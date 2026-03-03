@@ -1,19 +1,20 @@
 // ============================================================
 // BabyDaySnap - 画像保存ユーティリティ
 // ============================================================
-import { Paths, File, Directory } from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { Alert, Linking } from "react-native";
 import { v4 as uuidv4 } from "uuid";
 import type { AppLibraryItem, EditorOptions, ComputedInfo, PhotoSource } from "@/types";
 
 /** ライブラリディレクトリを取得（無ければ作成） */
-function getLibraryDir(): Directory {
-    const dir = new Directory(Paths.document, "library");
-    if (!dir.exists) {
-        dir.create();
+async function getLibraryDirPath(): Promise<string> {
+    const dirPath = `${FileSystem.documentDirectory}library/`;
+    const info = await FileSystem.getInfoAsync(dirPath);
+    if (!info.exists) {
+        await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true });
     }
-    return dir;
+    return dirPath;
 }
 
 /**
@@ -29,13 +30,15 @@ export async function saveToAppLibrary(
     imageWidth: number,
     imageHeight: number,
 ): Promise<AppLibraryItem> {
-    const dir = getLibraryDir();
+    const dirPath = await getLibraryDirPath();
     const id = uuidv4();
-    const destFile = new File(dir, `${id}.jpg`);
-    const srcFile = new File(renderedUri);
+    const destUri = `${dirPath}${id}.jpg`;
 
     // コピー
-    srcFile.copy(destFile);
+    await FileSystem.copyAsync({
+        from: renderedUri,
+        to: destUri
+    });
 
     const item: AppLibraryItem = {
         id,
@@ -46,7 +49,7 @@ export async function saveToAppLibrary(
         templateId: editorOptions.templateId,
         dateColorHex: editorOptions.dateColorHex,
         commentText: editorOptions.commentText,
-        renderedFileUri: destFile.uri,
+        renderedFileUri: destUri,
         width: imageWidth,
         height: imageHeight,
     };
@@ -88,15 +91,11 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
  */
 export async function deleteFromAppLibrary(item: AppLibraryItem): Promise<void> {
     try {
-        const file = new File(item.renderedFileUri);
-        if (file.exists) {
-            file.delete();
+        if (item.renderedFileUri) {
+            await FileSystem.deleteAsync(item.renderedFileUri, { idempotent: true });
         }
         if (item.previewFileUri) {
-            const previewFile = new File(item.previewFileUri);
-            if (previewFile.exists) {
-                previewFile.delete();
-            }
+            await FileSystem.deleteAsync(item.previewFileUri, { idempotent: true });
         }
     } catch (e) {
         console.warn("deleteFromAppLibrary error:", e);

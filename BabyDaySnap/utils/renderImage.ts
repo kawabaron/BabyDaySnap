@@ -1,7 +1,7 @@
 // ============================================================
 // BabyDaySnap - 画像合成（Skia）
 // ============================================================
-import { Skia, type SkImage, type SkCanvas } from "@shopify/react-native-skia";
+import { Skia, type SkImage, type SkCanvas, type SkTypeface } from "@shopify/react-native-skia";
 import { Paths, File } from "expo-file-system";
 import { getTemplateConfig } from "./templates";
 import type { TemplateId, ComputedInfo, EditorOptions } from "@/types";
@@ -17,6 +17,7 @@ type RenderParams = {
     imageHeight: number;
     editorOptions: EditorOptions;
     computed: ComputedInfo;
+    typeface: SkTypeface | null;
 };
 
 /**
@@ -64,7 +65,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, tpl.isSquare, imageWidth, imageHeight);
 
     // テキスト描画
-    drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke);
+    drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, params.typeface);
 
     // 確定
     surface.flush();
@@ -73,15 +74,14 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         throw new Error("スナップショットの作成に失敗しました");
     }
 
-    // JPEG に書き出し
-    const encoded = snapshot.encodeToBytes();
-    if (!encoded) {
+    // JPEG に書き出し（Skia ネイティブで高速化）
+    const base64 = snapshot.encodeToBase64(3, 100); // 3 = JPEG, 100 = Quality
+    if (!base64) {
         throw new Error("画像のエンコードに失敗しました");
     }
 
     // 新しいexpo-file-system API を使ってファイルに保存
     const outputFile = new File(Paths.cache, `rendered_${Date.now()}.jpg`);
-    const base64 = uint8ArrayToBase64(encoded);
 
     // base64 -> バイナリで書き込み
     outputFile.write(base64, { encoding: "base64" });
@@ -132,6 +132,7 @@ function drawText(
     computed: ComputedInfo,
     hasFrame: boolean,
     hasStroke: boolean,
+    typeface: SkTypeface | null,
 ) {
     const shortSide = Math.min(canvasW, canvasH);
     const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO;
@@ -140,11 +141,9 @@ function drawText(
 
     const dateText = `${computed.shotDateISO}  生後${computed.ageDays}日`;
 
-    // フォント
-    const fontMgr = Skia.FontMgr.System();
-    const typeface = fontMgr.matchFamilyStyle("System", { weight: 600 });
-    const dateFont = Skia.Font(typeface ?? undefined, dateFontSize);
-    const commentFont = Skia.Font(typeface ?? undefined, commentFontSize);
+    // フォント生成
+    const dateFont = Skia.Font(typeface || undefined, dateFontSize);
+    const commentFont = Skia.Font(typeface || undefined, commentFontSize);
 
     // 日付テキスト
     const dateWidth = dateFont.measureText(dateText).width;
@@ -192,10 +191,3 @@ function drawText(
     canvas.drawText(dateText, dateX, dateY, fillPaint, dateFont);
 }
 
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-}

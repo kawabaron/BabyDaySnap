@@ -17,6 +17,7 @@ import { TEMPLATES, COLOR_PALETTE, getTemplateConfig } from "@/utils/templates";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { Ionicons } from "@expo/vector-icons";
+import { useFont } from "@shopify/react-native-skia";
 import type { TemplateId } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -31,9 +32,12 @@ export default function EditorScreen() {
     const [rendering, setRendering] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    // フォント読み込み
+    const customFont = useFont(require("../../assets/fonts/NotoSansJP-Bold.otf"), 16);
+
     // 合成実行
     const doRender = useCallback(async () => {
-        if (!currentPhoto || !computed) return;
+        if (!currentPhoto || !computed || !customFont) return;
         setRendering(true);
         try {
             const uri = await renderCompositeImage({
@@ -42,6 +46,7 @@ export default function EditorScreen() {
                 imageHeight: currentPhoto.height,
                 editorOptions,
                 computed,
+                typeface: customFont.getTypeface(),
             });
             dispatch({ type: "SET_RENDERED_URI", payload: uri });
         } catch (e) {
@@ -52,10 +57,12 @@ export default function EditorScreen() {
         }
     }, [currentPhoto, computed, editorOptions]);
 
-    // editorOptions が変わるたび再合成
+    // editorOptions または font が変わるたび再合成
     useEffect(() => {
-        doRender();
-    }, [doRender]);
+        if (customFont) {
+            doRender();
+        }
+    }, [doRender, customFont]);
 
     // テンプレート変更
     const handleTemplateChange = (id: TemplateId) => {
@@ -147,10 +154,11 @@ export default function EditorScreen() {
         }
     };
 
-    if (!currentPhoto || !computed) {
+    if (!currentPhoto || !computed || !customFont) {
         return (
             <View style={styles.container}>
-                <Text style={styles.errorText}>写真データが見つかりません</Text>
+                <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#FF8FA3" />
+                <Text style={styles.errorText}>準備中...</Text>
             </View>
         );
     }
