@@ -1,0 +1,120 @@
+// ============================================================
+// BabyDaySnap - 型定義
+// ============================================================
+
+// --- テンプレート ---
+export type TemplateId =
+    | "tpl_noframe_full"   // フチ無し全面（黒縁取り白文字デフォ）
+    | "tpl_frame_full"     // フチあり全面（黒文字）
+    | "tpl_frame_square";  // フチありスクエア（黒文字）
+
+// --- 写真ソース ---
+export type PhotoSource = {
+    uri: string;
+    width: number;
+    height: number;
+    source: "camera" | "import";
+    assetId?: string;
+    creationTimeMs?: number;
+    exifDateTimeOriginalMs?: number;
+};
+
+// --- 算出情報 ---
+export type ComputedInfo = {
+    shotDateISO: string; // "YYYY-MM-DD"
+    ageDays: number;     // 生後日数（誕生日当日=0日）
+};
+
+// --- エディタオプション ---
+export type EditorOptions = {
+    templateId: TemplateId;
+    dateColorHex: string;
+    commentText: string;
+};
+
+// --- アプリ内ライブラリアイテム ---
+export type AppLibraryItem = {
+    id: string;
+    createdAtMs: number;
+    source: "camera" | "import";
+    shotDateISO: string;
+    ageDays: number;
+
+    templateId: TemplateId;
+    dateColorHex: string;
+    commentText: string;
+
+    renderedFileUri: string;
+    previewFileUri?: string;
+    width: number;
+    height: number;
+};
+
+// --- ユーザー設定 ---
+export type PolicyUrls = {
+    termsUrl: string;
+    privacyUrl: string;
+    contactUrl: string;
+};
+
+export type UserSettings = {
+    hasOnboarded: boolean;
+    birthDateISO: string | null;
+    lastTemplateId: TemplateId;
+    lastDateColorHex: string;
+    policyUrls: PolicyUrls;
+};
+
+// --- アプリ状態 ---
+export type AppState = {
+    settings: UserSettings;
+    library: AppLibraryItem[];
+
+    currentPhoto: PhotoSource | null;
+    computed: ComputedInfo | null;
+    editorOptions: EditorOptions;
+
+    renderedUri: string | null;
+    loading: boolean;
+    error?: string;
+};
+
+// --- Action ---
+export type AppAction =
+    // 設定
+    | { type: "SET_ONBOARDED"; payload: boolean }
+    | { type: "SET_BIRTHDATE"; payload: string }
+    | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
+    | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string } }
+    // 編集
+    | { type: "SET_PHOTO"; payload: PhotoSource }
+    | { type: "SET_COMPUTED"; payload: ComputedInfo }
+    | { type: "SET_EDITOR_OPTIONS"; payload: Partial<EditorOptions> }
+    | { type: "SET_RENDERED_URI"; payload: string | null }
+    | { type: "RESET_EDITOR" }
+    // ライブラリ
+    | { type: "LIBRARY_LOAD"; payload: AppLibraryItem[] }
+    | { type: "LIBRARY_ADD"; payload: AppLibraryItem }
+    | { type: "LIBRARY_REMOVE"; payload: string }
+    // ローディング
+    | { type: "SET_LOADING"; payload: boolean }
+    | { type: "SET_ERROR"; payload: string | undefined }
+    // 全設定ロード
+    | { type: "LOAD_SETTINGS"; payload: UserSettings };
+
+// --- テンプレート定義 ---
+export type TemplateConfig = {
+    id: TemplateId;
+    label: string;
+    hasFrame: boolean;
+    isSquare: boolean;
+    defaultDateColorHex: string;
+    /** テキストに縁取り（stroke）を付けるか */
+    hasTextStroke: boolean;
+};
+
+// --- 日付色パレット ---
+export type ColorOption = {
+    hex: string;
+    label: string;
+};
