@@ -4,7 +4,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { Alert, Linking } from "react-native";
-import { v4 as uuidv4 } from "uuid";
 import type { AppLibraryItem, EditorOptions, ComputedInfo, PhotoSource } from "@/types";
 
 /** ライブラリディレクトリを取得（無ければ作成） */
@@ -31,7 +30,7 @@ export async function saveToAppLibrary(
     imageHeight: number,
 ): Promise<AppLibraryItem> {
     const dirPath = await getLibraryDirPath();
-    const id = uuidv4();
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const destUri = `${dirPath}${id}.jpg`;
 
     // コピー

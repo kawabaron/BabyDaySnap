@@ -5,8 +5,8 @@ import {
     TouchableOpacity,
     Platform,
     StyleSheet,
-    SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { useAppDispatch } from "@/context/AppContext";

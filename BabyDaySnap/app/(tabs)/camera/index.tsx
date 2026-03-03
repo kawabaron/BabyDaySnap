@@ -61,7 +61,7 @@ export default function CameraScreen() {
     const handleImport = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['images'],
                 quality: 1,
                 exif: true,
             });
@@ -131,29 +131,28 @@ export default function CameraScreen() {
         <View style={styles.container}>
             <CameraView
                 ref={cameraRef}
-                style={styles.camera}
+                style={StyleSheet.absoluteFillObject}
                 facing={facing}
-            >
-                {/* 上部ボタン */}
-                <SafeAreaView style={styles.topBar}>
-                    <TouchableOpacity
-                        style={styles.topButton}
-                        onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
-                    >
-                        <Ionicons name="camera-reverse-outline" size={28} color="#FFF" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.topButton} onPress={handleImport}>
-                        <Ionicons name="images-outline" size={26} color="#FFF" />
-                    </TouchableOpacity>
-                </SafeAreaView>
+            />
+            {/* 上部ボタン */}
+            <SafeAreaView style={styles.topBar}>
+                <TouchableOpacity
+                    style={styles.topButton}
+                    onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
+                >
+                    <Ionicons name="camera-reverse-outline" size={28} color="#FFF" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.topButton} onPress={handleImport}>
+                    <Ionicons name="images-outline" size={26} color="#FFF" />
+                </TouchableOpacity>
+            </SafeAreaView>
 
-                {/* 撮影ボタン */}
-                <View style={styles.bottomBar}>
-                    <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
-                        <View style={styles.captureInner} />
-                    </TouchableOpacity>
-                </View>
-            </CameraView>
+            {/* 撮影ボタン */}
+            <View style={styles.bottomBar}>
+                <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
+                    <View style={styles.captureInner} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
