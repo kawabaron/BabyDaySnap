@@ -31,11 +31,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return {
                 ...state,
                 settings: action.payload,
-                editorOptions: {
-                    ...state.editorOptions,
-                    templateId: action.payload.lastTemplateId,
-                    dateColorHex: action.payload.lastDateColorHex,
-                },
             };
         case "SET_ONBOARDED":
             return {
@@ -79,11 +74,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 ...state,
                 currentPhoto: null,
                 computed: null,
-                editorOptions: {
-                    templateId: state.settings.lastTemplateId,
-                    dateColorHex: state.settings.lastDateColorHex,
-                    commentText: "",
-                },
+                editorOptions: initialEditorOptions,
                 renderedUri: null,
             };
 

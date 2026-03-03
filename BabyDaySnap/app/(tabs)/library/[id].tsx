@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
-import { formatDateDisplay } from "@/utils/date";
+import { formatDateDisplay, msToDateISO } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -109,9 +109,7 @@ export default function LibraryDetailScreen() {
                 <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>作成日</Text>
                     <Text style={styles.metaValue}>
-                        {formatDateDisplay(
-                            new Date(item.createdAtMs).toISOString().split("T")[0],
-                        )}
+                        {formatDateDisplay(msToDateISO(item.createdAtMs))}
                     </Text>
                 </View>
 

@@ -55,13 +55,16 @@ export default function EditorScreen() {
         } finally {
             setRendering(false);
         }
-    }, [currentPhoto, computed, editorOptions]);
+    }, [currentPhoto, computed, editorOptions, customFont]);
 
     // editorOptions または font が変わるたび再合成
     useEffect(() => {
-        if (customFont) {
+        if (!customFont) return;
+
+        const timer = setTimeout(() => {
             doRender();
-        }
+        }, 150);
+        return () => clearTimeout(timer);
     }, [doRender, customFont]);
 
     // テンプレート変更
@@ -396,7 +399,7 @@ const styles = StyleSheet.create({
     templateNoFrame: {
         width: 52,
         height: 40,
-        backgroundColor: "#FFD6A5",
+        backgroundColor: "#E0E0E0",
         borderRadius: 4,
     },
     templateFrame: {
