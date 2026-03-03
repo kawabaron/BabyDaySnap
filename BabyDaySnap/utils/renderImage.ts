@@ -165,6 +165,7 @@ function drawText(
     const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO;
     const commentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
     const margin = shortSide * MARGIN_RATIO;
+    const gap = shortSide * 0.015;
 
     const dateText = `${computed.shotDateISO}  生後${computed.ageDays}日`;
 
@@ -172,31 +173,30 @@ function drawText(
     const dateFont = Skia.Font(typeface || undefined, dateFontSize);
     const commentFont = Skia.Font(typeface || undefined, commentFontSize);
 
-    // 日付テキスト
+    // 幅とX位置
     const dateWidth = dateFont.measureText(dateText).width;
     const dateX = canvasW - margin - dateWidth;
     let dateY = canvasH - margin;
 
-    // コメントがある場合はその分上にずらす
     const hasComment = options.commentText.trim().length > 0;
+
     if (hasComment) {
-        dateY = canvasH - margin;
-        const commentY = dateY - dateFontSize - 4;
+        // コメントが下、日付が上
+        const commentY = canvasH - margin;
+        dateY = commentY - commentFontSize - gap;
 
         // コメント描画
         const commentWidth = commentFont.measureText(options.commentText).width;
         const commentX = canvasW - margin - commentWidth;
 
         if (hasStroke) {
-            // 縁取り（黒ストローク）
             const strokePaint = Skia.Paint();
             strokePaint.setColor(Skia.Color("#000000"));
             strokePaint.setStyle(1); // Stroke
-            strokePaint.setStrokeWidth(Math.max(2, dateFontSize * 0.08));
+            strokePaint.setStrokeWidth(Math.max(2, commentFontSize * 0.08));
             canvas.drawText(options.commentText, commentX, commentY, strokePaint, commentFont);
         }
 
-        // 塗り
         const fillPaint = Skia.Paint();
         fillPaint.setColor(Skia.Color(options.dateColorHex));
         fillPaint.setStyle(0); // Fill

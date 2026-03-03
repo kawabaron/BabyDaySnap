@@ -160,6 +160,7 @@ export default function EditorScreen() {
     const dateFontSize = shortSide * 0.04;
     const commentFontSize = shortSide * 0.038;
     const margin = shortSide * 0.04;
+    const gap = shortSide * 0.015;
     const inset = shortSide * 0.06;
     const bottomInset = shortSide * 0.18;
 
@@ -208,19 +209,6 @@ export default function EditorScreen() {
                     bottom: margin,
                     alignItems: "flex-end",
                 }}>
-                    {editorOptions.commentText ? (
-                        <Text style={{
-                            fontSize: commentFontSize,
-                            color: editorOptions.dateColorHex,
-                            fontWeight: "bold",
-                            marginBottom: 4,
-                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                            textShadowOffset: { width: 1, height: 1 },
-                            textShadowRadius: 1,
-                        }}>
-                            {editorOptions.commentText}
-                        </Text>
-                    ) : null}
                     <Text style={{
                         fontSize: dateFontSize,
                         color: editorOptions.dateColorHex,
@@ -231,6 +219,19 @@ export default function EditorScreen() {
                     }}>
                         {computed.shotDateISO}  生後{computed.ageDays}日
                     </Text>
+                    {editorOptions.commentText ? (
+                        <Text style={{
+                            fontSize: commentFontSize,
+                            color: editorOptions.dateColorHex,
+                            fontWeight: "bold",
+                            marginTop: gap,
+                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                            textShadowOffset: { width: 1, height: 1 },
+                            textShadowRadius: 1,
+                        }}>
+                            {editorOptions.commentText}
+                        </Text>
+                    ) : null}
                 </View>
 
                 {/* Loading overlay for final save */}
