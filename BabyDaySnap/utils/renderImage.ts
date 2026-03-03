@@ -10,6 +10,7 @@ const MARGIN_RATIO = 0.04;
 const FONT_SIZE_DATE_RATIO = 0.04;
 const FONT_SIZE_COMMENT_RATIO = 0.038;
 const INSET_RATIO = 0.06; // フチあり時の余白比率
+const BOTTOM_INSET_RATIO = 0.14; // テキスト配置用の下部余白比率
 
 type RenderParams = {
     imageUri: string;
@@ -89,6 +90,25 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     return outputFile.uri;
 }
 
+function getCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
+    const srcAspect = srcW / srcH;
+    const dstAspect = dstW / dstH;
+
+    let sW = srcW;
+    let sH = srcH;
+    let sX = 0;
+    let sY = 0;
+
+    if (srcAspect > dstAspect) {
+        sW = srcH * dstAspect;
+        sX = (srcW - sW) / 2;
+    } else {
+        sH = srcW / dstAspect;
+        sY = (srcH - sH) / 2;
+    }
+    return { x: sX, y: sY, w: sW, h: sH };
+}
+
 function drawPhoto(
     canvas: SkCanvas,
     image: SkImage,
@@ -105,22 +125,29 @@ function drawPhoto(
         const dstRect = Skia.XYWHRect(0, 0, canvasW, canvasH);
         canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
     } else {
-        const inset = Math.min(canvasW, canvasH) * INSET_RATIO;
+        const shortSide = Math.min(canvasW, canvasH);
+        const inset = shortSide * INSET_RATIO;
+        const bottomInset = shortSide * BOTTOM_INSET_RATIO;
+
+        let dstW, dstH, dstX, dstY;
 
         if (isSquare) {
-            // スクエア: center-crop して正方形
-            const side = Math.min(origW, origH);
-            const sx = (origW - side) / 2;
-            const sy = (origH - side) / 2;
-            const srcRect = Skia.XYWHRect(sx, sy, side, side);
-            const dstRect = Skia.XYWHRect(inset, inset, canvasW - inset * 2, canvasH - inset * 2);
-            canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
+            dstH = canvasH - inset - bottomInset;
+            dstW = dstH; // perfect square
+            dstX = (canvasW - dstW) / 2; // center horizontal
+            dstY = inset;
         } else {
-            // フチあり全面: inset で縮小配置
-            const srcRect = Skia.XYWHRect(0, 0, origW, origH);
-            const dstRect = Skia.XYWHRect(inset, inset, canvasW - inset * 2, canvasH - inset * 2);
-            canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
+            dstW = canvasW - inset * 2;
+            dstH = canvasH - inset - bottomInset;
+            dstX = inset;
+            dstY = inset;
         }
+
+        const cover = getCoverRect(origW, origH, dstW, dstH);
+        const srcRect = Skia.XYWHRect(cover.x, cover.y, cover.w, cover.h);
+        const dstRect = Skia.XYWHRect(dstX, dstY, dstW, dstH);
+
+        canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
     }
 }
 

@@ -29,43 +29,23 @@ export default function EditorScreen() {
     const router = useRouter();
 
     const { currentPhoto, computed, editorOptions, settings, renderedUri } = state;
-    const [rendering, setRendering] = useState(false);
     const [saving, setSaving] = useState(false);
 
     // フォント読み込み
     const customFont = useFont(require("../../../assets/fonts/NotoSansJP-Bold.otf"), 16);
 
-    // 合成実行
-    const doRender = useCallback(async () => {
-        if (!currentPhoto || !computed || !customFont) return;
-        setRendering(true);
-        try {
-            const uri = await renderCompositeImage({
-                imageUri: currentPhoto.uri,
-                imageWidth: currentPhoto.width,
-                imageHeight: currentPhoto.height,
-                editorOptions,
-                computed,
-                typeface: customFont.getTypeface(),
-            });
-            dispatch({ type: "SET_RENDERED_URI", payload: uri });
-        } catch (e) {
-            console.error("Render error:", e);
-            Alert.alert("エラー", "画像の合成に失敗しました。");
-        } finally {
-            setRendering(false);
-        }
-    }, [currentPhoto, computed, editorOptions, customFont]);
-
-    // editorOptions または font が変わるたび再合成
-    useEffect(() => {
-        if (!customFont) return;
-
-        const timer = setTimeout(() => {
-            doRender();
-        }, 150);
-        return () => clearTimeout(timer);
-    }, [doRender, customFont]);
+    // 最終保存時にのみSkia合成を実行
+    const runFinalRender = async () => {
+        if (!currentPhoto || !computed || !customFont) throw new Error("Missing data");
+        return await renderCompositeImage({
+            imageUri: currentPhoto.uri,
+            imageWidth: currentPhoto.width,
+            imageHeight: currentPhoto.height,
+            editorOptions,
+            computed,
+            typeface: customFont.getTypeface(),
+        });
+    };
 
     // テンプレート変更
     const handleTemplateChange = (id: TemplateId) => {
@@ -99,9 +79,10 @@ export default function EditorScreen() {
 
     // アプリ内保存
     const handleSaveToApp = async () => {
-        if (!renderedUri || !currentPhoto || !computed) return;
+        if (!currentPhoto || !computed || !customFont) return;
         setSaving(true);
         try {
+            const finalUri = await runFinalRender();
             const tpl = getTemplateConfig(editorOptions.templateId);
             const imageW = tpl.isSquare
                 ? Math.min(currentPhoto.width, currentPhoto.height)
@@ -111,7 +92,7 @@ export default function EditorScreen() {
                 : currentPhoto.height;
 
             const item = await saveToAppLibrary(
-                renderedUri,
+                finalUri,
                 currentPhoto,
                 computed,
                 editorOptions,
@@ -145,10 +126,11 @@ export default function EditorScreen() {
 
     // iPhone写真保存
     const handleSaveToPhotos = async () => {
-        if (!renderedUri) return;
+        if (!currentPhoto || !computed || !customFont) return;
         setSaving(true);
         try {
-            const success = await saveToPhotoLibrary(renderedUri);
+            const finalUri = await runFinalRender();
+            const success = await saveToPhotoLibrary(finalUri);
             if (success) {
                 Alert.alert("保存完了", "写真ライブラリに保存しました。");
             }
@@ -166,12 +148,34 @@ export default function EditorScreen() {
         );
     }
 
-    // プレビュー画像のアスペクト比計算
+    // プレビュー画像のアスペクト比と配置レイアウト計算
     const tpl = getTemplateConfig(editorOptions.templateId);
     const previewAspect = tpl.isSquare
         ? 1
         : currentPhoto.width / currentPhoto.height;
     const previewHeight = PREVIEW_WIDTH / previewAspect;
+
+    // UIレイアウト計算 (renderImage.ts の定数に合わせる)
+    const shortSide = Math.min(PREVIEW_WIDTH, previewHeight);
+    const dateFontSize = shortSide * 0.04;
+    const commentFontSize = shortSide * 0.038;
+    const margin = shortSide * 0.04;
+    const inset = shortSide * 0.06;
+    const bottomInset = shortSide * 0.14;
+
+    const previewPhotoW = tpl.hasFrame
+        ? (tpl.isSquare ? previewHeight - inset - bottomInset : PREVIEW_WIDTH - inset * 2)
+        : PREVIEW_WIDTH;
+
+    const previewPhotoH = tpl.hasFrame
+        ? previewHeight - inset - bottomInset
+        : previewHeight;
+
+    const previewPhotoX = tpl.hasFrame
+        ? (tpl.isSquare ? (PREVIEW_WIDTH - previewPhotoW) / 2 : inset)
+        : 0;
+
+    const previewPhotoY = tpl.hasFrame ? inset : 0;
 
     return (
         <ScrollView
@@ -179,17 +183,63 @@ export default function EditorScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >
-            {/* プレビュー */}
-            <View style={[styles.previewContainer, { height: previewHeight }]}>
-                {rendering ? (
-                    <ActivityIndicator size="large" color="#FF8FA3" />
-                ) : renderedUri ? (
+            {/* プレビュー UI (純粋なReact Nativeコンポーネントで高速にモック表示) */}
+            <View style={[styles.previewContainer, { height: previewHeight, backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000" }]}>
+                {/* Photo Layer */}
+                <View style={{
+                    position: "absolute",
+                    left: previewPhotoX,
+                    top: previewPhotoY,
+                    width: previewPhotoW,
+                    height: previewPhotoH,
+                    overflow: "hidden",
+                }}>
                     <Image
-                        source={{ uri: renderedUri }}
-                        style={styles.previewImage}
-                        resizeMode="contain"
+                        source={{ uri: currentPhoto.uri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
                     />
-                ) : null}
+                </View>
+
+                {/* Text Layer */}
+                <View style={{
+                    position: "absolute",
+                    right: margin,
+                    bottom: margin,
+                    alignItems: "flex-end",
+                }}>
+                    {editorOptions.commentText ? (
+                        <Text style={{
+                            fontSize: commentFontSize,
+                            color: editorOptions.dateColorHex,
+                            fontWeight: "bold",
+                            marginBottom: 4,
+                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                            textShadowOffset: { width: 1, height: 1 },
+                            textShadowRadius: 1,
+                        }}>
+                            {editorOptions.commentText}
+                        </Text>
+                    ) : null}
+                    <Text style={{
+                        fontSize: dateFontSize,
+                        color: editorOptions.dateColorHex,
+                        fontWeight: "bold",
+                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                        textShadowOffset: { width: 1, height: 1 },
+                        textShadowRadius: 1,
+                    }}>
+                        {computed.shotDateISO}  生後{computed.ageDays}日
+                    </Text>
+                </View>
+
+                {/* Loading overlay for final save */}
+                {saving && (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
+                        <ActivityIndicator size="large" color="#FF8FA3" />
+                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>保存中...</Text>
+                    </View>
+                )}
             </View>
 
             {/* 情報表示 */}
@@ -294,7 +344,7 @@ export default function EditorScreen() {
                 <TouchableOpacity
                     style={styles.saveButton}
                     onPress={handleSaveToApp}
-                    disabled={saving || rendering}
+                    disabled={saving}
                 >
                     {saving ? (
                         <ActivityIndicator color="#FFF" />
@@ -309,7 +359,7 @@ export default function EditorScreen() {
                 <TouchableOpacity
                     style={styles.photoButton}
                     onPress={handleSaveToPhotos}
-                    disabled={saving || rendering}
+                    disabled={saving}
                 >
                     <Ionicons name="image-outline" size={20} color="#FF8FA3" />
                     <Text style={styles.photoButtonText}>iPhone写真に保存</Text>
