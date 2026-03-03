@@ -33,7 +33,7 @@ export default function EditorScreen() {
     const [saving, setSaving] = useState(false);
 
     // フォント読み込み
-    const customFont = useFont(require("../../assets/fonts/NotoSansJP-Bold.otf"), 16);
+    const customFont = useFont(require("../../../assets/fonts/NotoSansJP-Bold.otf"), 16);
 
     // 合成実行
     const doRender = useCallback(async () => {
