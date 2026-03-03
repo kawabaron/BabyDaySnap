@@ -10,7 +10,7 @@ const MARGIN_RATIO = 0.04;
 const FONT_SIZE_DATE_RATIO = 0.04;
 const FONT_SIZE_COMMENT_RATIO = 0.038;
 const INSET_RATIO = 0.06; // フチあり時の余白比率
-const BOTTOM_INSET_RATIO = 0.14; // テキスト配置用の下部余白比率
+const BOTTOM_INSET_RATIO = 0.18; // テキスト配置用の下部余白比率
 
 type RenderParams = {
     imageUri: string;

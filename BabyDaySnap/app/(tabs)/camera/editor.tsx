@@ -161,7 +161,7 @@ export default function EditorScreen() {
     const commentFontSize = shortSide * 0.038;
     const margin = shortSide * 0.04;
     const inset = shortSide * 0.06;
-    const bottomInset = shortSide * 0.14;
+    const bottomInset = shortSide * 0.18;
 
     const previewPhotoW = tpl.hasFrame
         ? (tpl.isSquare ? previewHeight - inset - bottomInset : PREVIEW_WIDTH - inset * 2)
