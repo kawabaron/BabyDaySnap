@@ -61,7 +61,8 @@
           "savePhotosPermission": "作成した写真をフォトライブラリに保存します",
           "isAccessMediaLocationEnabled": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
