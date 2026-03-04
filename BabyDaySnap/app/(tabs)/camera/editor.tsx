@@ -40,24 +40,20 @@ export default function EditorScreen() {
             headerLeft: () => (
                 <TouchableOpacity
                     onPress={() => {
+                        const libId = editingLibraryId;
                         dispatch({ type: "RESET_EDITOR" });
-                        if (editingLibraryId) {
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.navigate(`/(tabs)/library/${editingLibraryId}`);
-                            }
+                        if (libId) {
+                            router.navigate(`/(tabs)/library/${libId}`);
+                        } else if (router.canGoBack()) {
+                            router.back();
                         } else {
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.navigate("/(tabs)/camera");
-                            }
+                            router.navigate("/(tabs)/camera");
                         }
                     }}
-                    style={{ marginLeft: 8 }}
+                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4 }}
                 >
                     <Ionicons name="chevron-back" size={28} color="#333" />
+                    <Text style={{ fontSize: 17, color: "#333" }}>戻る</Text>
                 </TouchableOpacity>
             ),
         });

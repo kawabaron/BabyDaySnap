@@ -34,6 +34,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     const imageData = await Skia.Data.fromURI(imageUri);
     const skImage = Skia.Image.MakeImageFromEncoded(imageData);
     if (!skImage) {
+        imageData.dispose();
         throw new Error("画像の読み込みに失敗しました");
     }
 
@@ -53,42 +54,57 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     // サーフェス作成
     const surface = Skia.Surface.Make(canvasW, canvasH);
     if (!surface) {
+        skImage.dispose();
+        imageData.dispose();
         throw new Error("サーフェスの作成に失敗しました");
     }
 
-    const canvas = surface.getCanvas();
+    let outputUri: string;
+    try {
+        const canvas = surface.getCanvas();
 
-    // 背景
-    if (tpl.hasFrame) {
-        canvas.drawColor(Skia.Color("#FFFFFF"));
+        // 背景
+        if (tpl.hasFrame) {
+            canvas.drawColor(Skia.Color("#FFFFFF"));
+        }
+
+        // 写真描画
+        drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, tpl.isSquare, imageWidth, imageHeight);
+
+        // テキスト描画
+        drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
+
+        // 確定
+        surface.flush();
+        const snapshot = surface.makeImageSnapshot();
+        if (!snapshot) {
+            throw new Error("スナップショットの作成に失敗しました");
+        }
+
+        try {
+            // JPEG に書き出し（Skia ネイティブで高速化）
+            const base64 = snapshot.encodeToBase64(3, 100); // 3 = JPEG, 100 = Quality
+            if (!base64) {
+                throw new Error("画像のエンコードに失敗しました");
+            }
+
+            // 新しいexpo-file-system API を使ってファイルに保存
+            const outputFile = new File(Paths.cache, `rendered_${Date.now()}.jpg`);
+
+            // base64 -> バイナリで書き込み
+            outputFile.write(base64, { encoding: "base64" });
+
+            outputUri = outputFile.uri;
+        } finally {
+            snapshot.dispose();
+        }
+    } finally {
+        surface.dispose();
+        skImage.dispose();
+        imageData.dispose();
     }
 
-    // 写真描画
-    drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, tpl.isSquare, imageWidth, imageHeight);
-
-    // テキスト描画
-    drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
-
-    // 確定
-    surface.flush();
-    const snapshot = surface.makeImageSnapshot();
-    if (!snapshot) {
-        throw new Error("スナップショットの作成に失敗しました");
-    }
-
-    // JPEG に書き出し（Skia ネイティブで高速化）
-    const base64 = snapshot.encodeToBase64(3, 100); // 3 = JPEG, 100 = Quality
-    if (!base64) {
-        throw new Error("画像のエンコードに失敗しました");
-    }
-
-    // 新しいexpo-file-system API を使ってファイルに保存
-    const outputFile = new File(Paths.cache, `rendered_${Date.now()}.jpg`);
-
-    // base64 -> バイナリで書き込み
-    outputFile.write(base64, { encoding: "base64" });
-
-    return outputFile.uri;
+    return outputUri;
 }
 
 function getCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
