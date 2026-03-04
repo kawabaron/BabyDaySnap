@@ -176,15 +176,31 @@ function drawText(
     // 幅とX位置
     const dateWidth = dateFont.measureText(dateText).width;
     const dateX = canvasW - margin - dateWidth;
-    let dateY = canvasH - margin;
 
+    let dateY = 0;
+    let commentY = 0;
     const hasComment = options.commentText.trim().length > 0;
 
-    if (hasComment) {
-        // コメントが下、日付が上
-        const commentY = canvasH - margin;
-        dateY = commentY - commentFontSize - gap;
+    if (hasFrame) {
+        // フチあり: 写真の下端を基準に上詰め配置
+        const bottomInset = shortSide * 0.18; // renderImageの定数
+        const photoBottom = canvasH - bottomInset;
 
+        dateY = photoBottom + gap + dateFontSize; // text baseline
+        if (hasComment) {
+            commentY = dateY + gap + commentFontSize;
+        }
+    } else {
+        // フチなし: キャンバスの下端を基準に下詰め配置
+        if (hasComment) {
+            commentY = canvasH - margin;
+            dateY = commentY - commentFontSize - gap;
+        } else {
+            dateY = canvasH - margin;
+        }
+    }
+
+    if (hasComment) {
         // コメント描画
         const commentWidth = commentFont.measureText(options.commentText).width;
         const commentX = canvasW - margin - commentWidth;

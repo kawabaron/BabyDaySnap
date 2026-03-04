@@ -206,7 +206,7 @@ export default function EditorScreen() {
                 <View style={{
                     position: "absolute",
                     right: margin,
-                    bottom: margin,
+                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
                     alignItems: "flex-end",
                 }}>
                     <Text style={{
