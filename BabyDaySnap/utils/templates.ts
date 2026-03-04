@@ -1,7 +1,7 @@
 // ============================================================
 // BabyDaySnap - テンプレート定義
 // ============================================================
-import type { TemplateConfig, ColorOption, TemplateId } from "@/types";
+import type { TemplateConfig, ColorOption, TemplateId, FontOption, FontId } from "@/types";
 
 export const TEMPLATES: TemplateConfig[] = [
     {
@@ -45,4 +45,26 @@ export const COLOR_PALETTE: ColorOption[] = [
 
 export function getTemplateConfig(id: TemplateId): TemplateConfig {
     return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+}
+
+export const FONT_OPTIONS: FontOption[] = [
+    {
+        id: "font_standard",
+        label: "標準",
+        file: require("../../assets/fonts/NotoSansJP-Bold.otf"),
+    },
+    {
+        id: "font_soft",
+        label: "柔らかい",
+        file: require("../../assets/fonts/ZenMaruGothic-Bold.ttf"),
+    },
+    {
+        id: "font_stylish",
+        label: "おしゃれ",
+        file: require("../../assets/fonts/ZenKurenaido-Regular.ttf"),
+    },
+];
+
+export function getFontConfig(id: FontId): FontOption {
+    return FONT_OPTIONS.find((f) => f.id === id) ?? FONT_OPTIONS[0];
 }

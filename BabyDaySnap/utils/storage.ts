@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     hasOnboarded: false,
     birthDateISO: null,
     lastTemplateId: "tpl_noframe_full",
+    lastFontId: "font_standard",
     lastDateColorHex: "#FFFFFF",
     policyUrls: {
         termsUrl: "https://example.com/terms",

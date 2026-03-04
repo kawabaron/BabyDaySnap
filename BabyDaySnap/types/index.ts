@@ -8,6 +8,9 @@ export type TemplateId =
     | "tpl_frame_full"     // フチあり全面（黒文字）
     | "tpl_frame_square";  // フチありスクエア（黒文字）
 
+// --- フォント ---
+export type FontId = "font_standard" | "font_soft" | "font_stylish";
+
 // --- 写真ソース ---
 export type PhotoSource = {
     uri: string;
@@ -30,6 +33,7 @@ export type EditorOptions = {
     templateId: TemplateId;
     dateColorHex: string;
     commentText: string;
+    fontId: FontId;
 };
 
 // --- アプリ内ライブラリアイテム ---
@@ -41,6 +45,7 @@ export type AppLibraryItem = {
     ageDays: number;
 
     templateId: TemplateId;
+    fontId?: FontId;
     dateColorHex: string;
     commentText: string;
 
@@ -61,6 +66,7 @@ export type UserSettings = {
     hasOnboarded: boolean;
     birthDateISO: string | null;
     lastTemplateId: TemplateId;
+    lastFontId: FontId;
     lastDateColorHex: string;
     policyUrls: PolicyUrls;
 };
@@ -85,7 +91,7 @@ export type AppAction =
     | { type: "SET_ONBOARDED"; payload: boolean }
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
-    | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string } }
+    | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
     // 編集
     | { type: "SET_PHOTO"; payload: PhotoSource }
     | { type: "SET_COMPUTED"; payload: ComputedInfo }
@@ -117,4 +123,11 @@ export type TemplateConfig = {
 export type ColorOption = {
     hex: string;
     label: string;
+};
+
+// --- フォントオプション ---
+export type FontOption = {
+    id: FontId;
+    label: string;
+    file: any;
 };

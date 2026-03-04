@@ -10,6 +10,7 @@ const initialEditorOptions: EditorOptions = {
     templateId: "tpl_noframe_full",
     dateColorHex: "#FFFFFF",
     commentText: "",
+    fontId: "font_standard",
 };
 
 const initialState: AppState = {
@@ -54,6 +55,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     ...state.settings,
                     lastTemplateId: action.payload.lastTemplateId,
                     lastDateColorHex: action.payload.lastDateColorHex,
+                    lastFontId: action.payload.lastFontId,
                 },
             };
 

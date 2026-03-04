@@ -12,13 +12,14 @@ import {
     Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
-import { TEMPLATES, COLOR_PALETTE, getTemplateConfig } from "@/utils/templates";
+import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFont } from "@shopify/react-native-skia";
-import type { TemplateId } from "@/types";
+import type { TemplateId, FontId } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -31,19 +32,37 @@ export default function EditorScreen() {
     const { currentPhoto, computed, editorOptions, settings, renderedUri } = state;
     const [saving, setSaving] = useState(false);
 
-    // フォント読み込み
-    const customFont = useFont(require("../../../assets/fonts/NotoSansJP-Bold.otf"), 16);
+    // RN用プレビューフォント読み込み
+    const [rnFontsLoaded] = useFonts({
+        font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
+        font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
+        font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
+    });
+
+    // Skia用フォント読み込み
+    const skiaFontStandard = useFont(FONT_OPTIONS.find(f => f.id === "font_standard")!.file, 16);
+    const skiaFontSoft = useFont(FONT_OPTIONS.find(f => f.id === "font_soft")!.file, 16);
+    const skiaFontStylish = useFont(FONT_OPTIONS.find(f => f.id === "font_stylish")!.file, 16);
+
+    const getActiveTypeface = () => {
+        switch (editorOptions.fontId) {
+            case "font_soft": return skiaFontSoft?.getTypeface() ?? null;
+            case "font_stylish": return skiaFontStylish?.getTypeface() ?? null;
+            default: return skiaFontStandard?.getTypeface() ?? null;
+        }
+    };
 
     // 最終保存時にのみSkia合成を実行
     const runFinalRender = async () => {
-        if (!currentPhoto || !computed || !customFont) throw new Error("Missing data");
+        const activeTypeface = getActiveTypeface();
+        if (!currentPhoto || !computed || !activeTypeface) throw new Error("Missing data");
         return await renderCompositeImage({
             imageUri: currentPhoto.uri,
             imageWidth: currentPhoto.width,
             imageHeight: currentPhoto.height,
             editorOptions,
             computed,
-            typeface: customFont.getTypeface(),
+            typeface: activeTypeface,
         });
     };
 
@@ -56,6 +75,14 @@ export default function EditorScreen() {
                 templateId: id,
                 dateColorHex: tpl.defaultDateColorHex,
             },
+        });
+    };
+
+    // フォント変更
+    const handleFontChange = (id: FontId) => {
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { fontId: id },
         });
     };
 
@@ -79,7 +106,7 @@ export default function EditorScreen() {
 
     // アプリ内保存
     const handleSaveToApp = async () => {
-        if (!currentPhoto || !computed || !customFont) return;
+        if (!currentPhoto || !computed || !getActiveTypeface()) return;
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
@@ -105,6 +132,7 @@ export default function EditorScreen() {
                 payload: {
                     lastTemplateId: editorOptions.templateId,
                     lastDateColorHex: editorOptions.dateColorHex,
+                    lastFontId: editorOptions.fontId,
                 },
             });
             Alert.alert("保存完了", "ライブラリに保存しました。", [
@@ -126,7 +154,7 @@ export default function EditorScreen() {
 
     // iPhone写真保存
     const handleSaveToPhotos = async () => {
-        if (!currentPhoto || !computed || !customFont) return;
+        if (!currentPhoto || !computed || !getActiveTypeface()) return;
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
@@ -139,7 +167,7 @@ export default function EditorScreen() {
         }
     };
 
-    if (!currentPhoto || !computed || !customFont) {
+    if (!currentPhoto || !computed || !rnFontsLoaded || !skiaFontStandard || !skiaFontSoft || !skiaFontStylish) {
         return (
             <View style={styles.container}>
                 <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#FF8FA3" />
@@ -210,6 +238,7 @@ export default function EditorScreen() {
                     alignItems: "flex-end",
                 }}>
                     <Text style={{
+                        fontFamily: editorOptions.fontId,
                         fontSize: dateFontSize,
                         color: editorOptions.dateColorHex,
                         fontWeight: "bold",
@@ -221,6 +250,7 @@ export default function EditorScreen() {
                     </Text>
                     {editorOptions.commentText ? (
                         <Text style={{
+                            fontFamily: editorOptions.fontId,
                             fontSize: commentFontSize,
                             color: editorOptions.dateColorHex,
                             fontWeight: "bold",
@@ -292,6 +322,37 @@ export default function EditorScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
+            </View>
+
+            {/* フォント選択 */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>フォント</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.fontRow}
+                >
+                    {FONT_OPTIONS.map((f) => (
+                        <TouchableOpacity
+                            key={f.id}
+                            style={[
+                                styles.fontBadge,
+                                editorOptions.fontId === f.id && styles.fontBadgeActive,
+                            ]}
+                            onPress={() => handleFontChange(f.id)}
+                        >
+                            <Text
+                                style={[
+                                    styles.fontBadgeText,
+                                    { fontFamily: f.id },
+                                    editorOptions.fontId === f.id && styles.fontBadgeTextActive,
+                                ]}
+                            >
+                                {f.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
             {/* 日付色選択 */}
@@ -485,6 +546,30 @@ const styles = StyleSheet.create({
     templateLabelActive: {
         color: "#FF8FA3",
         fontWeight: "700",
+    },
+    fontRow: {
+        flexDirection: "row",
+        gap: 8,
+        paddingVertical: 4,
+    },
+    fontBadge: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: "#F5F5F5",
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: "transparent",
+    },
+    fontBadgeActive: {
+        borderColor: "#FF8FA3",
+        backgroundColor: "#FFF5F7",
+    },
+    fontBadgeText: {
+        fontSize: 14,
+        color: "#555",
+    },
+    fontBadgeTextActive: {
+        color: "#FF8FA3",
     },
     colorRow: {
         flexDirection: "row",
