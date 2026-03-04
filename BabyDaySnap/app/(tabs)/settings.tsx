@@ -74,258 +74,261 @@ export default function SettingsScreen() {
                 <Text style={styles.headerTitle}>設定</Text>
             </View>
 
-            {/* 出生日セクション */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>赤ちゃんの情報</Text>
-                <View style={styles.card}>
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLeft}>
-                            <Ionicons name="calendar-outline" size={22} color="#FF8FA3" />
-                            <View>
-                                <Text style={styles.settingLabel}>誕生日</Text>
-                                <Text style={styles.settingValue}>
-                                    {settings.birthDateISO
-                                        ? formatDateDisplay(settings.birthDateISO)
-                                        : "未設定"}
-                                </Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={() => setShowDatePicker(!showDatePicker)}
-                        >
-                            <Text style={styles.editButtonText}>
-                                {showDatePicker ? "閉じる" : "変更"}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-                    {showDatePicker && (
-                        <View style={styles.datePickerContainer}>
-                            <DateTimePicker
-                                value={tempDate}
-                                mode="date"
-                                display={Platform.OS === "ios" ? "spinner" : "default"}
-                                maximumDate={new Date()}
-                                onChange={onDateChange}
-                                locale="ja"
-                                style={styles.datePicker}
-                            />
+                {/* 出生日セクション */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>赤ちゃんの情報</Text>
+                    <View style={styles.card}>
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="calendar-outline" size={22} color="#FF8FA3" />
+                                <View>
+                                    <Text style={styles.settingLabel}>誕生日</Text>
+                                    <Text style={styles.settingValue}>
+                                        {settings.birthDateISO
+                                            ? formatDateDisplay(settings.birthDateISO)
+                                            : "未設定"}
+                                    </Text>
+                                </View>
+                            </View>
                             <TouchableOpacity
-                                style={styles.saveDateButton}
-                                onPress={handleSaveBirthDate}
+                                style={styles.editButton}
+                                onPress={() => setShowDatePicker(!showDatePicker)}
                             >
-                                <Text style={styles.saveDateButtonText}>保存する</Text>
+                                <Text style={styles.editButtonText}>
+                                    {showDatePicker ? "閉じる" : "変更"}
+                                </Text>
                             </TouchableOpacity>
                         </View>
-                    )}
 
-                    <View style={styles.divider} />
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLeft}>
-                            <Ionicons name="person-outline" size={22} color="#FF8FA3" />
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.settingLabel}>お名前</Text>
-                                <TextInput
-                                    style={styles.nameInput}
-                                    value={settings.babyName}
-                                    onChangeText={(text) => dispatch({ type: "SET_BABY_NAME", payload: text })}
-                                    placeholder="未設定"
-                                    placeholderTextColor="#CCC"
-                                    maxLength={20}
-                                    returnKeyType="done"
+                        {showDatePicker && (
+                            <View style={styles.datePickerContainer}>
+                                <DateTimePicker
+                                    value={tempDate}
+                                    mode="date"
+                                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                                    maximumDate={new Date()}
+                                    onChange={onDateChange}
+                                    locale="ja"
+                                    style={styles.datePicker}
                                 />
+                                <TouchableOpacity
+                                    style={styles.saveDateButton}
+                                    onPress={handleSaveBirthDate}
+                                >
+                                    <Text style={styles.saveDateButtonText}>保存する</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="person-outline" size={22} color="#FF8FA3" />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.settingLabel}>お名前</Text>
+                                    <TextInput
+                                        style={styles.nameInput}
+                                        value={settings.babyName}
+                                        onChangeText={(text) => dispatch({ type: "SET_BABY_NAME", payload: text })}
+                                        placeholder="未設定"
+                                        placeholderTextColor="#CCC"
+                                        maxLength={20}
+                                        returnKeyType="done"
+                                    />
+                                </View>
                             </View>
                         </View>
                     </View>
                 </View>
-            </View>
 
-            {/* 初期表示設定 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>テキストの初期表示</Text>
-                <View style={styles.card}>
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLeft}>
-                            <Ionicons name="calendar-outline" size={22} color="#888" />
-                            <Text style={styles.linkText}>日付</Text>
-                        </View>
-                        <Switch
-                            value={settings.defaultShowDate}
-                            onValueChange={(val) =>
-                                dispatch({
-                                    type: "SET_DEFAULT_TOGGLES", payload: {
-                                        defaultShowDate: val,
-                                        defaultShowName: settings.defaultShowName,
-                                        defaultShowAge: settings.defaultShowAge
-                                    }
-                                })
-                            }
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
-                        />
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLeft}>
-                            <Ionicons name="person-outline" size={22} color="#888" />
-                            <Text style={styles.linkText}>お名前</Text>
-                        </View>
-                        <Switch
-                            value={settings.defaultShowName}
-                            onValueChange={(val) =>
-                                dispatch({
-                                    type: "SET_DEFAULT_TOGGLES", payload: {
-                                        defaultShowDate: settings.defaultShowDate,
-                                        defaultShowName: val,
-                                        defaultShowAge: settings.defaultShowAge
-                                    }
-                                })
-                            }
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
-                        />
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingLeft}>
-                            <Ionicons name="time-outline" size={22} color="#888" />
-                            <Text style={styles.linkText}>生後日数</Text>
-                        </View>
-                        <Switch
-                            value={settings.defaultShowAge}
-                            onValueChange={(val) =>
-                                dispatch({
-                                    type: "SET_DEFAULT_TOGGLES", payload: {
-                                        defaultShowDate: settings.defaultShowDate,
-                                        defaultShowName: settings.defaultShowName,
-                                        defaultShowAge: val
-                                    }
-                                })
-                            }
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
-                        />
-                    </View>
-                </View>
-            </View>
-
-            {/* デフォルトのスタイル */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>デフォルトのスタイル</Text>
-
-                <Text style={styles.subTitle}>テンプレート</Text>
-                <View style={styles.templateRow}>
-                    {TEMPLATES.map((t) => (
-                        <TouchableOpacity
-                            key={t.id}
-                            style={[
-                                styles.templateOption,
-                                settings.defaultTemplateId === t.id && styles.templateOptionActive,
-                            ]}
-                            onPress={() => handleTemplateChange(t.id)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.templatePreviewBox}>
-                                {t.id === "tpl_noframe_full" && <View style={styles.templateNoFrame} />}
-                                {t.id === "tpl_frame_full" && (
-                                    <View style={styles.templateFrame}>
-                                        <View style={styles.templateInner} />
-                                    </View>
-                                )}
-                                {t.id === "tpl_frame_square" && (
-                                    <View style={[styles.templateFrame, styles.templateSquare]}>
-                                        <View style={[styles.templateInner, styles.templateInnerSquare]} />
-                                    </View>
-                                )}
+                {/* 初期表示設定 */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>テキストの初期表示</Text>
+                    <View style={styles.card}>
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="calendar-outline" size={22} color="#888" />
+                                <Text style={styles.linkText}>日付</Text>
                             </View>
-                            <Text
-                                style={[
-                                    styles.templateLabel,
-                                    settings.defaultTemplateId === t.id && styles.templateLabelActive,
-                                ]}
-                            >
-                                {t.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                            <Switch
+                                value={settings.defaultShowDate}
+                                onValueChange={(val) =>
+                                    dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: val,
+                                            defaultShowName: settings.defaultShowName,
+                                            defaultShowAge: settings.defaultShowAge
+                                        }
+                                    })
+                                }
+                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            />
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="person-outline" size={22} color="#888" />
+                                <Text style={styles.linkText}>お名前</Text>
+                            </View>
+                            <Switch
+                                value={settings.defaultShowName}
+                                onValueChange={(val) =>
+                                    dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: settings.defaultShowDate,
+                                            defaultShowName: val,
+                                            defaultShowAge: settings.defaultShowAge
+                                        }
+                                    })
+                                }
+                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            />
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingLeft}>
+                                <Ionicons name="time-outline" size={22} color="#888" />
+                                <Text style={styles.linkText}>生後日数</Text>
+                            </View>
+                            <Switch
+                                value={settings.defaultShowAge}
+                                onValueChange={(val) =>
+                                    dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: settings.defaultShowDate,
+                                            defaultShowName: settings.defaultShowName,
+                                            defaultShowAge: val
+                                        }
+                                    })
+                                }
+                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            />
+                        </View>
+                    </View>
                 </View>
 
-                <Text style={styles.subTitle}>フォント</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
-                    {FONT_OPTIONS.map((f) => (
+                {/* デフォルトのスタイル */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>デフォルトのスタイル</Text>
+
+                    <Text style={styles.subTitle}>テンプレート</Text>
+                    <View style={styles.templateRow}>
+                        {TEMPLATES.map((t) => (
+                            <TouchableOpacity
+                                key={t.id}
+                                style={[
+                                    styles.templateOption,
+                                    settings.defaultTemplateId === t.id && styles.templateOptionActive,
+                                ]}
+                                onPress={() => handleTemplateChange(t.id)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.templatePreviewBox}>
+                                    {t.id === "tpl_noframe_full" && <View style={styles.templateNoFrame} />}
+                                    {t.id === "tpl_frame_full" && (
+                                        <View style={styles.templateFrame}>
+                                            <View style={styles.templateInner} />
+                                        </View>
+                                    )}
+                                    {t.id === "tpl_frame_square" && (
+                                        <View style={[styles.templateFrame, styles.templateSquare]}>
+                                            <View style={[styles.templateInner, styles.templateInnerSquare]} />
+                                        </View>
+                                    )}
+                                </View>
+                                <Text
+                                    style={[
+                                        styles.templateLabel,
+                                        settings.defaultTemplateId === t.id && styles.templateLabelActive,
+                                    ]}
+                                >
+                                    {t.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <Text style={styles.subTitle}>フォント</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
+                        {FONT_OPTIONS.map((f) => (
+                            <TouchableOpacity
+                                key={f.id}
+                                style={[
+                                    styles.fontBadge,
+                                    settings.defaultFontId === f.id && styles.fontBadgeActive,
+                                ]}
+                                onPress={() => handleFontChange(f.id)}
+                                activeOpacity={0.7}
+                            >
+                                <Text
+                                    style={[
+                                        styles.fontBadgeText,
+                                        { fontFamily: f.id },
+                                        settings.defaultFontId === f.id && styles.fontBadgeTextActive,
+                                    ]}
+                                >
+                                    {f.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                {/* リンクセクション */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>情報</Text>
+                    <View style={styles.card}>
                         <TouchableOpacity
-                            key={f.id}
-                            style={[
-                                styles.fontBadge,
-                                settings.defaultFontId === f.id && styles.fontBadgeActive,
-                            ]}
-                            onPress={() => handleFontChange(f.id)}
-                            activeOpacity={0.7}
+                            style={styles.linkRow}
+                            onPress={() => openURL(settings.policyUrls.termsUrl)}
                         >
-                            <Text
-                                style={[
-                                    styles.fontBadgeText,
-                                    { fontFamily: f.id },
-                                    settings.defaultFontId === f.id && styles.fontBadgeTextActive,
-                                ]}
-                            >
-                                {f.label}
-                            </Text>
+                            <View style={styles.linkLeft}>
+                                <Ionicons name="document-text-outline" size={20} color="#888" />
+                                <Text style={styles.linkText}>利用規約</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
 
-            {/* リンクセクション */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>情報</Text>
-                <View style={styles.card}>
-                    <TouchableOpacity
-                        style={styles.linkRow}
-                        onPress={() => openURL(settings.policyUrls.termsUrl)}
-                    >
-                        <View style={styles.linkLeft}>
-                            <Ionicons name="document-text-outline" size={20} color="#888" />
-                            <Text style={styles.linkText}>利用規約</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
+                        <View style={styles.divider} />
 
-                    <View style={styles.divider} />
+                        <TouchableOpacity
+                            style={styles.linkRow}
+                            onPress={() => openURL(settings.policyUrls.privacyUrl)}
+                        >
+                            <View style={styles.linkLeft}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#888" />
+                                <Text style={styles.linkText}>プライバシーポリシー</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.linkRow}
-                        onPress={() => openURL(settings.policyUrls.privacyUrl)}
-                    >
-                        <View style={styles.linkLeft}>
-                            <Ionicons name="shield-checkmark-outline" size={20} color="#888" />
-                            <Text style={styles.linkText}>プライバシーポリシー</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
+                        <View style={styles.divider} />
 
-                    <View style={styles.divider} />
-
-                    <TouchableOpacity
-                        style={styles.linkRow}
-                        onPress={() => openURL(settings.policyUrls.contactUrl)}
-                    >
-                        <View style={styles.linkLeft}>
-                            <Ionicons name="mail-outline" size={20} color="#888" />
-                            <Text style={styles.linkText}>お問い合わせ</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.linkRow}
+                            onPress={() => openURL(settings.policyUrls.contactUrl)}
+                        >
+                            <View style={styles.linkLeft}>
+                                <Ionicons name="mail-outline" size={20} color="#888" />
+                                <Text style={styles.linkText}>お問い合わせ</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
 
-            {/* アプリバージョン */}
-            <View style={styles.versionContainer}>
-                <Text style={styles.versionText}>BabyDaySnap v{appVersion}</Text>
-            </View>
+                {/* アプリバージョン */}
+                <View style={styles.versionContainer}>
+                    <Text style={styles.versionText}>BabyDaySnap v{appVersion}</Text>
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }

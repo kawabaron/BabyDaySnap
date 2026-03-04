@@ -147,7 +147,12 @@ export default function EditorScreen() {
                     text: "OK",
                     onPress: () => {
                         dispatch({ type: "RESET_EDITOR" });
-                        router.push("/(tabs)/library");
+                        if (router.canGoBack()) {
+                            router.back();
+                        }
+                        setTimeout(() => {
+                            router.navigate("/(tabs)/library");
+                        }, 50);
                     },
                 },
             ]);
