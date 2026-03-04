@@ -62,6 +62,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     defaultShowAge: action.payload.defaultShowAge,
                 },
             };
+        case "SET_DEFAULT_PREFS":
+            return {
+                ...state,
+                settings: { ...state.settings, ...action.payload },
+            };
         case "SET_POLICY_URLS":
             return {
                 ...state,
