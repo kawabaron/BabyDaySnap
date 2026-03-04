@@ -12,7 +12,7 @@ import {
     Dimensions,
     Switch,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
@@ -32,6 +32,36 @@ export default function EditorScreen() {
 
     const { currentPhoto, computed, editorOptions, settings, renderedUri, editingLibraryId } = state;
     const [saving, setSaving] = useState(false);
+    const navigation = useNavigation();
+
+    // 戻るボタンのカスタマイズ (再編集時はライブラリ詳細へ戻る)
+    useEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => (
+                <TouchableOpacity
+                    onPress={() => {
+                        dispatch({ type: "RESET_EDITOR" });
+                        if (editingLibraryId) {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.navigate(`/(tabs)/library/${editingLibraryId}`);
+                            }
+                        } else {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.navigate("/(tabs)/camera");
+                            }
+                        }
+                    }}
+                    style={{ marginLeft: 8 }}
+                >
+                    <Ionicons name="chevron-back" size={28} color="#333" />
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation, editingLibraryId, dispatch, router]);
 
     // RN用プレビューフォント読み込み
     const [rnFontsLoaded] = useFonts({

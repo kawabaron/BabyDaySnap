@@ -66,8 +66,8 @@ export default function LibraryDetailScreen() {
             type: "SET_PHOTO",
             payload: {
                 uri: item.originalFileUri,
-                width: item.width,
-                height: item.height,
+                width: (item as any).originalWidth ?? item.width,
+                height: (item as any).originalHeight ?? item.height,
                 source: item.source,
             },
         });

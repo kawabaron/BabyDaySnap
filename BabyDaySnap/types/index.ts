@@ -47,6 +47,8 @@ export type AppLibraryItem = {
     renderedFileUri: string;
     width: number;
     height: number;
+    originalWidth: number;
+    originalHeight: number;
     shotDateISO: string;
     ageDays: number;
     templateId: TemplateId;

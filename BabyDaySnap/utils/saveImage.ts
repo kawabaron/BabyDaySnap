@@ -56,6 +56,8 @@ export async function saveToAppLibrary(
         renderedFileUri: destUri,
         width: imageWidth,
         height: imageHeight,
+        originalWidth: photoSource.width,
+        originalHeight: photoSource.height,
         shotDateISO: computed.shotDateISO,
         ageDays: computed.ageDays,
         templateId: editorOptions.templateId,
