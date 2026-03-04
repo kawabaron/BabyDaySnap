@@ -32,6 +32,7 @@ export async function saveToAppLibrary(
     const dirPath = await getLibraryDirPath();
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const destUri = `${dirPath}${id}.jpg`;
+    const originalDestUri = `${dirPath}${id}_original.jpg`;
 
     // コピー
     await FileSystem.copyAsync({
@@ -39,18 +40,28 @@ export async function saveToAppLibrary(
         to: destUri
     });
 
+    await FileSystem.copyAsync({
+        from: photoSource.uri,
+        to: originalDestUri
+    });
+
     const item: AppLibraryItem = {
         id,
         createdAtMs: Date.now(),
         source: photoSource.source,
+        originalFileUri: originalDestUri,
+        renderedFileUri: destUri,
+        width: imageWidth,
+        height: imageHeight,
         shotDateISO: computed.shotDateISO,
         ageDays: computed.ageDays,
         templateId: editorOptions.templateId,
         dateColorHex: editorOptions.dateColorHex,
         commentText: editorOptions.commentText,
-        renderedFileUri: destUri,
-        width: imageWidth,
-        height: imageHeight,
+        fontId: editorOptions.fontId,
+        showDate: editorOptions.showDate,
+        showName: editorOptions.showName,
+        showAge: editorOptions.showAge,
     };
 
     return item;
@@ -85,16 +96,13 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
     }
 }
 
-/**
- * アプリ内ライブラリから削除
- */
 export async function deleteFromAppLibrary(item: AppLibraryItem): Promise<void> {
     try {
         if (item.renderedFileUri) {
             await FileSystem.deleteAsync(item.renderedFileUri, { idempotent: true });
         }
-        if (item.previewFileUri) {
-            await FileSystem.deleteAsync(item.previewFileUri, { idempotent: true });
+        if (item.originalFileUri) {
+            await FileSystem.deleteAsync(item.originalFileUri, { idempotent: true });
         }
     } catch (e) {
         console.warn("deleteFromAppLibrary error:", e);

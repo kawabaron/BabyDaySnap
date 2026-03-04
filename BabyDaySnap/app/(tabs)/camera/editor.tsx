@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     Image,
     Dimensions,
+    Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
@@ -63,6 +64,7 @@ export default function EditorScreen() {
             editorOptions,
             computed,
             typeface: activeTypeface,
+            babyName: settings.babyName,
         });
     };
 
@@ -237,17 +239,23 @@ export default function EditorScreen() {
                     ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
                     alignItems: "flex-end",
                 }}>
-                    <Text style={{
-                        fontFamily: editorOptions.fontId,
-                        fontSize: dateFontSize,
-                        color: editorOptions.dateColorHex,
-                        fontWeight: "bold",
-                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                        textShadowOffset: { width: 1, height: 1 },
-                        textShadowRadius: 1,
-                    }}>
-                        {computed.shotDateISO}  生後{computed.ageDays}日
-                    </Text>
+                    {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
+                        <Text style={{
+                            fontFamily: editorOptions.fontId,
+                            fontSize: dateFontSize,
+                            color: editorOptions.dateColorHex,
+                            fontWeight: "bold",
+                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                            textShadowOffset: { width: 1, height: 1 },
+                            textShadowRadius: 1,
+                        }}>
+                            {[
+                                editorOptions.showDate ? computed.shotDateISO : null,
+                                editorOptions.showName && settings.babyName ? settings.babyName : null,
+                                editorOptions.showAge ? `生後${computed.ageDays}日` : null
+                            ].filter(Boolean).join("  ")}
+                        </Text>
+                    )}
                     {editorOptions.commentText ? (
                         <Text style={{
                             fontFamily: editorOptions.fontId,
@@ -384,6 +392,41 @@ export default function EditorScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
+            </View>
+
+            {/* 表示項目切り替え */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>印字テキスト</Text>
+                <View style={styles.toggleRowContainer}>
+                    <View style={styles.toggleItem}>
+                        <Text style={styles.toggleLabel}>日付</Text>
+                        <Switch
+                            value={editorOptions.showDate}
+                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            style={styles.switchSmall}
+                        />
+                    </View>
+                    <View style={styles.toggleItem}>
+                        <Text style={styles.toggleLabel}>名前</Text>
+                        <Switch
+                            value={editorOptions.showName}
+                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            style={styles.switchSmall}
+                            disabled={!settings.babyName}
+                        />
+                    </View>
+                    <View style={styles.toggleItem}>
+                        <Text style={styles.toggleLabel}>生後日数</Text>
+                        <Switch
+                            value={editorOptions.showAge}
+                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            style={styles.switchSmall}
+                        />
+                    </View>
+                </View>
             </View>
 
             {/* コメント入力 */}
@@ -600,6 +643,29 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#333",
         backgroundColor: "#FAFAFA",
+    },
+    toggleRowContainer: {
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        gap: 16,
+        paddingVertical: 4,
+    },
+    toggleItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F5F5F5",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
+        gap: 8,
+    },
+    toggleLabel: {
+        fontSize: 13,
+        color: "#555",
+        fontWeight: "600",
+    },
+    switchSmall: {
+        transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
     },
     buttonContainer: {
         marginTop: 24,

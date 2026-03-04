@@ -19,6 +19,7 @@ type RenderParams = {
     editorOptions: EditorOptions;
     computed: ComputedInfo;
     typeface: SkTypeface | null;
+    babyName: string;
 };
 
 /**
@@ -26,7 +27,7 @@ type RenderParams = {
  * @returns 書き出したファイルのURI
  */
 export async function renderCompositeImage(params: RenderParams): Promise<string> {
-    const { imageUri, imageWidth, imageHeight, editorOptions, computed } = params;
+    const { imageUri, imageWidth, imageHeight, editorOptions, computed, typeface, babyName } = params;
     const tpl = getTemplateConfig(editorOptions.templateId);
 
     // 画像読み込み
@@ -66,7 +67,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, tpl.isSquare, imageWidth, imageHeight);
 
     // テキスト描画
-    drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, params.typeface);
+    drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
 
     // 確定
     surface.flush();
@@ -160,6 +161,7 @@ function drawText(
     hasFrame: boolean,
     hasStroke: boolean,
     typeface: SkTypeface | null,
+    babyName: string,
 ) {
     const shortSide = Math.min(canvasW, canvasH);
     const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO;
@@ -167,14 +169,20 @@ function drawText(
     const margin = shortSide * MARGIN_RATIO;
     const gap = shortSide * 0.015;
 
-    const dateText = `${computed.shotDateISO}  生後${computed.ageDays}日`;
+    const dateText = [
+        options.showDate ? computed.shotDateISO : null,
+        options.showName && babyName ? babyName : null,
+        options.showAge ? `生後${computed.ageDays}日` : null
+    ].filter(Boolean).join("  ");
+
+    const hasDateText = dateText.length > 0;
 
     // フォント生成
     const dateFont = Skia.Font(typeface || undefined, dateFontSize);
     const commentFont = Skia.Font(typeface || undefined, commentFontSize);
 
     // 幅とX位置
-    const dateWidth = dateFont.measureText(dateText).width;
+    const dateWidth = hasDateText ? dateFont.measureText(dateText).width : 0;
     const dateX = canvasW - margin - dateWidth;
 
     let dateY = 0;
@@ -220,17 +228,19 @@ function drawText(
     }
 
     // 日付描画
-    if (hasStroke) {
-        const strokePaint = Skia.Paint();
-        strokePaint.setColor(Skia.Color("#000000"));
-        strokePaint.setStyle(1); // Stroke
-        strokePaint.setStrokeWidth(Math.max(2, dateFontSize * 0.08));
-        canvas.drawText(dateText, dateX, dateY, strokePaint, dateFont);
-    }
+    if (hasDateText) {
+        if (hasStroke) {
+            const strokePaint = Skia.Paint();
+            strokePaint.setColor(Skia.Color("#000000"));
+            strokePaint.setStyle(1); // Stroke
+            strokePaint.setStrokeWidth(Math.max(2, dateFontSize * 0.08));
+            canvas.drawText(dateText, dateX, dateY, strokePaint, dateFont);
+        }
 
-    const fillPaint = Skia.Paint();
-    fillPaint.setColor(Skia.Color(options.dateColorHex));
-    fillPaint.setStyle(0); // Fill
-    canvas.drawText(dateText, dateX, dateY, fillPaint, dateFont);
+        const fillPaint = Skia.Paint();
+        fillPaint.setColor(Skia.Color(options.dateColorHex));
+        fillPaint.setStyle(0); // Fill
+        canvas.drawText(dateText, dateX, dateY, fillPaint, dateFont);
+    }
 }
 

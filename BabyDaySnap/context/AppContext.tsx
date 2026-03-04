@@ -11,6 +11,9 @@ const initialEditorOptions: EditorOptions = {
     dateColorHex: "#FFFFFF",
     commentText: "",
     fontId: "font_standard",
+    showDate: true,
+    showName: true,
+    showAge: true,
 };
 
 const initialState: AppState = {
@@ -42,6 +45,21 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return {
                 ...state,
                 settings: { ...state.settings, birthDateISO: action.payload },
+            };
+        case "SET_BABY_NAME":
+            return {
+                ...state,
+                settings: { ...state.settings, babyName: action.payload },
+            };
+        case "SET_DEFAULT_TOGGLES":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    defaultShowDate: action.payload.defaultShowDate,
+                    defaultShowName: action.payload.defaultShowName,
+                    defaultShowAge: action.payload.defaultShowAge,
+                },
             };
         case "SET_POLICY_URLS":
             return {
@@ -76,7 +94,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 ...state,
                 currentPhoto: null,
                 computed: null,
-                editorOptions: initialEditorOptions,
+                editorOptions: {
+                    templateId: state.settings.lastTemplateId,
+                    dateColorHex: state.settings.lastDateColorHex,
+                    commentText: "",
+                    fontId: state.settings.lastFontId,
+                    showDate: state.settings.defaultShowDate,
+                    showName: state.settings.defaultShowName,
+                    showAge: state.settings.defaultShowAge,
+                },
                 renderedUri: null,
             };
 

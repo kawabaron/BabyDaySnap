@@ -34,25 +34,29 @@ export type EditorOptions = {
     dateColorHex: string;
     commentText: string;
     fontId: FontId;
+    showDate: boolean;
+    showName: boolean;
+    showAge: boolean;
 };
 
 // --- アプリ内ライブラリアイテム ---
 export type AppLibraryItem = {
-    id: string;
-    createdAtMs: number;
+    id: string; // uuid
     source: "camera" | "import";
-    shotDateISO: string;
-    ageDays: number;
-
-    templateId: TemplateId;
-    fontId?: FontId;
-    dateColorHex: string;
-    commentText: string;
-
+    originalFileUri: string; // 再編集用
     renderedFileUri: string;
-    previewFileUri?: string;
     width: number;
     height: number;
+    shotDateISO: string;
+    ageDays: number;
+    templateId: TemplateId;
+    dateColorHex: string;
+    commentText: string;
+    fontId: FontId;
+    showDate: boolean;
+    showName: boolean;
+    showAge: boolean;
+    createdAtMs: number;
 };
 
 // --- ユーザー設定 ---
@@ -65,6 +69,10 @@ export type PolicyUrls = {
 export type UserSettings = {
     hasOnboarded: boolean;
     birthDateISO: string | null;
+    babyName: string;
+    defaultShowDate: boolean;
+    defaultShowName: boolean;
+    defaultShowAge: boolean;
     lastTemplateId: TemplateId;
     lastFontId: FontId;
     lastDateColorHex: string;
@@ -90,6 +98,8 @@ export type AppAction =
     // 設定
     | { type: "SET_ONBOARDED"; payload: boolean }
     | { type: "SET_BIRTHDATE"; payload: string }
+    | { type: "SET_BABY_NAME"; payload: string }
+    | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
     // 編集

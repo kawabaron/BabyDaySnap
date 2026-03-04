@@ -16,22 +16,23 @@ export function calcAgeDays(birthDateISO: string, shotDateISO: string): number {
 }
 
 /**
- * "YYYY-MM-DD" をローカル日付の00:00としてパースする
+ * "YYYY/MM/DD" 等をローカル日付の00:00としてパースする
  * new Date("YYYY-MM-DD") は UTC 扱いになるため、手動パース
  */
-function parseLocalDate(iso: string): Date {
-    const [y, m, d] = iso.split("-").map(Number);
+function parseLocalDate(dateStr: string): Date {
+    const cleanStr = dateStr.replace(/-/g, "/");
+    const [y, m, d] = cleanStr.split("/").map(Number);
     return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 /**
- * Date を "YYYY-MM-DD" にフォーマット
+ * Date を "YYYY/MM/DD" にフォーマット
  */
 export function formatDateISO(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    return `${y}/${m}/${d}`;
 }
 
 /**
@@ -44,8 +45,9 @@ export function msToDateISO(ms: number): string {
 /**
  * 日付表示用フォーマット: "YYYY年M月D日"
  */
-export function formatDateDisplay(iso: string): string {
-    const [y, m, d] = iso.split("-").map(Number);
+export function formatDateDisplay(dateStr: string): string {
+    const cleanStr = dateStr.replace(/-/g, "/");
+    const [y, m, d] = cleanStr.split("/").map(Number);
     return `${y}年${m}月${d}日`;
 }
 

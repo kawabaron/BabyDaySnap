@@ -7,6 +7,8 @@ import {
     Platform,
     Linking,
     Alert,
+    Switch,
+    TextInput,
 } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
@@ -100,6 +102,96 @@ export default function SettingsScreen() {
                             </TouchableOpacity>
                         </View>
                     )}
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLeft}>
+                            <Ionicons name="person-outline" size={22} color="#FF8FA3" />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.settingLabel}>お名前</Text>
+                                <TextInput
+                                    style={styles.nameInput}
+                                    value={settings.babyName}
+                                    onChangeText={(text) => dispatch({ type: "SET_BABY_NAME", payload: text })}
+                                    placeholder="未設定"
+                                    placeholderTextColor="#CCC"
+                                    maxLength={20}
+                                    returnKeyType="done"
+                                />
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            {/* 初期表示設定 */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>テキストの初期表示</Text>
+                <View style={styles.card}>
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLeft}>
+                            <Ionicons name="calendar-outline" size={22} color="#888" />
+                            <Text style={styles.linkText}>日付</Text>
+                        </View>
+                        <Switch
+                            value={settings.defaultShowDate}
+                            onValueChange={(val) =>
+                                dispatch({
+                                    type: "SET_DEFAULT_TOGGLES", payload: {
+                                        defaultShowDate: val,
+                                        defaultShowName: settings.defaultShowName,
+                                        defaultShowAge: settings.defaultShowAge
+                                    }
+                                })
+                            }
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                        />
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLeft}>
+                            <Ionicons name="person-outline" size={22} color="#888" />
+                            <Text style={styles.linkText}>お名前</Text>
+                        </View>
+                        <Switch
+                            value={settings.defaultShowName}
+                            onValueChange={(val) =>
+                                dispatch({
+                                    type: "SET_DEFAULT_TOGGLES", payload: {
+                                        defaultShowDate: settings.defaultShowDate,
+                                        defaultShowName: val,
+                                        defaultShowAge: settings.defaultShowAge
+                                    }
+                                })
+                            }
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                        />
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.settingRow}>
+                        <View style={styles.settingLeft}>
+                            <Ionicons name="time-outline" size={22} color="#888" />
+                            <Text style={styles.linkText}>生後日数</Text>
+                        </View>
+                        <Switch
+                            value={settings.defaultShowAge}
+                            onValueChange={(val) =>
+                                dispatch({
+                                    type: "SET_DEFAULT_TOGGLES", payload: {
+                                        defaultShowDate: settings.defaultShowDate,
+                                        defaultShowName: settings.defaultShowName,
+                                        defaultShowAge: val
+                                    }
+                                })
+                            }
+                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                        />
+                    </View>
                 </View>
             </View>
 
@@ -243,6 +335,13 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 15,
         fontWeight: "700",
+    },
+    nameInput: {
+        fontSize: 16,
+        color: "#333",
+        fontWeight: "600",
+        marginTop: 2,
+        padding: 0,
     },
     linkRow: {
         flexDirection: "row",

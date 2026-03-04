@@ -60,6 +60,41 @@ export default function LibraryDetailScreen() {
         }
     };
 
+    const handleReedit = () => {
+        // 元画像の復元
+        dispatch({
+            type: "SET_PHOTO",
+            payload: {
+                uri: item.originalFileUri,
+                width: item.width,
+                height: item.height,
+                source: item.source,
+            },
+        });
+        // 計算結果の復元
+        dispatch({
+            type: "SET_COMPUTED",
+            payload: {
+                shotDateISO: item.shotDateISO,
+                ageDays: item.ageDays,
+            },
+        });
+        // エディタ設定の復元（過去バージョン互換のためフォールバックあり）
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: {
+                templateId: item.templateId,
+                dateColorHex: item.dateColorHex,
+                commentText: item.commentText,
+                fontId: (item as any).fontId || "font_standard",
+                showDate: (item as any).showDate ?? true,
+                showName: (item as any).showName ?? true,
+                showAge: (item as any).showAge ?? true,
+            },
+        });
+        router.push("/(tabs)/camera/editor");
+    };
+
     const handleDelete = () => {
         Alert.alert("削除確認", "この写真を削除しますか？", [
             { text: "キャンセル", style: "cancel" },
@@ -142,9 +177,14 @@ export default function LibraryDetailScreen() {
 
             {/* アクションボタン */}
             <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.reeditButton} onPress={handleReedit}>
+                    <Ionicons name="color-wand-outline" size={20} color="#FFF" />
+                    <Text style={styles.saveButtonText}>再編集する</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.saveButton} onPress={handleSaveToPhotos}>
-                    <Ionicons name="image-outline" size={20} color="#FFF" />
-                    <Text style={styles.saveButtonText}>iPhone写真に保存</Text>
+                    <Ionicons name="image-outline" size={20} color="#FF8FA3" />
+                    <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
@@ -229,7 +269,7 @@ const styles = StyleSheet.create({
         marginTop: 24,
         gap: 12,
     },
-    saveButton: {
+    reeditButton: {
         backgroundColor: "#FF8FA3",
         flexDirection: "row",
         alignItems: "center",
@@ -243,8 +283,22 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
+    saveButton: {
+        backgroundColor: "#FFF0F3",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 14,
+        borderRadius: 14,
+        gap: 8,
+    },
     saveButtonText: {
         color: "#FFF",
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    saveButtonTextOutline: {
+        color: "#FF8FA3",
         fontSize: 16,
         fontWeight: "700",
     },
