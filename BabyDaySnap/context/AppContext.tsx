@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from "react";
 import type { AppState, AppAction, EditorOptions } from "@/types";
 import { loadSettings, saveSettings, loadLibrary, saveLibrary, DEFAULT_SETTINGS } from "@/utils/storage";
+import { getTemplateConfig } from "@/utils/templates";
 
 // --- 初期状態 ---
 const initialEditorOptions: EditorOptions = {
@@ -97,14 +98,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return { ...state, renderedUri: action.payload };
         case "SET_EDITING_LIBRARY_ID":
             return { ...state, editingLibraryId: action.payload };
-        case "RESET_EDITOR":
+        case "RESET_EDITOR": {
+            const templateId = state.settings.defaultTemplateId || "tpl_noframe_full";
+            const tpl = getTemplateConfig(templateId);
             return {
                 ...state,
                 currentPhoto: null,
                 computed: null,
                 editorOptions: {
-                    templateId: state.settings.defaultTemplateId || "tpl_noframe_full",
-                    dateColorHex: state.settings.lastDateColorHex || "#FFFFFF",
+                    templateId,
+                    dateColorHex: tpl.defaultDateColorHex,
                     commentText: "",
                     fontId: state.settings.defaultFontId || "font_standard",
                     showDate: state.settings.defaultShowDate,
@@ -114,6 +117,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 renderedUri: null,
                 editingLibraryId: null,
             };
+        }
 
         // ライブラリ
         case "LIBRARY_LOAD":
