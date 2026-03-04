@@ -234,6 +234,8 @@ export default function EditorScreen() {
                     width: previewPhotoW,
                     height: previewPhotoH,
                     overflow: "hidden",
+                    borderWidth: tpl.hasFrame ? 1 : 0,
+                    borderColor: "#E0E0E0",
                 }}>
                     <Image
                         source={{ uri: currentPhoto.uri }}
