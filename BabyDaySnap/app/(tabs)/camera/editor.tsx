@@ -225,7 +225,12 @@ export default function EditorScreen() {
             showsVerticalScrollIndicator={false}
         >
             {/* プレビュー UI (純粋なReact Nativeコンポーネントで高速にモック表示) */}
-            <View style={[styles.previewContainer, { height: previewHeight, backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000" }]}>
+            <View style={[styles.previewContainer, {
+                height: previewHeight,
+                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
+                borderWidth: tpl.hasFrame ? 1 : 0,
+                borderColor: "#E0E0E0"
+            }]}>
                 {/* Photo Layer */}
                 <View style={{
                     position: "absolute",
@@ -240,9 +245,6 @@ export default function EditorScreen() {
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                     />
-                    {tpl.hasFrame && (
-                        <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: "#E0E0E0" }]} pointerEvents="none" />
-                    )}
                 </View>
 
                 {/* Text Layer */}

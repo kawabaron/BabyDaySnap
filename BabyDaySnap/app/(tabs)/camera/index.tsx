@@ -89,10 +89,7 @@ export default function CameraScreen() {
 
     const isFocused = useIsFocused();
 
-    // フォーカスが外れた場合はカメラをアンマウントしてクラッシュ防止
-    if (!isFocused) {
-        return <View style={styles.container} />;
-    }
+    // フォーカスが外れた場合はCameraViewのみアンマウントしてクラッシュを防止
 
     // 権限未許可時の画面
     if (!permission) {
@@ -138,11 +135,13 @@ export default function CameraScreen() {
 
     return (
         <View style={styles.container}>
-            <CameraView
-                ref={cameraRef}
-                style={StyleSheet.absoluteFillObject}
-                facing={facing}
-            />
+            {isFocused && (
+                <CameraView
+                    ref={cameraRef}
+                    style={StyleSheet.absoluteFillObject}
+                    facing={facing}
+                />
+            )}
             {/* 上部ボタン */}
             <SafeAreaView style={styles.topBar}>
                 <TouchableOpacity
