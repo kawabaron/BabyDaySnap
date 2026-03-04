@@ -28,9 +28,10 @@ export async function saveToAppLibrary(
     editorOptions: EditorOptions,
     imageWidth: number,
     imageHeight: number,
+    existingId?: string | null,
 ): Promise<AppLibraryItem> {
     const dirPath = await getLibraryDirPath();
-    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    const id = existingId || (Date.now().toString(36) + Math.random().toString(36).substring(2));
     const destUri = `${dirPath}${id}.jpg`;
     const originalDestUri = `${dirPath}${id}_original.jpg`;
 
@@ -40,10 +41,12 @@ export async function saveToAppLibrary(
         to: destUri
     });
 
-    await FileSystem.copyAsync({
-        from: photoSource.uri,
-        to: originalDestUri
-    });
+    if (!existingId || photoSource.uri !== originalDestUri) {
+        await FileSystem.copyAsync({
+            from: photoSource.uri,
+            to: originalDestUri
+        });
+    }
 
     const item: AppLibraryItem = {
         id,

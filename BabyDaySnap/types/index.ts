@@ -70,6 +70,8 @@ export type UserSettings = {
     hasOnboarded: boolean;
     birthDateISO: string | null;
     babyName: string;
+    defaultTemplateId: TemplateId;
+    defaultFontId: FontId;
     defaultShowDate: boolean;
     defaultShowName: boolean;
     defaultShowAge: boolean;
@@ -89,6 +91,7 @@ export type AppState = {
     editorOptions: EditorOptions;
 
     renderedUri: string | null;
+    editingLibraryId?: string | null;
     loading: boolean;
     error?: string;
 };
@@ -100,6 +103,7 @@ export type AppAction =
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_BABY_NAME"; payload: string }
     | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean } }
+    | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
     // 編集
@@ -107,10 +111,12 @@ export type AppAction =
     | { type: "SET_COMPUTED"; payload: ComputedInfo }
     | { type: "SET_EDITOR_OPTIONS"; payload: Partial<EditorOptions> }
     | { type: "SET_RENDERED_URI"; payload: string | null }
+    | { type: "SET_EDITING_LIBRARY_ID"; payload: string | null }
     | { type: "RESET_EDITOR" }
     // ライブラリ
     | { type: "LIBRARY_LOAD"; payload: AppLibraryItem[] }
     | { type: "LIBRARY_ADD"; payload: AppLibraryItem }
+    | { type: "LIBRARY_UPDATE"; payload: AppLibraryItem }
     | { type: "LIBRARY_REMOVE"; payload: string }
     // ローディング
     | { type: "SET_LOADING"; payload: boolean }

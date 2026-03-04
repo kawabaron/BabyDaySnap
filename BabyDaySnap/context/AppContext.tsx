@@ -23,6 +23,7 @@ const initialState: AppState = {
     computed: null,
     editorOptions: initialEditorOptions,
     renderedUri: null,
+    editingLibraryId: null,
     loading: true,
     error: undefined,
 };
@@ -89,21 +90,24 @@ function appReducer(state: AppState, action: AppAction): AppState {
             };
         case "SET_RENDERED_URI":
             return { ...state, renderedUri: action.payload };
+        case "SET_EDITING_LIBRARY_ID":
+            return { ...state, editingLibraryId: action.payload };
         case "RESET_EDITOR":
             return {
                 ...state,
                 currentPhoto: null,
                 computed: null,
                 editorOptions: {
-                    templateId: state.settings.lastTemplateId,
-                    dateColorHex: state.settings.lastDateColorHex,
+                    templateId: state.settings.defaultTemplateId || "tpl_noframe_full",
+                    dateColorHex: state.settings.lastDateColorHex || "#FFFFFF",
                     commentText: "",
-                    fontId: state.settings.lastFontId,
+                    fontId: state.settings.defaultFontId || "font_standard",
                     showDate: state.settings.defaultShowDate,
                     showName: state.settings.defaultShowName,
                     showAge: state.settings.defaultShowAge,
                 },
                 renderedUri: null,
+                editingLibraryId: null,
             };
 
         // ライブラリ
@@ -111,6 +115,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
             return { ...state, library: action.payload };
         case "LIBRARY_ADD":
             return { ...state, library: [action.payload, ...state.library] };
+        case "LIBRARY_UPDATE":
+            return {
+                ...state,
+                library: state.library.map((item) =>
+                    item.id === action.payload.id ? action.payload : item
+                ),
+            };
         case "LIBRARY_REMOVE":
             return {
                 ...state,

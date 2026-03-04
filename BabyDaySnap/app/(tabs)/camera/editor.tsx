@@ -30,7 +30,7 @@ export default function EditorScreen() {
     const dispatch = useAppDispatch();
     const router = useRouter();
 
-    const { currentPhoto, computed, editorOptions, settings, renderedUri } = state;
+    const { currentPhoto, computed, editorOptions, settings, renderedUri, editingLibraryId } = state;
     const [saving, setSaving] = useState(false);
 
     // RN用プレビューフォント読み込み
@@ -127,8 +127,13 @@ export default function EditorScreen() {
                 editorOptions,
                 imageW,
                 imageH,
+                editingLibraryId,
             );
-            dispatch({ type: "LIBRARY_ADD", payload: item });
+            if (editingLibraryId) {
+                dispatch({ type: "LIBRARY_UPDATE", payload: item });
+            } else {
+                dispatch({ type: "LIBRARY_ADD", payload: item });
+            }
             dispatch({
                 type: "SET_LAST_EDITOR_PREFS",
                 payload: {
@@ -142,7 +147,7 @@ export default function EditorScreen() {
                     text: "OK",
                     onPress: () => {
                         dispatch({ type: "RESET_EDITOR" });
-                        router.back();
+                        router.push("/(tabs)/library");
                     },
                 },
             ]);
@@ -281,16 +286,6 @@ export default function EditorScreen() {
                 )}
             </View>
 
-            {/* 情報表示 */}
-            <View style={styles.infoRow}>
-                <View style={styles.infoBadge}>
-                    <Text style={styles.infoBadgeText}>
-                        生後 {computed.ageDays} 日
-                    </Text>
-                </View>
-                <Text style={styles.infoDate}>{computed.shotDateISO}</Text>
-            </View>
-
             {/* テンプレート選択 */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>テンプレート</Text>
@@ -418,7 +413,7 @@ export default function EditorScreen() {
                         />
                     </View>
                     <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>生後日数</Text>
+                        <Text style={styles.toggleLabel}>日数</Text>
                         <Switch
                             value={editorOptions.showAge}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}

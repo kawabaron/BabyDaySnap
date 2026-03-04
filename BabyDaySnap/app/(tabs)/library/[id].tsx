@@ -92,6 +92,10 @@ export default function LibraryDetailScreen() {
                 showAge: (item as any).showAge ?? true,
             },
         });
+        dispatch({
+            type: "SET_EDITING_LIBRARY_ID",
+            payload: item.id,
+        });
         router.push("/(tabs)/camera/editor");
     };
 
@@ -129,22 +133,13 @@ export default function LibraryDetailScreen() {
             <View style={styles.metaContainer}>
                 <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>生後日数</Text>
-                    <View style={styles.ageBadge}>
-                        <Text style={styles.ageBadgeText}>{item.ageDays}日</Text>
-                    </View>
+                    <Text style={styles.metaValue}>{item.ageDays}日</Text>
                 </View>
 
                 <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>撮影日</Text>
                     <Text style={styles.metaValue}>
                         {formatDateDisplay(item.shotDateISO)}
-                    </Text>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>作成日</Text>
-                    <Text style={styles.metaValue}>
-                        {formatDateDisplay(msToDateISO(item.createdAtMs))}
                     </Text>
                 </View>
 
@@ -243,17 +238,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#333",
         fontWeight: "600",
-    },
-    ageBadge: {
-        backgroundColor: "#FF8FA3",
-        paddingHorizontal: 12,
-        paddingVertical: 3,
-        borderRadius: 20,
-    },
-    ageBadgeText: {
-        color: "#FFF",
-        fontSize: 14,
-        fontWeight: "700",
     },
     colorPreviewRow: {
         flexDirection: "row",

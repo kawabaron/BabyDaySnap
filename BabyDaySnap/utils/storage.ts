@@ -14,6 +14,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
     hasOnboarded: false,
     birthDateISO: null,
     babyName: "",
+    defaultTemplateId: "tpl_noframe_full",
+    defaultFontId: "font_standard",
     defaultShowDate: true,
     defaultShowName: true,
     defaultShowAge: true,

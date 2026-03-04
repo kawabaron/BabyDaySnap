@@ -9,10 +9,13 @@ import {
     Alert,
     Switch,
     TextInput,
+    ScrollView,
 } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
+import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
+import type { TemplateId, FontId } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
@@ -41,6 +44,20 @@ export default function SettingsScreen() {
         dispatch({ type: "SET_BIRTHDATE", payload: iso });
         setShowDatePicker(false);
         Alert.alert("保存完了", "誕生日を更新しました。");
+    };
+
+    const handleTemplateChange = (id: TemplateId) => {
+        dispatch({
+            type: "SET_DEFAULT_PREFS",
+            payload: { defaultTemplateId: id },
+        });
+    };
+
+    const handleFontChange = (id: FontId) => {
+        dispatch({
+            type: "SET_DEFAULT_PREFS",
+            payload: { defaultFontId: id },
+        });
     };
 
     const openURL = (url: string) => {
@@ -193,6 +210,73 @@ export default function SettingsScreen() {
                         />
                     </View>
                 </View>
+            </View>
+
+            {/* デフォルトのスタイル */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>デフォルトのスタイル</Text>
+
+                <Text style={styles.subTitle}>テンプレート</Text>
+                <View style={styles.templateRow}>
+                    {TEMPLATES.map((t) => (
+                        <TouchableOpacity
+                            key={t.id}
+                            style={[
+                                styles.templateOption,
+                                settings.defaultTemplateId === t.id && styles.templateOptionActive,
+                            ]}
+                            onPress={() => handleTemplateChange(t.id)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.templatePreviewBox}>
+                                {t.id === "tpl_noframe_full" && <View style={styles.templateNoFrame} />}
+                                {t.id === "tpl_frame_full" && (
+                                    <View style={styles.templateFrame}>
+                                        <View style={styles.templateInner} />
+                                    </View>
+                                )}
+                                {t.id === "tpl_frame_square" && (
+                                    <View style={[styles.templateFrame, styles.templateSquare]}>
+                                        <View style={[styles.templateInner, styles.templateInnerSquare]} />
+                                    </View>
+                                )}
+                            </View>
+                            <Text
+                                style={[
+                                    styles.templateLabel,
+                                    settings.defaultTemplateId === t.id && styles.templateLabelActive,
+                                ]}
+                            >
+                                {t.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <Text style={styles.subTitle}>フォント</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
+                    {FONT_OPTIONS.map((f) => (
+                        <TouchableOpacity
+                            key={f.id}
+                            style={[
+                                styles.fontBadge,
+                                settings.defaultFontId === f.id && styles.fontBadgeActive,
+                            ]}
+                            onPress={() => handleFontChange(f.id)}
+                            activeOpacity={0.7}
+                        >
+                            <Text
+                                style={[
+                                    styles.fontBadgeText,
+                                    { fontFamily: f.id },
+                                    settings.defaultFontId === f.id && styles.fontBadgeTextActive,
+                                ]}
+                            >
+                                {f.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
             {/* リンクセクション */}
@@ -370,5 +454,100 @@ const styles = StyleSheet.create({
     versionText: {
         fontSize: 13,
         color: "#CCC",
+    },
+    subTitle: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#666",
+        marginTop: 12,
+        marginBottom: 8,
+    },
+    templateRow: {
+        flexDirection: "row",
+        gap: 12,
+    },
+    templateOption: {
+        flex: 1,
+        alignItems: "center",
+        padding: 10,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: "#F0F0F0",
+        backgroundColor: "#FAFAFA",
+    },
+    templateOptionActive: {
+        borderColor: "#FF8FA3",
+        backgroundColor: "#FFF5F7",
+    },
+    templatePreviewBox: {
+        width: 60,
+        height: 48,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 6,
+    },
+    templateNoFrame: {
+        width: 52,
+        height: 40,
+        backgroundColor: "#E0E0E0",
+        borderRadius: 4,
+    },
+    templateFrame: {
+        width: 52,
+        height: 40,
+        backgroundColor: "#FFF",
+        borderWidth: 1,
+        borderColor: "#DDD",
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    templateSquare: {
+        width: 40,
+        height: 40,
+    },
+    templateInner: {
+        width: 42,
+        height: 30,
+        backgroundColor: "#E0E0E0",
+        borderRadius: 2,
+    },
+    templateInnerSquare: {
+        width: 30,
+        height: 30,
+    },
+    templateLabel: {
+        fontSize: 11,
+        color: "#888",
+        fontWeight: "500",
+    },
+    templateLabelActive: {
+        color: "#FF8FA3",
+        fontWeight: "700",
+    },
+    fontRow: {
+        flexDirection: "row",
+        gap: 8,
+        paddingVertical: 4,
+    },
+    fontBadge: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: "#F5F5F5",
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: "transparent",
+    },
+    fontBadgeActive: {
+        backgroundColor: "#FFF5F7",
+        borderColor: "#FF8FA3",
+    },
+    fontBadgeText: {
+        fontSize: 14,
+        color: "#666",
+    },
+    fontBadgeTextActive: {
+        color: "#FF8FA3",
+        fontWeight: "bold",
     },
 });

@@ -55,7 +55,7 @@ export const FONT_OPTIONS: FontOption[] = [
     },
     {
         id: "font_soft",
-        label: "柔らかい",
+        label: "柔らかめ",
         file: require("../assets/fonts/ZenMaruGothic-Bold.ttf"),
     },
     {
