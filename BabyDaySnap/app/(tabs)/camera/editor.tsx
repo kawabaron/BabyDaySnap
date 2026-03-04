@@ -20,6 +20,7 @@ import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFont } from "@shopify/react-native-skia";
+import * as FileSystem from "expo-file-system/legacy";
 import type { TemplateId, FontId } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -50,7 +51,7 @@ export default function EditorScreen() {
                             router.navigate("/(tabs)/camera");
                         }
                     }}
-                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4 }}
+                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
                 >
                     <Ionicons name="chevron-back" size={28} color="#333" />
                     <Text style={{ fontSize: 17, color: "#333" }}>戻る</Text>
@@ -155,6 +156,10 @@ export default function EditorScreen() {
                 imageH,
                 editingLibraryId,
             );
+
+            // 一時ファイル削除
+            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
+
             if (editingLibraryId) {
                 dispatch({ type: "LIBRARY_UPDATE", payload: item });
             } else {
@@ -197,6 +202,8 @@ export default function EditorScreen() {
         try {
             const finalUri = await runFinalRender();
             const success = await saveToPhotoLibrary(finalUri);
+            // 一時ファイル削除
+            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
             if (success) {
                 Alert.alert("保存完了", "写真ライブラリに保存しました。");
             }
@@ -204,6 +211,7 @@ export default function EditorScreen() {
             setSaving(false);
         }
     };
+
 
     if (!currentPhoto || !computed || !rnFontsLoaded || !skiaFontStandard || !skiaFontSoft || !skiaFontStylish) {
         return (
