@@ -28,6 +28,7 @@ export default function CameraScreen() {
         const shotDateISO = getShotDateISO(photo.source, photo.creationTimeMs);
         const ageDays = calcAgeDays(settings.birthDateISO!, shotDateISO);
 
+        dispatch({ type: "RESET_EDITOR" });
         dispatch({ type: "SET_PHOTO", payload: photo });
         dispatch({
             type: "SET_COMPUTED",
