@@ -51,17 +51,17 @@ export const FONT_OPTIONS: FontOption[] = [
     {
         id: "font_standard",
         label: "標準",
-        file: require("../../assets/fonts/NotoSansJP-Bold.otf"),
+        file: require("../assets/fonts/NotoSansJP-Bold.otf"),
     },
     {
         id: "font_soft",
         label: "柔らかい",
-        file: require("../../assets/fonts/ZenMaruGothic-Bold.ttf"),
+        file: require("../assets/fonts/ZenMaruGothic-Bold.ttf"),
     },
     {
         id: "font_stylish",
         label: "おしゃれ",
-        file: require("../../assets/fonts/ZenKurenaido-Regular.ttf"),
+        file: require("../assets/fonts/ZenKurenaido-Regular.ttf"),
     },
 ];
 
