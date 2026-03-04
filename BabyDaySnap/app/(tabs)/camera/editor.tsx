@@ -234,14 +234,15 @@ export default function EditorScreen() {
                     width: previewPhotoW,
                     height: previewPhotoH,
                     overflow: "hidden",
-                    borderWidth: tpl.hasFrame ? 1 : 0,
-                    borderColor: "#E0E0E0",
                 }}>
                     <Image
                         source={{ uri: currentPhoto.uri }}
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                     />
+                    {tpl.hasFrame && (
+                        <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: "#E0E0E0" }]} pointerEvents="none" />
+                    )}
                 </View>
 
                 {/* Text Layer */}

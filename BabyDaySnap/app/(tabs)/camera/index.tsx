@@ -10,6 +10,7 @@ import {
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { useAppDispatch, useAppState } from "@/context/AppContext";
 import { getShotDateISO, calcAgeDays } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
@@ -85,6 +86,13 @@ export default function CameraScreen() {
             Alert.alert("エラー", "写真の取り込みに失敗しました。");
         }
     };
+
+    const isFocused = useIsFocused();
+
+    // フォーカスが外れた場合はカメラをアンマウントしてクラッシュ防止
+    if (!isFocused) {
+        return <View style={styles.container} />;
+    }
 
     // 権限未許可時の画面
     if (!permission) {
