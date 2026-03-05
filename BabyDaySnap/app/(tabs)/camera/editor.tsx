@@ -13,6 +13,7 @@ import {
     Switch,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
@@ -212,6 +213,12 @@ export default function EditorScreen() {
         }
     };
 
+    const editorIsFocused = useIsFocused();
+
+    // フォーカスが外れた場合はメモリ節約のため軽量プレースホルダーを表示
+    if (!editorIsFocused) {
+        return <View style={styles.container} />;
+    }
 
     if (!currentPhoto || !computed || !rnFontsLoaded || !skiaFontStandard || !skiaFontSoft || !skiaFontStylish) {
         return (

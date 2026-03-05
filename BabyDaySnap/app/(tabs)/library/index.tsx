@@ -140,6 +140,10 @@ export default function LibraryGridScreen() {
                         contentContainerStyle={styles.gridContainer}
                         columnWrapperStyle={styles.columnWrapper}
                         showsVerticalScrollIndicator={false}
+                        windowSize={5}
+                        removeClippedSubviews={true}
+                        maxToRenderPerBatch={9}
+                        initialNumToRender={12}
                     />
 
                     {isSelectionMode && (
