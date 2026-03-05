@@ -141,12 +141,17 @@ export default function EditorScreen() {
         try {
             const finalUri = await runFinalRender();
             const tpl = getTemplateConfig(editorOptions.templateId);
-            const imageW = tpl.isSquare
+            const baseW = tpl.isSquare
                 ? Math.min(currentPhoto.width, currentPhoto.height)
                 : currentPhoto.width;
-            const imageH = tpl.isSquare
+            const baseH = tpl.isSquare
                 ? Math.min(currentPhoto.width, currentPhoto.height)
                 : currentPhoto.height;
+            // renderImage.ts の MAX_OUTPUT_DIMENSION と合わせる
+            const maxSide = Math.max(baseW, baseH);
+            const scale = maxSide > 2048 ? 2048 / maxSide : 1;
+            const imageW = Math.round(baseW * scale);
+            const imageH = Math.round(baseH * scale);
 
             const item = await saveToAppLibrary(
                 finalUri,

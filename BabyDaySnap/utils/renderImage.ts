@@ -22,6 +22,9 @@ type RenderParams = {
     babyName: string;
 };
 
+// 出力画像の最大辺サイズ (メモリ節約のため制限)
+const MAX_OUTPUT_DIMENSION = 2048;
+
 /**
  * 画像を合成してファイルに書き出す
  * @returns 書き出したファイルのURI
@@ -38,18 +41,24 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         throw new Error("画像の読み込みに失敗しました");
     }
 
-    // キャンバスサイズ決定
-    let canvasW: number;
-    let canvasH: number;
+    // キャンバスサイズ決定 (元の比率を維持しつつ最大辺を制限)
+    let baseW: number;
+    let baseH: number;
 
     if (tpl.isSquare) {
         const side = Math.min(imageWidth, imageHeight);
-        canvasW = side;
-        canvasH = side;
+        baseW = side;
+        baseH = side;
     } else {
-        canvasW = imageWidth;
-        canvasH = imageHeight;
+        baseW = imageWidth;
+        baseH = imageHeight;
     }
+
+    // 最大辺サイズでスケール
+    const maxSide = Math.max(baseW, baseH);
+    const scale = maxSide > MAX_OUTPUT_DIMENSION ? MAX_OUTPUT_DIMENSION / maxSide : 1;
+    const canvasW = Math.round(baseW * scale);
+    const canvasH = Math.round(baseH * scale);
 
     // サーフェス作成
     const surface = Skia.Surface.Make(canvasW, canvasH);
@@ -83,7 +92,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
 
         try {
             // JPEG に書き出し（Skia ネイティブで高速化）
-            const base64 = snapshot.encodeToBase64(3, 100); // 3 = JPEG, 100 = Quality
+            const base64 = snapshot.encodeToBase64(3, 90); // 3 = JPEG, 90 = Quality
             if (!base64) {
                 throw new Error("画像のエンコードに失敗しました");
             }
