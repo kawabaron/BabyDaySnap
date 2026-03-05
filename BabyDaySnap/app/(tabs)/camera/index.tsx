@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useAppDispatch, useAppState } from "@/context/AppContext";
@@ -38,6 +39,26 @@ export default function CameraScreen() {
         router.push("/(tabs)/camera/editor");
     };
 
+    // 写真を2048pxにダウンスケールしてメモリを節約する（Skiaの入力時点でメモリ爆発を防ぐ根本対策）
+    const downscaleToMaxDimension = async (uri: string, width: number, height: number) => {
+        const MAX_DIMENSION = 2048;
+        if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+            return { uri, width, height }; // 変換不要
+        }
+
+        const scale = MAX_DIMENSION / Math.max(width, height);
+        const newWidth = Math.round(width * scale);
+        const newHeight = Math.round(height * scale);
+
+        const result = await manipulateAsync(
+            uri,
+            [{ resize: { width: newWidth, height: newHeight } }],
+            { compress: 0.9, format: SaveFormat.JPEG }
+        );
+
+        return { uri: result.uri, width: result.width, height: result.height };
+    };
+
     const handleCapture = async () => {
         if (!cameraRef.current) return;
         try {
@@ -45,10 +66,13 @@ export default function CameraScreen() {
                 quality: 0.7,
             });
             if (result) {
+                // Skiaに渡す前にダウンスケールしてメモリを節約
+                const downscaled = await downscaleToMaxDimension(result.uri, result.width, result.height);
+
                 const photo: PhotoSource = {
-                    uri: result.uri,
-                    width: result.width,
-                    height: result.height,
+                    uri: downscaled.uri,
+                    width: downscaled.width,
+                    height: downscaled.height,
                     source: "camera",
                     creationTimeMs: Date.now(),
                 };
@@ -70,10 +94,12 @@ export default function CameraScreen() {
 
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
+                const downscaled = await downscaleToMaxDimension(asset.uri, asset.width, asset.height);
+
                 const photo: PhotoSource = {
-                    uri: asset.uri,
-                    width: asset.width,
-                    height: asset.height,
+                    uri: downscaled.uri,
+                    width: downscaled.width,
+                    height: downscaled.height,
                     source: "import",
                     creationTimeMs: asset.exif?.DateTimeOriginal
                         ? new Date(asset.exif.DateTimeOriginal as string).getTime()
@@ -135,13 +161,13 @@ export default function CameraScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={isFocused ? StyleSheet.absoluteFillObject : { width: 0, height: 0, overflow: 'hidden' as const }}>
+            {isFocused && (
                 <CameraView
                     ref={cameraRef}
                     style={StyleSheet.absoluteFillObject}
                     facing={facing}
                 />
-            </View>
+            )}
             {/* 上部ボタン */}
             <SafeAreaView style={styles.topBar}>
                 <TouchableOpacity
