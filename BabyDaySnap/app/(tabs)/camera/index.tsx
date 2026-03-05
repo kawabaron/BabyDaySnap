@@ -41,8 +41,8 @@ export default function CameraScreen() {
 
     // 写真をダウンスケールしてメモリを節約する（Skia用とプレビュー用の2つを生成）
     const downscaleToMaxDimension = async (uri: string, width: number, height: number) => {
-        const MAX_DIMENSION = 2048;      // Skia保存用（十分な画質）
-        const MAX_PREVIEW = 800;         // Editor表示用（メモリ節約用超軽量）
+        const MAX_DIMENSION = 3000;      // Skia保存用（十分な画質、3000px）
+        const MAX_PREVIEW = 400;         // Editor表示用（メモリ限界まで節約、400px）
 
         // --- Skia保存用 (2048px) ---
         let mainUri = uri;
@@ -55,7 +55,7 @@ export default function CameraScreen() {
             const res = await manipulateAsync(
                 uri,
                 [{ resize: { width: mainW, height: mainH } }],
-                { compress: 0.9, format: SaveFormat.JPEG }
+                { compress: 1.0, format: SaveFormat.JPEG }
             );
             mainUri = res.uri;
         }
