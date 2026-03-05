@@ -135,13 +135,13 @@ export default function CameraScreen() {
 
     return (
         <View style={styles.container}>
-            {isFocused && (
+            <View style={isFocused ? StyleSheet.absoluteFillObject : { width: 0, height: 0, overflow: 'hidden' as const }}>
                 <CameraView
                     ref={cameraRef}
                     style={StyleSheet.absoluteFillObject}
                     facing={facing}
                 />
-            )}
+            </View>
             {/* 上部ボタン */}
             <SafeAreaView style={styles.topBar}>
                 <TouchableOpacity
