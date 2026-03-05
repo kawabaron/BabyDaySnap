@@ -236,9 +236,7 @@ export default function EditorScreen() {
 
     // プレビュー画像のアスペクト比と配置レイアウト計算
     const tpl = getTemplateConfig(editorOptions.templateId);
-    const previewAspect = tpl.isSquare
-        ? 1
-        : currentPhoto.width / currentPhoto.height;
+    const previewAspect = currentPhoto.width / currentPhoto.height;
     const previewHeight = PREVIEW_WIDTH / previewAspect;
 
     // UIレイアウト計算 (renderImage.ts の定数に合わせる)
@@ -251,17 +249,14 @@ export default function EditorScreen() {
     const bottomInset = shortSide * 0.18;
 
     const previewPhotoW = tpl.hasFrame
-        ? (tpl.isSquare ? previewHeight - inset - bottomInset : PREVIEW_WIDTH - inset * 2)
+        ? PREVIEW_WIDTH - inset * 2
         : PREVIEW_WIDTH;
 
     const previewPhotoH = tpl.hasFrame
         ? previewHeight - inset - bottomInset
         : previewHeight;
 
-    const previewPhotoX = tpl.hasFrame
-        ? (tpl.isSquare ? (PREVIEW_WIDTH - previewPhotoW) / 2 : inset)
-        : 0;
-
+    const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
 
     return (
@@ -287,7 +282,7 @@ export default function EditorScreen() {
                     overflow: "hidden",
                 }}>
                     <Image
-                        source={{ uri: currentPhoto.uri }}
+                        source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                     />
@@ -357,14 +352,8 @@ export default function EditorScreen() {
                         >
                             <View style={styles.templatePreviewBox}>
                                 {t.hasFrame ? (
-                                    <View style={[
-                                        styles.templateFrame,
-                                        t.isSquare && styles.templateSquare,
-                                    ]}>
-                                        <View style={[
-                                            styles.templateInner,
-                                            t.isSquare && styles.templateInnerSquare,
-                                        ]} />
+                                    <View style={styles.templateFrame}>
+                                        <View style={styles.templateInner} />
                                     </View>
                                 ) : (
                                     <View style={styles.templateNoFrame} />
@@ -618,19 +607,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    templateSquare: {
-        width: 40,
-        height: 40,
-    },
     templateInner: {
         width: 42,
         height: 30,
         backgroundColor: "#E0E0E0",
         borderRadius: 2,
-    },
-    templateInnerSquare: {
-        width: 30,
-        height: 30,
     },
     templateLabel: {
         fontSize: 11,

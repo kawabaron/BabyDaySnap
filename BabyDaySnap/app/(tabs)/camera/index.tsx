@@ -39,24 +39,42 @@ export default function CameraScreen() {
         router.push("/(tabs)/camera/editor");
     };
 
-    // 写真を2048pxにダウンスケールしてメモリを節約する（Skiaの入力時点でメモリ爆発を防ぐ根本対策）
+    // 写真をダウンスケールしてメモリを節約する（Skia用とプレビュー用の2つを生成）
     const downscaleToMaxDimension = async (uri: string, width: number, height: number) => {
-        const MAX_DIMENSION = 2048;
-        if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
-            return { uri, width, height }; // 変換不要
+        const MAX_DIMENSION = 2048;      // Skia保存用（十分な画質）
+        const MAX_PREVIEW = 800;         // Editor表示用（メモリ節約用超軽量）
+
+        // --- Skia保存用 (2048px) ---
+        let mainUri = uri;
+        let mainW = width;
+        let mainH = height;
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+            const scale = MAX_DIMENSION / Math.max(width, height);
+            mainW = Math.round(width * scale);
+            mainH = Math.round(height * scale);
+            const res = await manipulateAsync(
+                uri,
+                [{ resize: { width: mainW, height: mainH } }],
+                { compress: 0.9, format: SaveFormat.JPEG }
+            );
+            mainUri = res.uri;
         }
 
-        const scale = MAX_DIMENSION / Math.max(width, height);
-        const newWidth = Math.round(width * scale);
-        const newHeight = Math.round(height * scale);
+        // --- Editorプレビュー用 (800px) ---
+        let previewUri = mainUri;
+        if (mainW > MAX_PREVIEW || mainH > MAX_PREVIEW) {
+            const scalePreview = MAX_PREVIEW / Math.max(mainW, mainH);
+            const preW = Math.round(mainW * scalePreview);
+            const preH = Math.round(mainH * scalePreview);
+            const preRes = await manipulateAsync(
+                mainUri,
+                [{ resize: { width: preW, height: preH } }],
+                { compress: 0.7, format: SaveFormat.JPEG }
+            );
+            previewUri = preRes.uri;
+        }
 
-        const result = await manipulateAsync(
-            uri,
-            [{ resize: { width: newWidth, height: newHeight } }],
-            { compress: 0.9, format: SaveFormat.JPEG }
-        );
-
-        return { uri: result.uri, width: result.width, height: result.height };
+        return { uri: mainUri, previewUri, width: mainW, height: mainH };
     };
 
     const handleCapture = async () => {
@@ -71,6 +89,7 @@ export default function CameraScreen() {
 
                 const photo: PhotoSource = {
                     uri: downscaled.uri,
+                    previewUri: downscaled.previewUri,
                     width: downscaled.width,
                     height: downscaled.height,
                     source: "camera",
@@ -98,6 +117,7 @@ export default function CameraScreen() {
 
                 const photo: PhotoSource = {
                     uri: downscaled.uri,
+                    previewUri: downscaled.previewUri,
                     width: downscaled.width,
                     height: downscaled.height,
                     source: "import",

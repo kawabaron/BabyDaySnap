@@ -14,17 +14,9 @@ export const TEMPLATES: TemplateConfig[] = [
     },
     {
         id: "tpl_frame_full",
-        label: "フチあり全面",
+        label: "フチあり",
         hasFrame: true,
         isSquare: false,
-        defaultDateColorHex: "#000000",
-        hasTextStroke: false,
-    },
-    {
-        id: "tpl_frame_square",
-        label: "スクエア",
-        hasFrame: true,
-        isSquare: true,
         defaultDateColorHex: "#000000",
         hasTextStroke: false,
     },

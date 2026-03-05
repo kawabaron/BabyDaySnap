@@ -237,11 +237,6 @@ export default function SettingsScreen() {
                                             <View style={styles.templateInner} />
                                         </View>
                                     )}
-                                    {t.id === "tpl_frame_square" && (
-                                        <View style={[styles.templateFrame, styles.templateSquare]}>
-                                            <View style={[styles.templateInner, styles.templateInnerSquare]} />
-                                        </View>
-                                    )}
                                 </View>
                                 <Text
                                     style={[

@@ -5,8 +5,7 @@
 // --- テンプレート ---
 export type TemplateId =
     | "tpl_noframe_full"   // フチ無し全面（黒縁取り白文字デフォ）
-    | "tpl_frame_full"     // フチあり全面（黒文字）
-    | "tpl_frame_square";  // フチありスクエア（黒文字）
+    | "tpl_frame_full";     // フチあり全面（黒文字）
 
 // --- フォント ---
 export type FontId = "font_standard" | "font_soft" | "font_stylish";
@@ -14,6 +13,7 @@ export type FontId = "font_standard" | "font_soft" | "font_stylish";
 // --- 写真ソース ---
 export type PhotoSource = {
     uri: string;
+    previewUri?: string; // エディタプレビュー用の軽量画像
     width: number;
     height: number;
     source: "camera" | "import";

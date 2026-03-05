@@ -78,7 +78,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         }
 
         // 写真描画
-        drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, tpl.isSquare, imageWidth, imageHeight);
+        drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, imageWidth, imageHeight);
 
         // テキスト描画
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
@@ -141,7 +141,6 @@ function drawPhoto(
     canvasW: number,
     canvasH: number,
     hasFrame: boolean,
-    isSquare: boolean,
     origW: number,
     origH: number,
 ) {
@@ -155,19 +154,10 @@ function drawPhoto(
         const inset = shortSide * INSET_RATIO;
         const bottomInset = shortSide * BOTTOM_INSET_RATIO;
 
-        let dstW, dstH, dstX, dstY;
-
-        if (isSquare) {
-            dstH = canvasH - inset - bottomInset;
-            dstW = dstH; // perfect square
-            dstX = (canvasW - dstW) / 2; // center horizontal
-            dstY = inset;
-        } else {
-            dstW = canvasW - inset * 2;
-            dstH = canvasH - inset - bottomInset;
-            dstX = inset;
-            dstY = inset;
-        }
+        const dstW = canvasW - inset * 2;
+        const dstH = canvasH - inset - bottomInset;
+        const dstX = inset;
+        const dstY = inset;
 
         const cover = getCoverRect(origW, origH, dstW, dstH);
         const srcRect = Skia.XYWHRect(cover.x, cover.y, cover.w, cover.h);
