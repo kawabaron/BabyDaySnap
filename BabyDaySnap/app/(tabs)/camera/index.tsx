@@ -42,7 +42,7 @@ export default function CameraScreen() {
         if (!cameraRef.current) return;
         try {
             const result = await cameraRef.current.takePictureAsync({
-                quality: 0.9,
+                quality: 0.7,
             });
             if (result) {
                 const photo: PhotoSource = {
