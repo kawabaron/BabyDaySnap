@@ -18,6 +18,7 @@ type RenderParams = {
     imageHeight: number;
     editorOptions: EditorOptions;
     computed: ComputedInfo;
+    typeface: SkTypeface | null;
     babyName: string;
 };
 
@@ -29,26 +30,8 @@ const MAX_OUTPUT_DIMENSION = 2048;
  * @returns 書き出したファイルのURI
  */
 export async function renderCompositeImage(params: RenderParams): Promise<string> {
-    const { imageUri, imageWidth, imageHeight, editorOptions, computed, babyName } = params;
+    const { imageUri, imageWidth, imageHeight, editorOptions, computed, typeface, babyName } = params;
     const tpl = getTemplateConfig(editorOptions.templateId);
-
-    // フォントファイルをロードしてTypefaceを作成（保存時のみメモリ確保し、完了後即dispose）
-    const fontConfig = getFontConfig(editorOptions.fontId);
-    const fontAsset = fontConfig.file;
-
-    // React Nativeのrequire()はnumber(アセットID)を返すので、resolveAssetSourceでURIに変換
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { resolveAssetSource } = require("react-native/Libraries/Image/resolveAssetSource") as { resolveAssetSource: (asset: number) => { uri: string } };
-    const fontUri = typeof fontAsset === 'number' ? resolveAssetSource(fontAsset).uri : String(fontAsset);
-
-    let typeface: SkTypeface | null = null;
-    try {
-        const fontData = await Skia.Data.fromURI(fontUri);
-        typeface = Skia.Typeface.MakeFreeTypeFaceFromData(fontData);
-        fontData.dispose();
-    } catch (_) {
-        // フォント読み込み失敗時はnull(デフォルトフォントで描画)
-    }
 
     // 画像読み込み
     const imageData = await Skia.Data.fromURI(imageUri);

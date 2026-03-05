@@ -20,6 +20,7 @@ import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/uti
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { Ionicons } from "@expo/vector-icons";
+import { useFont } from "@shopify/react-native-skia";
 import * as FileSystem from "expo-file-system/legacy";
 import type { TemplateId, FontId } from "@/types";
 
@@ -67,15 +68,30 @@ export default function EditorScreen() {
         font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
     });
 
-    // 最終保存時にのみSkia合成を実行（フォントはrenderCompositeImage内でオンデマンドロード）
+    // Skia用フォント読み込み
+    const skiaFontStandard = useFont(FONT_OPTIONS.find(f => f.id === "font_standard")!.file, 16);
+    const skiaFontSoft = useFont(FONT_OPTIONS.find(f => f.id === "font_soft")!.file, 16);
+    const skiaFontStylish = useFont(FONT_OPTIONS.find(f => f.id === "font_stylish")!.file, 16);
+
+    const getActiveTypeface = () => {
+        switch (editorOptions.fontId) {
+            case "font_soft": return skiaFontSoft?.getTypeface() ?? null;
+            case "font_stylish": return skiaFontStylish?.getTypeface() ?? null;
+            default: return skiaFontStandard?.getTypeface() ?? null;
+        }
+    };
+
+    // 最終保存時にのみSkia合成を実行
     const runFinalRender = async () => {
-        if (!currentPhoto || !computed) throw new Error("Missing data");
+        const activeTypeface = getActiveTypeface();
+        if (!currentPhoto || !computed || !activeTypeface) throw new Error("Missing data");
         return await renderCompositeImage({
             imageUri: currentPhoto.uri,
             imageWidth: currentPhoto.width,
             imageHeight: currentPhoto.height,
             editorOptions,
             computed,
+            typeface: activeTypeface,
             babyName: settings.babyName,
         });
     };
@@ -120,7 +136,7 @@ export default function EditorScreen() {
 
     // アプリ内保存
     const handleSaveToApp = async () => {
-        if (!currentPhoto || !computed) return;
+        if (!currentPhoto || !computed || !getActiveTypeface()) return;
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
@@ -187,7 +203,7 @@ export default function EditorScreen() {
 
     // iPhone写真保存
     const handleSaveToPhotos = async () => {
-        if (!currentPhoto || !computed) return;
+        if (!currentPhoto || !computed || !getActiveTypeface()) return;
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
@@ -209,7 +225,7 @@ export default function EditorScreen() {
         return <View style={styles.container} />;
     }
 
-    if (!currentPhoto || !computed || !rnFontsLoaded) {
+    if (!currentPhoto || !computed || !rnFontsLoaded || !skiaFontStandard || !skiaFontSoft || !skiaFontStylish) {
         return (
             <View style={styles.container}>
                 <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#FF8FA3" />
