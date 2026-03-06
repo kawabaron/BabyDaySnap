@@ -66,6 +66,7 @@ export default function LibraryDetailScreen() {
             type: "SET_PHOTO",
             payload: {
                 uri: item.originalFileUri,
+                previewUri: item.originalFileUri, // FIX: previewUriを与えないと真っ白になるため代入
                 width: (item as any).originalWidth ?? item.width,
                 height: (item as any).originalHeight ?? item.height,
                 source: item.source,
@@ -121,7 +122,12 @@ export default function LibraryDetailScreen() {
             showsVerticalScrollIndicator={false}
         >
             {/* 画像大表示 */}
-            <View style={[styles.imageContainer, { height: imageHeight }]}>
+            <View style={[styles.imageContainer, {
+                height: imageHeight,
+                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
+                borderWidth: tpl.hasFrame ? 1 : 0,
+                borderColor: "#E0E0E0",
+            }]}>
                 <Image
                     source={{ uri: item.renderedFileUri }}
                     style={styles.image}
