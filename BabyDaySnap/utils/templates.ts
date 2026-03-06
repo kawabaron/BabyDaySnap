@@ -55,6 +55,11 @@ export const FONT_OPTIONS: FontOption[] = [
         label: "おしゃれ",
         file: require("../assets/fonts/ZenKurenaido-Regular.ttf"),
     },
+    {
+        id: "font_cute",
+        label: "かわいい",
+        file: require("../assets/fonts/HachiMaruPop-Regular.ttf"),
+    },
 ];
 
 export function getFontConfig(id: FontId): FontOption {

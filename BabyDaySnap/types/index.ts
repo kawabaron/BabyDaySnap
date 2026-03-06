@@ -8,7 +8,7 @@ export type TemplateId =
     | "tpl_frame_full";     // フチあり全面（黒文字）
 
 // --- フォント ---
-export type FontId = "font_standard" | "font_soft" | "font_stylish";
+export type FontId = "font_standard" | "font_soft" | "font_stylish" | "font_cute";
 
 // --- 写真ソース ---
 export type PhotoSource = {

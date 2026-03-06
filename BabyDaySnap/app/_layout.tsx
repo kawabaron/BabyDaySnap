@@ -16,6 +16,7 @@ function RootLayoutNav() {
     font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
     font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
     font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
+    font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
   });
 
   useEffect(() => {
