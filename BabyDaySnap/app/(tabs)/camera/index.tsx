@@ -138,7 +138,7 @@ export default function CameraScreen() {
                         onPress={handleCapture}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="camera-outline" size={24} color="#FFF" />
+                        <Ionicons name="camera-outline" size={32} color="#FFF" />
                         <Text style={styles.captureButtonText}>カメラで撮影</Text>
                     </TouchableOpacity>
 
@@ -147,7 +147,7 @@ export default function CameraScreen() {
                         onPress={handleImport}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="images-outline" size={24} color="#FF8FA3" />
+                        <Ionicons name="images-outline" size={32} color="#FF8FA3" />
                         <Text style={styles.importButtonText}>写真から選ぶ</Text>
                     </TouchableOpacity>
                 </View>
@@ -196,9 +196,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 24,
-        borderRadius: 20,
-        gap: 12,
+        paddingVertical: 28,
+        borderRadius: 24,
+        gap: 16,
         shadowColor: "#FF8FA3",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
@@ -207,24 +207,24 @@ const styles = StyleSheet.create({
     },
     captureButtonText: {
         color: "#FFF",
-        fontSize: 20,
-        fontWeight: "700",
+        fontSize: 24,
+        fontWeight: "800",
         letterSpacing: 0.5,
     },
     importButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 24,
-        borderRadius: 20,
+        paddingVertical: 28,
+        borderRadius: 24,
         borderWidth: 2,
         borderColor: "#FF8FA3",
-        gap: 12,
+        gap: 16,
     },
     importButtonText: {
         color: "#FF8FA3",
-        fontSize: 20,
-        fontWeight: "700",
+        fontSize: 24,
+        fontWeight: "800",
         letterSpacing: 0.5,
     },
     hint: {
