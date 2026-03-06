@@ -82,14 +82,17 @@ export default function EditorScreen() {
         }
     };
 
-    // メモリ使用量ログ
-    const logMemory = (label: string) => {
-        // @ts-ignore - performance.memory is not standard but available in Hermes
-        const mem = (global as any).performance?.memory;
-        if (mem) {
-            console.log(`[MEMORY] ${label}: jsHeap=${(mem.usedJSHeapSize / 1024 / 1024).toFixed(1)}MB / ${(mem.totalJSHeapSize / 1024 / 1024).toFixed(1)}MB`);
-        } else {
-            console.log(`[MEMORY] ${label}: (performance.memory not available)`);
+    // メモリ使用量ログ（ファイルサイズとタイミング計測）
+    const logFileSize = async (label: string, uri: string) => {
+        try {
+            const info = await FileSystem.getInfoAsync(uri);
+            if (info.exists && 'size' in info) {
+                console.log(`[MEMORY] ${label}: ${(info.size / 1024 / 1024).toFixed(2)}MB, uri=${uri.substring(0, 60)}...`);
+            } else {
+                console.log(`[MEMORY] ${label}: file not found`);
+            }
+        } catch (_) {
+            console.log(`[MEMORY] ${label}: unable to check file`);
         }
     };
 
@@ -99,15 +102,15 @@ export default function EditorScreen() {
         const activeTypeface = getActiveTypeface();
         if (!currentPhoto || !computed || !activeTypeface) throw new Error("Missing data");
 
-        logMemory("保存開始");
+        console.log(`[SAVE] === 保存開始 ===`);
+        console.log(`[SAVE] 元画像: ${currentPhoto.width}x${currentPhoto.height}`);
+        await logFileSize("元画像ファイル", currentPhoto.uri);
 
         // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
         const MAX_RENDER = 3000;
         let renderUri = currentPhoto.uri;
         let renderW = currentPhoto.width;
         let renderH = currentPhoto.height;
-
-        console.log(`[SAVE] 元画像: ${renderW}x${renderH}, uri=${renderUri.substring(0, 80)}...`);
 
         if (renderW > MAX_RENDER || renderH > MAX_RENDER) {
             const scale = MAX_RENDER / Math.max(renderW, renderH);
@@ -120,9 +123,8 @@ export default function EditorScreen() {
                 { compress: 1.0, format: SaveFormat.JPEG }
             );
             renderUri = resized.uri;
+            await logFileSize("リサイズ後ファイル", renderUri);
         }
-
-        logMemory("リサイズ後");
 
         try {
             const result = await renderCompositeImage({
@@ -135,7 +137,8 @@ export default function EditorScreen() {
                 babyName: settings.babyName,
             });
 
-            logMemory("Skia合成完了");
+            await logFileSize("Skia出力ファイル", result);
+            console.log(`[SAVE] === 保存完了 ===`);
             return result;
         } finally {
             // 一時リサイズファイルを削除

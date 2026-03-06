@@ -55,6 +55,13 @@ export default function CameraScreen() {
     // iPhone標準カメラで撮影（Deep Fusion, Smart HDR 等のApple画像処理パイプライン適用）
     const handleCapture = async () => {
         try {
+            // カメラ権限リクエスト
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("カメラへのアクセス", "撮影にはカメラへのアクセス許可が必要です。\n設定アプリから許可してください。");
+                return;
+            }
+
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ['images'],
                 quality: 1,
@@ -63,6 +70,7 @@ export default function CameraScreen() {
 
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
+                console.log(`[CAMERA] 撮影完了: ${asset.width}x${asset.height}, uri=${asset.uri.substring(0, 80)}`);
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
 
                 const photo: PhotoSource = {
@@ -79,7 +87,7 @@ export default function CameraScreen() {
             }
         } catch (e) {
             console.error("Capture error:", e);
-            Alert.alert("エラー", "撮影に失敗しました。");
+            Alert.alert("エラー", `撮影に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
         }
     };
 
