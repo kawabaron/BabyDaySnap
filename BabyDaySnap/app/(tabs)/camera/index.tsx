@@ -1,17 +1,13 @@
-import { useState, useRef, useEffect } from "react";
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
     Alert,
-    Linking,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { useRouter } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
 import { useAppDispatch, useAppState } from "@/context/AppContext";
 import { getShotDateISO, calcAgeDays } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,9 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { PhotoSource } from "@/types";
 
 export default function CameraScreen() {
-    const [permission, requestPermission] = useCameraPermissions();
-    const cameraRef = useRef<CameraView>(null);
-    const [facing, setFacing] = useState<"front" | "back">("back");
     const dispatch = useAppDispatch();
     const { settings } = useAppState();
     const router = useRouter();
@@ -54,28 +47,33 @@ export default function CameraScreen() {
         const res = await manipulateAsync(
             uri,
             [{ resize: { width: preW, height: preH } }],
-            { compress: 1.0, format: SaveFormat.JPEG }  // 圧縮なし＝劣化なし
+            { compress: 1.0, format: SaveFormat.JPEG }
         );
         return res.uri;
     };
 
+    // iPhone標準カメラで撮影（Deep Fusion, Smart HDR 等のApple画像処理パイプライン適用）
     const handleCapture = async () => {
-        if (!cameraRef.current) return;
         try {
-            const result = await cameraRef.current.takePictureAsync({
-                quality: 1.0,  // 最大画質で撮影
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 1,
+                exif: true,
             });
-            if (result) {
-                // プレビュー用軽量画像を生成（元画像はそのまま保持）
-                const previewUri = await createPreviewImage(result.uri, result.width, result.height);
+
+            if (!result.canceled && result.assets[0]) {
+                const asset = result.assets[0];
+                const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
 
                 const photo: PhotoSource = {
-                    uri: result.uri,           // 元画像（Skia保存用）
-                    previewUri,                // プレビュー（エディタ表示用）
-                    width: result.width,
-                    height: result.height,
+                    uri: asset.uri,
+                    previewUri,
+                    width: asset.width,
+                    height: asset.height,
                     source: "camera",
-                    creationTimeMs: Date.now(),
+                    creationTimeMs: asset.exif?.DateTimeOriginal
+                        ? new Date(asset.exif.DateTimeOriginal as string).getTime()
+                        : Date.now(),
                 };
                 navigateToEditor(photo);
             }
@@ -85,6 +83,7 @@ export default function CameraScreen() {
         }
     };
 
+    // iPhone写真ライブラリから取り込み
     const handleImport = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -98,8 +97,8 @@ export default function CameraScreen() {
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
 
                 const photo: PhotoSource = {
-                    uri: asset.uri,            // 元画像（Skia保存用）
-                    previewUri,                // プレビュー（エディタ表示用）
+                    uri: asset.uri,
+                    previewUri,
                     width: asset.width,
                     height: asset.height,
                     source: "import",
@@ -115,170 +114,119 @@ export default function CameraScreen() {
         }
     };
 
-    const isFocused = useIsFocused();
-
-    // フォーカスが外れた場合はCameraViewのみアンマウントしてクラッシュを防止
-
-    // 権限未許可時の画面
-    if (!permission) {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.permissionText}>カメラの読み込み中...</Text>
-            </View>
-        );
-    }
-
-    if (!permission.granted) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.permissionContainer}>
-                    <Ionicons name="camera-outline" size={64} color="#BDBDBD" />
-                    <Text style={styles.permissionTitle}>カメラへのアクセス</Text>
-                    <Text style={styles.permissionText}>
-                        赤ちゃんの写真を撮影するために{"\n"}カメラへのアクセスが必要です
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                {/* ヘッダー */}
+                <View style={styles.headerArea}>
+                    <Ionicons name="camera" size={48} color="#FF8FA3" />
+                    <Text style={styles.title}>写真を撮ろう</Text>
+                    <Text style={styles.subtitle}>
+                        撮影するか、ライブラリから{"\n"}お気に入りの写真を選んでね
                     </Text>
-                    {permission.canAskAgain ? (
-                        <TouchableOpacity
-                            style={styles.permissionButton}
-                            onPress={requestPermission}
-                        >
-                            <Text style={styles.permissionButtonText}>許可する</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.permissionButton}
-                            onPress={() => Linking.openSettings()}
-                        >
-                            <Text style={styles.permissionButtonText}>設定を開く</Text>
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity style={styles.importOnlyButton} onPress={handleImport}>
-                        <Ionicons name="images-outline" size={20} color="#FF8FA3" />
-                        <Text style={styles.importOnlyButtonText}>写真を取り込む</Text>
+                </View>
+
+                {/* ボタンエリア */}
+                <View style={styles.buttonArea}>
+                    <TouchableOpacity
+                        style={styles.captureButton}
+                        onPress={handleCapture}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="camera-outline" size={24} color="#FFF" />
+                        <Text style={styles.captureButtonText}>カメラで撮影</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.importButton}
+                        onPress={handleImport}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="images-outline" size={24} color="#FF8FA3" />
+                        <Text style={styles.importButtonText}>写真から選ぶ</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
-        );
-    }
 
-    return (
-        <View style={styles.container}>
-            {isFocused && (
-                <CameraView
-                    ref={cameraRef}
-                    style={StyleSheet.absoluteFillObject}
-                    facing={facing}
-                />
-            )}
-            {/* 上部ボタン */}
-            <SafeAreaView style={styles.topBar}>
-                <TouchableOpacity
-                    style={styles.topButton}
-                    onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
-                >
-                    <Ionicons name="camera-reverse-outline" size={28} color="#FFF" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.topButton} onPress={handleImport}>
-                    <Ionicons name="images-outline" size={26} color="#FFF" />
-                </TouchableOpacity>
-            </SafeAreaView>
-
-            {/* 撮影ボタン */}
-            <View style={styles.bottomBar}>
-                <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
-                    <View style={styles.captureInner} />
-                </TouchableOpacity>
+                {/* 説明 */}
+                <Text style={styles.hint}>
+                    iPhoneの標準カメラで撮影するため{"\n"}最高画質の写真が撮れます
+                </Text>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
-    },
-    camera: {
-        flex: 1,
-    },
-    topBar: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingHorizontal: 20,
-        paddingTop: 8,
-    },
-    topButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    bottomBar: {
-        position: "absolute",
-        bottom: 50,
-        left: 0,
-        right: 0,
-        alignItems: "center",
-    },
-    captureButton: {
-        width: 78,
-        height: 78,
-        borderRadius: 39,
-        borderWidth: 4,
-        borderColor: "#FFF",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    captureInner: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
         backgroundColor: "#FFF",
     },
-    permissionContainer: {
+    content: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 32,
-        backgroundColor: "#FFF",
     },
-    permissionTitle: {
-        fontSize: 22,
+    headerArea: {
+        alignItems: "center",
+        marginBottom: 48,
+    },
+    title: {
+        fontSize: 24,
         fontWeight: "700",
         color: "#333",
         marginTop: 16,
-        marginBottom: 8,
     },
-    permissionText: {
+    subtitle: {
         fontSize: 15,
-        color: "#888",
+        color: "#999",
         textAlign: "center",
         lineHeight: 22,
-        marginBottom: 24,
+        marginTop: 8,
     },
-    permissionButton: {
+    buttonArea: {
+        width: "100%",
+        gap: 16,
+    },
+    captureButton: {
         backgroundColor: "#FF8FA3",
-        paddingHorizontal: 32,
-        paddingVertical: 14,
-        borderRadius: 12,
-        marginBottom: 16,
-    },
-    permissionButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "700",
-    },
-    importOnlyButton: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        paddingVertical: 12,
+        justifyContent: "center",
+        paddingVertical: 18,
+        borderRadius: 16,
+        gap: 10,
+        shadowColor: "#FF8FA3",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    importOnlyButtonText: {
+    captureButtonText: {
+        color: "#FFF",
+        fontSize: 18,
+        fontWeight: "700",
+    },
+    importButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 18,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: "#FF8FA3",
+        gap: 10,
+    },
+    importButtonText: {
         color: "#FF8FA3",
-        fontSize: 15,
-        fontWeight: "600",
+        fontSize: 18,
+        fontWeight: "700",
+    },
+    hint: {
+        fontSize: 13,
+        color: "#CCC",
+        textAlign: "center",
+        lineHeight: 20,
+        marginTop: 32,
     },
 });
