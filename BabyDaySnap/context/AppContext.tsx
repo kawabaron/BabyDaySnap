@@ -5,6 +5,7 @@ import React, { createContext, useContext, useReducer, useEffect, useCallback, t
 import type { AppState, AppAction, EditorOptions } from "@/types";
 import { loadSettings, saveSettings, loadLibrary, saveLibrary, DEFAULT_SETTINGS } from "@/utils/storage";
 import { getTemplateConfig } from "@/utils/templates";
+import * as FileSystem from "expo-file-system/legacy";
 
 // --- 初期状態 ---
 const initialEditorOptions: EditorOptions = {
@@ -99,6 +100,19 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "SET_EDITING_LIBRARY_ID":
             return { ...state, editingLibraryId: action.payload };
         case "RESET_EDITOR": {
+            // エディタをリセットする際、現在保持している一時写真をキャッシュから削除してストレージ/メモリ漏れを防ぐ
+            if (state.currentPhoto) {
+                const { uri, previewUri, source } = state.currentPhoto;
+                // re-edit等でDocumentsディレクトリにある保存済み画像は消さないようにする
+                // カメラやインポート由来の場合はexpo-image-picker/manipulatorが生成したキャッシュファイルなので消す
+                if (source === "camera" || source === "import") {
+                    try { FileSystem.deleteAsync(uri, { idempotent: true }); } catch (_) { }
+                    if (previewUri && previewUri !== uri) {
+                        try { FileSystem.deleteAsync(previewUri, { idempotent: true }); } catch (_) { }
+                    }
+                }
+            }
+
             const templateId = state.settings.defaultTemplateId || "tpl_noframe_full";
             const tpl = getTemplateConfig(templateId);
             return {

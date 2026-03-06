@@ -3,7 +3,8 @@
 // ============================================================
 import { Skia, type SkImage, type SkCanvas, type SkTypeface } from "@shopify/react-native-skia";
 import { Paths, File } from "expo-file-system";
-import { getTemplateConfig, getFontConfig } from "./templates";
+import { Asset } from "expo-asset";
+import { getTemplateConfig, getFontConfig, FONT_OPTIONS } from "./templates";
 import type { TemplateId, ComputedInfo, EditorOptions, FontId } from "@/types";
 
 const MARGIN_RATIO = 0.04;
@@ -18,7 +19,7 @@ type RenderParams = {
     imageHeight: number;
     editorOptions: EditorOptions;
     computed: ComputedInfo;
-    typeface: SkTypeface | null;
+    fontId: FontId;
     babyName: string;
 };
 
@@ -30,8 +31,20 @@ const MAX_OUTPUT_DIMENSION = 2000;
  * @returns 書き出したファイルのURI
  */
 export async function renderCompositeImage(params: RenderParams): Promise<string> {
-    const { imageUri, imageWidth, imageHeight, editorOptions, computed, typeface, babyName } = params;
+    const { imageUri, imageWidth, imageHeight, editorOptions, computed, fontId, babyName } = params;
     const tpl = getTemplateConfig(editorOptions.templateId);
+
+    // フォント読み込み (動的に読み込んで使い捨てることでuseFontのメモリリークを防止)
+    const fontConfig = FONT_OPTIONS.find(f => f.id === fontId) || FONT_OPTIONS[0];
+    const [{ localUri }] = await Asset.loadAsync(fontConfig.file);
+    if (!localUri) throw new Error("フォントの読み込みに失敗しました");
+
+    // EXPOのFile Systemを使ってarrayBufferとして読み込む
+    const fontData = await Skia.Data.fromURI(localUri);
+    const typeface = Skia.Typeface.MakeFreeTypeFaceFromData(fontData);
+    fontData.dispose();
+
+    if (!typeface) throw new Error("フォントのパースに失敗しました");
 
     // 画像読み込み
     console.log(`[SKIA] Loading image: ${imageUri.substring(0, 80)}...`);
@@ -105,6 +118,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         surface.dispose();
         skImage.dispose();
         imageData.dispose();
+        typeface.dispose(); // 使い捨てたTypefaceを明示的に破棄
     }
 
     return outputUri;
