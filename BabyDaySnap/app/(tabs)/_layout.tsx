@@ -26,6 +26,7 @@ export default function TabsLayout() {
         name="camera"
         options={{
           title: "カメラ",
+          href: "/(tabs)/camera",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="camera" size={size} color={color} />
           ),
@@ -35,6 +36,7 @@ export default function TabsLayout() {
         name="library"
         options={{
           title: "ライブラリ",
+          href: "/(tabs)/library",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="images" size={size} color={color} />
           ),
@@ -44,6 +46,7 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: "設定",
+          href: "/(tabs)/settings",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
