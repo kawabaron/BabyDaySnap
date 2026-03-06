@@ -94,14 +94,18 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         if (tpl.hasFrame) {
             const borderPaint = Skia.Paint();
             borderPaint.setColor(Skia.Color("#E0E0E0"));
-            borderPaint.setStyle(1); // Stroke
+            borderPaint.setStyle(0); // Fill
 
             const strokeWidth = Math.max(1, Math.round(Math.min(canvasW, canvasH) * 0.0025));
-            borderPaint.setStrokeWidth(strokeWidth);
 
-            const offset = strokeWidth / 2;
-            const borderRect = Skia.XYWHRect(offset, offset, canvasW - strokeWidth, canvasH - strokeWidth);
-            canvas.drawRect(borderRect, borderPaint);
+            // 上
+            canvas.drawRect(Skia.XYWHRect(0, 0, canvasW, strokeWidth), borderPaint);
+            // 下
+            canvas.drawRect(Skia.XYWHRect(0, canvasH - strokeWidth, canvasW, strokeWidth), borderPaint);
+            // 左
+            canvas.drawRect(Skia.XYWHRect(0, 0, strokeWidth, canvasH), borderPaint);
+            // 右
+            canvas.drawRect(Skia.XYWHRect(canvasW - strokeWidth, 0, strokeWidth, canvasH), borderPaint);
         }
 
         // 確定
