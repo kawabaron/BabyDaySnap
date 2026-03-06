@@ -22,8 +22,8 @@ type RenderParams = {
     babyName: string;
 };
 
-// 出力画像の最大辺サイズ (メモリ節約のため制限)
-const MAX_OUTPUT_DIMENSION = 3000;
+// 出力画像の最大辺サイズ (メモリ節約のため制限、約534万画素)
+const MAX_OUTPUT_DIMENSION = 2000;
 
 /**
  * 画像を合成してファイルに書き出す
@@ -86,7 +86,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
 
         try {
             // JPEG に書き出し（Skia ネイティブで高速化）
-            const base64 = snapshot.encodeToBase64(3, 100); // 3 = JPEG, 100 = Quality
+            const base64 = snapshot.encodeToBase64(3, 95); // 3 = JPEG, 95 = Quality (見た目は100と同等、ファイルサイズは40%削減)
             if (!base64) {
                 throw new Error("画像のエンコードに失敗しました");
             }

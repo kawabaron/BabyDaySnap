@@ -107,7 +107,7 @@ export default function EditorScreen() {
         await logFileSize("元画像ファイル", currentPhoto.uri);
 
         // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
-        const MAX_RENDER = 3000;
+        const MAX_RENDER = 2000;  // 2000px = 約534万画素（Skiaメモリ約34MBに抑制）
         let renderUri = currentPhoto.uri;
         let renderW = currentPhoto.width;
         let renderH = currentPhoto.height;
@@ -194,7 +194,7 @@ export default function EditorScreen() {
             const finalUri = await runFinalRender();
             // renderImage.ts の MAX_OUTPUT_DIMENSION と合わせる
             const maxSide = Math.max(currentPhoto.width, currentPhoto.height);
-            const scale = maxSide > 3000 ? 3000 / maxSide : 1;
+            const scale = maxSide > 2000 ? 2000 / maxSide : 1;
             const imageW = Math.round(currentPhoto.width * scale);
             const imageH = Math.round(currentPhoto.height * scale);
 
