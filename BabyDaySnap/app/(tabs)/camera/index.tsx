@@ -127,11 +127,8 @@ export default function CameraScreen() {
             <View style={styles.content}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
-                    <Ionicons name="add-circle" size={56} color="#FF8FA3" />
+                    <Ionicons name="add-circle" size={64} color="#FF8FA3" />
                     <Text style={styles.title}>新しく作る</Text>
-                    <Text style={styles.subtitle}>
-                        カメラで撮影するか、ライブラリから{"\n"}お気に入りの写真を選んでね
-                    </Text>
                 </View>
 
                 {/* ボタンエリア */}
@@ -155,10 +152,8 @@ export default function CameraScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* 説明 */}
-                <Text style={styles.hint}>
-                    ※「カメラで撮影」は高画質な{"\n"}標準カメラを使用します
-                </Text>
+                {/* 説明 (削除) */}
+                <View style={{ height: 32 }} />
             </View>
         </SafeAreaView>
     );
@@ -201,34 +196,36 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 18,
-        borderRadius: 16,
-        gap: 10,
+        paddingVertical: 24,
+        borderRadius: 20,
+        gap: 12,
         shadowColor: "#FF8FA3",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 6,
     },
     captureButtonText: {
         color: "#FFF",
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "700",
+        letterSpacing: 0.5,
     },
     importButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 18,
-        borderRadius: 16,
+        paddingVertical: 24,
+        borderRadius: 20,
         borderWidth: 2,
         borderColor: "#FF8FA3",
-        gap: 10,
+        gap: 12,
     },
     importButtonText: {
         color: "#FF8FA3",
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "700",
+        letterSpacing: 0.5,
     },
     hint: {
         fontSize: 13,
