@@ -192,9 +192,16 @@ export default function EditorScreen() {
                 editingLibraryId,
             );
 
-            // 一時ファイル全て削除（メモリ蓄積防止）
+            // 一時ファイルのみ削除（メモリ蓄積防止）
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
-            if (currentPhoto.previewUri && currentPhoto.previewUri !== currentPhoto.uri) {
+
+            // previewUri が一時ファイル（cacheディレクトリ）の場合のみ削除する
+            // ※ライブラリの原本ファイル (documentDirectory) を指している場合は削除してはいけない
+            if (
+                currentPhoto.previewUri &&
+                currentPhoto.previewUri !== currentPhoto.uri &&
+                currentPhoto.previewUri.includes('ImagePicker') // Expo Camera/ImagePickerのキャッシュファイルの特徴
+            ) {
                 try { await FileSystem.deleteAsync(currentPhoto.previewUri, { idempotent: true }); } catch (_) { }
             }
 

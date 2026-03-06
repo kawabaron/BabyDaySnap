@@ -94,20 +94,26 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         if (tpl.hasFrame) {
             const borderPaint = Skia.Paint();
             borderPaint.setColor(Skia.Color("#E0E0E0"));
-            borderPaint.setStyle(0); // Fill
+            borderPaint.setStyle(1); // 塗りつぶしの継ぎ接ぎではなく、角丸のStroke1本で描画する
 
             const strokeWidth = Math.max(1, Math.round(Math.min(canvasW, canvasH) * 0.0025));
-            const marginX = Math.round(canvasW * 0.01); // 1%の左右余白
-            const marginY = Math.round(canvasH * 0.01); // 1%の上下余白
+            // 余白は画像サイズの1%
+            const marginX = Math.round(canvasW * 0.01);
+            const marginY = Math.round(canvasH * 0.01);
+            borderPaint.setStrokeWidth(strokeWidth);
 
-            // 上
-            canvas.drawRect(Skia.XYWHRect(marginX, marginY, canvasW - marginX * 2, strokeWidth), borderPaint);
-            // 下
-            canvas.drawRect(Skia.XYWHRect(marginX, canvasH - marginY - strokeWidth, canvasW - marginX * 2, strokeWidth), borderPaint);
-            // 左
-            canvas.drawRect(Skia.XYWHRect(marginX, marginY, strokeWidth, canvasH - marginY * 2), borderPaint);
-            // 右
-            canvas.drawRect(Skia.XYWHRect(canvasW - marginX - strokeWidth, marginY, strokeWidth, canvasH - marginY * 2), borderPaint);
+            // 角丸の半径 (エディタのUIの borderRadius: 12 に近い比率)
+            const borderRadius = Math.max(4, Math.round(Math.min(canvasW, canvasH) * 0.015));
+
+            const rect = Skia.XYWHRect(
+                marginX + strokeWidth / 2,
+                marginY + strokeWidth / 2,
+                canvasW - marginX * 2 - strokeWidth,
+                canvasH - marginY * 2 - strokeWidth
+            );
+
+            const rrect = Skia.RRectXY(rect, borderRadius, borderRadius);
+            canvas.drawRRect(rrect, borderPaint);
         }
 
         // 確定
