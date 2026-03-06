@@ -22,6 +22,7 @@ import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFont } from "@shopify/react-native-skia";
 import * as FileSystem from "expo-file-system/legacy";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import type { TemplateId, FontId } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -81,19 +82,67 @@ export default function EditorScreen() {
         }
     };
 
+    // メモリ使用量ログ
+    const logMemory = (label: string) => {
+        // @ts-ignore - performance.memory is not standard but available in Hermes
+        const mem = (global as any).performance?.memory;
+        if (mem) {
+            console.log(`[MEMORY] ${label}: jsHeap=${(mem.usedJSHeapSize / 1024 / 1024).toFixed(1)}MB / ${(mem.totalJSHeapSize / 1024 / 1024).toFixed(1)}MB`);
+        } else {
+            console.log(`[MEMORY] ${label}: (performance.memory not available)`);
+        }
+    };
+
     // 最終保存時にのみSkia合成を実行
+    // manipulateAsyncで先に安全にリサイズしてからSkiaに渡す（メモリ爆発防止＆全URI形式対応）
     const runFinalRender = async () => {
         const activeTypeface = getActiveTypeface();
         if (!currentPhoto || !computed || !activeTypeface) throw new Error("Missing data");
-        return await renderCompositeImage({
-            imageUri: currentPhoto.uri,
-            imageWidth: currentPhoto.width,
-            imageHeight: currentPhoto.height,
-            editorOptions,
-            computed,
-            typeface: activeTypeface,
-            babyName: settings.babyName,
-        });
+
+        logMemory("保存開始");
+
+        // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
+        const MAX_RENDER = 3000;
+        let renderUri = currentPhoto.uri;
+        let renderW = currentPhoto.width;
+        let renderH = currentPhoto.height;
+
+        console.log(`[SAVE] 元画像: ${renderW}x${renderH}, uri=${renderUri.substring(0, 80)}...`);
+
+        if (renderW > MAX_RENDER || renderH > MAX_RENDER) {
+            const scale = MAX_RENDER / Math.max(renderW, renderH);
+            renderW = Math.round(renderW * scale);
+            renderH = Math.round(renderH * scale);
+            console.log(`[SAVE] リサイズ: ${renderW}x${renderH}`);
+            const resized = await manipulateAsync(
+                currentPhoto.uri,
+                [{ resize: { width: renderW, height: renderH } }],
+                { compress: 1.0, format: SaveFormat.JPEG }
+            );
+            renderUri = resized.uri;
+        }
+
+        logMemory("リサイズ後");
+
+        try {
+            const result = await renderCompositeImage({
+                imageUri: renderUri,
+                imageWidth: renderW,
+                imageHeight: renderH,
+                editorOptions,
+                computed,
+                typeface: activeTypeface,
+                babyName: settings.babyName,
+            });
+
+            logMemory("Skia合成完了");
+            return result;
+        } finally {
+            // 一時リサイズファイルを削除
+            if (renderUri !== currentPhoto.uri) {
+                try { await FileSystem.deleteAsync(renderUri, { idempotent: true }); } catch (_) { }
+            }
+        }
     };
 
     // テンプレート変更

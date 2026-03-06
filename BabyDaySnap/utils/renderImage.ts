@@ -34,12 +34,14 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     const tpl = getTemplateConfig(editorOptions.templateId);
 
     // 画像読み込み
+    console.log(`[SKIA] Loading image: ${imageUri.substring(0, 80)}...`);
     const imageData = await Skia.Data.fromURI(imageUri);
     const skImage = Skia.Image.MakeImageFromEncoded(imageData);
     if (!skImage) {
         imageData.dispose();
         throw new Error("画像の読み込みに失敗しました");
     }
+    console.log(`[SKIA] Image loaded: ${skImage.width()}x${skImage.height()}, specified: ${imageWidth}x${imageHeight}`);
 
     // キャンバスサイズ決定 (元の比率を維持しつつ最大辺を制限)
     const baseW = imageWidth;
@@ -50,6 +52,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
     const scale = maxSide > MAX_OUTPUT_DIMENSION ? MAX_OUTPUT_DIMENSION / maxSide : 1;
     const canvasW = Math.round(baseW * scale);
     const canvasH = Math.round(baseH * scale);
+    console.log(`[SKIA] Canvas: ${canvasW}x${canvasH}, scale=${scale.toFixed(3)}, memory_est=${((canvasW * canvasH * 4 * 3) / 1024 / 1024).toFixed(1)}MB`);
 
     // サーフェス作成
     const surface = Skia.Surface.Make(canvasW, canvasH);
