@@ -708,17 +708,17 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-start",
         flexWrap: "wrap",
-        gap: 12,
+        gap: 8,
         paddingVertical: 4,
     },
     toggleItem: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#F5F5F5",
-        paddingHorizontal: 12,
+        paddingHorizontal: 8,
         paddingVertical: 8,
         borderRadius: 12,
-        gap: 8,
+        gap: 6,
     },
     toggleLabel: {
         fontSize: 13,
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     switchSmall: {
-        transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
+        transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }],
     },
     buttonContainer: {
         marginTop: 24,
