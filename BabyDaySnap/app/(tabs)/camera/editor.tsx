@@ -231,11 +231,10 @@ export default function EditorScreen() {
                     onPress: () => {
                         console.log(`[NAV] エディタクリーンアップ開始`);
                         dispatch({ type: "RESET_EDITOR" });
-                        // スタックを完全にクリアしてメモリ解放
-                        router.dismissAll();
+
                         setTimeout(() => {
                             router.replace("/(tabs)/library");
-                        }, 100);
+                        }, 50);
                     },
                 },
             ]);
