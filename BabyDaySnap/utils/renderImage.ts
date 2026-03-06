@@ -90,6 +90,20 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         // テキスト描画
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
 
+        // 枠線描画 (エディタのUIに合わせて描画)
+        if (tpl.hasFrame) {
+            const borderPaint = Skia.Paint();
+            borderPaint.setColor(Skia.Color("#E0E0E0"));
+            borderPaint.setStyle(1); // Stroke
+
+            const strokeWidth = Math.max(1, Math.round(Math.min(canvasW, canvasH) * 0.0025));
+            borderPaint.setStrokeWidth(strokeWidth);
+
+            const offset = strokeWidth / 2;
+            const borderRect = Skia.XYWHRect(offset, offset, canvasW - strokeWidth, canvasH - strokeWidth);
+            canvas.drawRect(borderRect, borderPaint);
+        }
+
         // 確定
         surface.flush();
         const snapshot = surface.makeImageSnapshot();
