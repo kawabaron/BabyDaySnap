@@ -29,7 +29,7 @@ export default function CameraScreen() {
             type: "SET_COMPUTED",
             payload: { shotDateISO, ageDays },
         });
-        router.push("/(tabs)/camera/editor");
+        router.replace("/(tabs)/camera/editor");
     };
 
     // エディタ表示用のプレビュー画像のみ生成（元画像はそのまま保持して最大画質保存に使う）

@@ -46,11 +46,9 @@ export default function EditorScreen() {
                         const libId = editingLibraryId;
                         dispatch({ type: "RESET_EDITOR" });
                         if (libId) {
-                            router.navigate(`/(tabs)/library/${libId}`);
-                        } else if (router.canGoBack()) {
-                            router.back();
+                            router.replace(`/(tabs)/library/${libId}`);
                         } else {
-                            router.navigate("/(tabs)/camera");
+                            router.replace("/(tabs)/camera");
                         }
                     }}
                     style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
@@ -231,13 +229,13 @@ export default function EditorScreen() {
                 {
                     text: "OK",
                     onPress: () => {
+                        console.log(`[NAV] エディタクリーンアップ開始`);
                         dispatch({ type: "RESET_EDITOR" });
-                        if (router.canGoBack()) {
-                            router.back();
-                        }
+                        // スタックを完全にクリアしてメモリ解放
+                        router.dismissAll();
                         setTimeout(() => {
-                            router.navigate("/(tabs)/library");
-                        }, 50);
+                            router.replace("/(tabs)/library");
+                        }, 100);
                     },
                 },
             ]);

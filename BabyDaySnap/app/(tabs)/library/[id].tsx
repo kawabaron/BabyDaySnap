@@ -96,7 +96,7 @@ export default function LibraryDetailScreen() {
             type: "SET_EDITING_LIBRARY_ID",
             payload: item.id,
         });
-        router.push("/(tabs)/camera/editor");
+        router.replace("/(tabs)/camera/editor");
     };
 
     const handleDelete = () => {
