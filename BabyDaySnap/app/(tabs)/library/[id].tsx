@@ -65,8 +65,9 @@ export default function LibraryDetailScreen() {
         dispatch({
             type: "SET_PHOTO",
             payload: {
-                uri: item.originalFileUri,
-                previewUri: item.originalFileUri, // FIX: previewUriを与えないと真っ白になるため代入
+                // originalFileUriが消えたり読めなくなると真っ白になるので fallback 処理を入れる
+                uri: item.originalFileUri || item.renderedFileUri,
+                previewUri: item.originalFileUri || item.renderedFileUri,
                 width: (item as any).originalWidth ?? item.width,
                 height: (item as any).originalHeight ?? item.height,
                 source: item.source,
@@ -125,8 +126,6 @@ export default function LibraryDetailScreen() {
             <View style={[styles.imageContainer, {
                 height: imageHeight,
                 backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
-                borderWidth: tpl.hasFrame ? 1 : 0,
-                borderColor: "#E0E0E0",
             }]}>
                 <Image
                     source={{ uri: item.renderedFileUri }}
