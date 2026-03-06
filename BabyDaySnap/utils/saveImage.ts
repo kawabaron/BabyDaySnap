@@ -41,17 +41,17 @@ export async function saveToAppLibrary(
         to: destUri
     });
 
-    // 再編集時（existingIdがある）で、かつphotoSource.uriが既にoriginalDestUriを指している場合は
-    // 自分自身へのコピーになってしまいファイルが破損/消失する恐れがあるためスキップする
-    if (!existingId || photoSource.uri !== originalDestUri) {
-        // 元画像URIが存在する場合のみコピー（一時ファイル削除などで消えているケースへの防御）
+    // 再編集時（existingIdがある）は、すでに originalDestUri に原本が保存されている状態なので
+    // 上書きコピー処理は完全にスキップして原本を守る
+    if (!existingId) {
+        // 新規作成時のみ元画像を保存する
         const info = await FileSystem.getInfoAsync(photoSource.uri);
         if (info.exists) {
             await FileSystem.copyAsync({
                 from: photoSource.uri,
                 to: originalDestUri
             });
-        } else if (!existingId) {
+        } else {
             console.warn("Original photo source does not exist:", photoSource.uri);
         }
     }

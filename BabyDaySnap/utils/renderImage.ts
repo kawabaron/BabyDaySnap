@@ -90,22 +90,24 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         // テキスト描画
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
 
-        // 枠線描画 (エディタのUIに合わせて描画)
+        // 枠線描画 (外側に少し白枠の余白を残して描画し、UIの角丸で削られないようにする)
         if (tpl.hasFrame) {
             const borderPaint = Skia.Paint();
             borderPaint.setColor(Skia.Color("#E0E0E0"));
             borderPaint.setStyle(0); // Fill
 
             const strokeWidth = Math.max(1, Math.round(Math.min(canvasW, canvasH) * 0.0025));
+            const marginX = Math.round(canvasW * 0.01); // 1%の左右余白
+            const marginY = Math.round(canvasH * 0.01); // 1%の上下余白
 
             // 上
-            canvas.drawRect(Skia.XYWHRect(0, 0, canvasW, strokeWidth), borderPaint);
+            canvas.drawRect(Skia.XYWHRect(marginX, marginY, canvasW - marginX * 2, strokeWidth), borderPaint);
             // 下
-            canvas.drawRect(Skia.XYWHRect(0, canvasH - strokeWidth, canvasW, strokeWidth), borderPaint);
+            canvas.drawRect(Skia.XYWHRect(marginX, canvasH - marginY - strokeWidth, canvasW - marginX * 2, strokeWidth), borderPaint);
             // 左
-            canvas.drawRect(Skia.XYWHRect(0, 0, strokeWidth, canvasH), borderPaint);
+            canvas.drawRect(Skia.XYWHRect(marginX, marginY, strokeWidth, canvasH - marginY * 2), borderPaint);
             // 右
-            canvas.drawRect(Skia.XYWHRect(canvasW - strokeWidth, 0, strokeWidth, canvasH), borderPaint);
+            canvas.drawRect(Skia.XYWHRect(canvasW - marginX - strokeWidth, marginY, strokeWidth, canvasH - marginY * 2), borderPaint);
         }
 
         // 確定
