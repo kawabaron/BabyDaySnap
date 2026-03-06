@@ -41,11 +41,19 @@ export async function saveToAppLibrary(
         to: destUri
     });
 
+    // 再編集時（existingIdがある）で、かつphotoSource.uriが既にoriginalDestUriを指している場合は
+    // 自分自身へのコピーになってしまいファイルが破損/消失する恐れがあるためスキップする
     if (!existingId || photoSource.uri !== originalDestUri) {
-        await FileSystem.copyAsync({
-            from: photoSource.uri,
-            to: originalDestUri
-        });
+        // 元画像URIが存在する場合のみコピー（一時ファイル削除などで消えているケースへの防御）
+        const info = await FileSystem.getInfoAsync(photoSource.uri);
+        if (info.exists) {
+            await FileSystem.copyAsync({
+                from: photoSource.uri,
+                to: originalDestUri
+            });
+        } else if (!existingId) {
+            console.warn("Original photo source does not exist:", photoSource.uri);
+        }
     }
 
     const item: AppLibraryItem = {
