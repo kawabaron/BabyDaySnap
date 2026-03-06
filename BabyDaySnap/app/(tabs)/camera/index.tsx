@@ -127,10 +127,10 @@ export default function CameraScreen() {
             <View style={styles.content}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
-                    <Ionicons name="camera" size={48} color="#FF8FA3" />
-                    <Text style={styles.title}>写真を撮ろう</Text>
+                    <Ionicons name="add-circle" size={56} color="#FF8FA3" />
+                    <Text style={styles.title}>新しく作る</Text>
                     <Text style={styles.subtitle}>
-                        撮影するか、ライブラリから{"\n"}お気に入りの写真を選んでね
+                        カメラで撮影するか、ライブラリから{"\n"}お気に入りの写真を選んでね
                     </Text>
                 </View>
 
@@ -157,7 +157,7 @@ export default function CameraScreen() {
 
                 {/* 説明 */}
                 <Text style={styles.hint}>
-                    iPhoneの標準カメラで撮影するため{"\n"}最高画質の写真が撮れます
+                    ※「カメラで撮影」は高画質な{"\n"}標準カメラを使用します
                 </Text>
             </View>
         </SafeAreaView>

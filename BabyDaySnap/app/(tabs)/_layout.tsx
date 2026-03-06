@@ -25,10 +25,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="camera"
         options={{
-          title: "カメラ",
+          title: "作る",
           href: "/(tabs)/camera",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="camera" size={size} color={color} />
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />
