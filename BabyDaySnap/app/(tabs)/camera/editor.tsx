@@ -140,18 +140,11 @@ export default function EditorScreen() {
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
-            const tpl = getTemplateConfig(editorOptions.templateId);
-            const baseW = tpl.isSquare
-                ? Math.min(currentPhoto.width, currentPhoto.height)
-                : currentPhoto.width;
-            const baseH = tpl.isSquare
-                ? Math.min(currentPhoto.width, currentPhoto.height)
-                : currentPhoto.height;
             // renderImage.ts の MAX_OUTPUT_DIMENSION と合わせる
-            const maxSide = Math.max(baseW, baseH);
-            const scale = maxSide > 2048 ? 2048 / maxSide : 1;
-            const imageW = Math.round(baseW * scale);
-            const imageH = Math.round(baseH * scale);
+            const maxSide = Math.max(currentPhoto.width, currentPhoto.height);
+            const scale = maxSide > 3000 ? 3000 / maxSide : 1;
+            const imageW = Math.round(currentPhoto.width * scale);
+            const imageH = Math.round(currentPhoto.height * scale);
 
             const item = await saveToAppLibrary(
                 finalUri,
@@ -163,8 +156,11 @@ export default function EditorScreen() {
                 editingLibraryId,
             );
 
-            // 一時ファイル削除
+            // 一時ファイル全て削除（メモリ蓄積防止）
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
+            if (currentPhoto.previewUri && currentPhoto.previewUri !== currentPhoto.uri) {
+                try { await FileSystem.deleteAsync(currentPhoto.previewUri, { idempotent: true }); } catch (_) { }
+            }
 
             if (editingLibraryId) {
                 dispatch({ type: "LIBRARY_UPDATE", payload: item });
@@ -208,7 +204,7 @@ export default function EditorScreen() {
         try {
             const finalUri = await runFinalRender();
             const success = await saveToPhotoLibrary(finalUri);
-            // 一時ファイル削除
+            // 一時ファイル削除（メモリ蓄積防止）
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
             if (success) {
                 Alert.alert("保存完了", "写真ライブラリに保存しました。");

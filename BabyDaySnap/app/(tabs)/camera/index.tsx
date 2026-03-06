@@ -39,59 +39,41 @@ export default function CameraScreen() {
         router.push("/(tabs)/camera/editor");
     };
 
-    // 写真をダウンスケールしてメモリを節約する（Skia用とプレビュー用の2つを生成）
-    const downscaleToMaxDimension = async (uri: string, width: number, height: number) => {
-        const MAX_DIMENSION = 3000;      // Skia保存用（十分な画質、3000px）
-        const MAX_PREVIEW = 400;         // Editor表示用（メモリ限界まで節約、400px）
+    // エディタ表示用のプレビュー画像のみ生成（元画像はそのまま保持して最大画質保存に使う）
+    const createPreviewImage = async (uri: string, width: number, height: number) => {
+        const MAX_PREVIEW = 1200;  // エディタ表示用（画質維持しつつメモリ節約）
 
-        // --- Skia保存用 (2048px) ---
-        let mainUri = uri;
-        let mainW = width;
-        let mainH = height;
-        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-            const scale = MAX_DIMENSION / Math.max(width, height);
-            mainW = Math.round(width * scale);
-            mainH = Math.round(height * scale);
-            const res = await manipulateAsync(
-                uri,
-                [{ resize: { width: mainW, height: mainH } }],
-                { compress: 1.0, format: SaveFormat.JPEG }
-            );
-            mainUri = res.uri;
+        // 元画像がプレビューサイズ以下ならそのまま使う（劣化なし）
+        if (width <= MAX_PREVIEW && height <= MAX_PREVIEW) {
+            return uri;
         }
 
-        // --- Editorプレビュー用 (800px) ---
-        let previewUri = mainUri;
-        if (mainW > MAX_PREVIEW || mainH > MAX_PREVIEW) {
-            const scalePreview = MAX_PREVIEW / Math.max(mainW, mainH);
-            const preW = Math.round(mainW * scalePreview);
-            const preH = Math.round(mainH * scalePreview);
-            const preRes = await manipulateAsync(
-                mainUri,
-                [{ resize: { width: preW, height: preH } }],
-                { compress: 0.7, format: SaveFormat.JPEG }
-            );
-            previewUri = preRes.uri;
-        }
-
-        return { uri: mainUri, previewUri, width: mainW, height: mainH };
+        const scale = MAX_PREVIEW / Math.max(width, height);
+        const preW = Math.round(width * scale);
+        const preH = Math.round(height * scale);
+        const res = await manipulateAsync(
+            uri,
+            [{ resize: { width: preW, height: preH } }],
+            { compress: 1.0, format: SaveFormat.JPEG }  // 圧縮なし＝劣化なし
+        );
+        return res.uri;
     };
 
     const handleCapture = async () => {
         if (!cameraRef.current) return;
         try {
             const result = await cameraRef.current.takePictureAsync({
-                quality: 0.7,
+                quality: 1.0,  // 最大画質で撮影
             });
             if (result) {
-                // Skiaに渡す前にダウンスケールしてメモリを節約
-                const downscaled = await downscaleToMaxDimension(result.uri, result.width, result.height);
+                // プレビュー用軽量画像を生成（元画像はそのまま保持）
+                const previewUri = await createPreviewImage(result.uri, result.width, result.height);
 
                 const photo: PhotoSource = {
-                    uri: downscaled.uri,
-                    previewUri: downscaled.previewUri,
-                    width: downscaled.width,
-                    height: downscaled.height,
+                    uri: result.uri,           // 元画像（Skia保存用）
+                    previewUri,                // プレビュー（エディタ表示用）
+                    width: result.width,
+                    height: result.height,
                     source: "camera",
                     creationTimeMs: Date.now(),
                 };
@@ -113,13 +95,13 @@ export default function CameraScreen() {
 
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
-                const downscaled = await downscaleToMaxDimension(asset.uri, asset.width, asset.height);
+                const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
 
                 const photo: PhotoSource = {
-                    uri: downscaled.uri,
-                    previewUri: downscaled.previewUri,
-                    width: downscaled.width,
-                    height: downscaled.height,
+                    uri: asset.uri,            // 元画像（Skia保存用）
+                    previewUri,                // プレビュー（エディタ表示用）
+                    width: asset.width,
+                    height: asset.height,
                     source: "import",
                     creationTimeMs: asset.exif?.DateTimeOriginal
                         ? new Date(asset.exif.DateTimeOriginal as string).getTime()
