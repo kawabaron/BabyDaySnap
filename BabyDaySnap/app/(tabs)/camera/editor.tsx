@@ -406,11 +406,7 @@ export default function EditorScreen() {
             {/* フォント選択 */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>フォント</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.fontRow}
-                >
+                <View style={styles.fontRow}>
                     {FONT_OPTIONS.map((f) => (
                         <TouchableOpacity
                             key={f.id}
@@ -431,7 +427,7 @@ export default function EditorScreen() {
                             </Text>
                         </TouchableOpacity>
                     ))}
-                </ScrollView>
+                </View>
             </View>
 
             {/* 日付色選択 */}
@@ -655,11 +651,12 @@ const styles = StyleSheet.create({
     },
     fontRow: {
         flexDirection: "row",
+        flexWrap: "wrap",
         gap: 8,
         paddingVertical: 4,
     },
     fontBadge: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 10,
         backgroundColor: "#F5F5F5",
         borderRadius: 20,
@@ -710,7 +707,8 @@ const styles = StyleSheet.create({
     toggleRowContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
-        gap: 16,
+        flexWrap: "wrap",
+        gap: 12,
         paddingVertical: 4,
     },
     toggleItem: {
