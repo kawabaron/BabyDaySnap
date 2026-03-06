@@ -92,25 +92,7 @@ export default function EditorScreen() {
 
         // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
         const MAX_RENDER = 2000;  // 2000px = 約534万画素（Skiaメモリ約34MBに抑制）
-
-        // ファイルの正当性チェック (再編集などで原本が消失/破損している場合へのフェールセーフ)
-        let safeUri = currentPhoto.uri;
-        const uriInfo = await FileSystem.getInfoAsync(safeUri);
-        if (!uriInfo.exists || ('size' in uriInfo && uriInfo.size === 0)) {
-            console.warn(`[SAVE] 元画像が読み込めません。フェールセーフとしてプレビュー画像を使用します: ${safeUri}`);
-            if (currentPhoto.previewUri && currentPhoto.previewUri !== safeUri) {
-                const prevInfo = await FileSystem.getInfoAsync(currentPhoto.previewUri);
-                if (prevInfo.exists && ('size' in prevInfo && prevInfo.size > 0)) {
-                    safeUri = currentPhoto.previewUri;
-                } else {
-                    throw new Error("画像データが見つかりません。ライブラリから再度画像を選択してください。");
-                }
-            } else {
-                throw new Error("画像データが見つかりません。ライブラリから再度画像を選択してください。");
-            }
-        }
-
-        let renderUri = safeUri;
+        let renderUri = currentPhoto.uri;
         let renderW = currentPhoto.width;
         let renderH = currentPhoto.height;
 
@@ -119,18 +101,13 @@ export default function EditorScreen() {
             renderW = Math.round(renderW * scale);
             renderH = Math.round(renderH * scale);
             console.log(`[SAVE] リサイズ: ${renderW}x${renderH}`);
-            try {
-                const resized = await manipulateAsync(
-                    safeUri,
-                    [{ resize: { width: renderW, height: renderH } }],
-                    { compress: 1.0, format: SaveFormat.JPEG }
-                );
-                renderUri = resized.uri;
-                await logFileSize("リサイズ後ファイル", renderUri);
-            } catch (e) {
-                console.warn("[SAVE] リサイズに失敗したため、元の安全なURIで続行します", e);
-                renderUri = safeUri;
-            }
+            const resized = await manipulateAsync(
+                currentPhoto.uri,
+                [{ resize: { width: renderW, height: renderH } }],
+                { compress: 1.0, format: SaveFormat.JPEG }
+            );
+            renderUri = resized.uri;
+            await logFileSize("リサイズ後ファイル", renderUri);
         }
 
         try {

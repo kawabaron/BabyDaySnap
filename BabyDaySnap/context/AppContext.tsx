@@ -102,14 +102,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "RESET_EDITOR": {
             // エディタをリセットする際、現在保持している一時写真をキャッシュから削除してストレージ/メモリ漏れを防ぐ
             if (state.currentPhoto) {
-                const { uri, previewUri, source } = state.currentPhoto;
-                // re-edit等でDocumentsディレクトリにある保存済み画像は消さないようにする
-                // カメラやインポート由来の場合はexpo-image-picker/manipulatorが生成したキャッシュファイルなので消す
-                if (source === "camera" || source === "import") {
+                const { uri, previewUri } = state.currentPhoto;
+                // Documents/library/ 内にあるファイル（保存済み原本・レンダリング済み画像）は絶対に消さない
+                // カメラやインポート由来のキャッシュファイルのみ削除する
+                const isLibraryFile = (path: string) => path.includes('/Documents/library/');
+                if (uri && !isLibraryFile(uri)) {
                     try { FileSystem.deleteAsync(uri, { idempotent: true }); } catch (_) { }
-                    if (previewUri && previewUri !== uri) {
-                        try { FileSystem.deleteAsync(previewUri, { idempotent: true }); } catch (_) { }
-                    }
+                }
+                if (previewUri && previewUri !== uri && !isLibraryFile(previewUri)) {
+                    try { FileSystem.deleteAsync(previewUri, { idempotent: true }); } catch (_) { }
                 }
             }
 
