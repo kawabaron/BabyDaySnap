@@ -91,31 +91,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         // テキスト描画
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, dateTextLine1, isMultiBaby);
 
-        // 枠線描画 (外側に少し白枠の余白を残して描画し、UIの角丸で削られないようにする)
-        if (tpl.hasFrame) {
-            const borderPaint = Skia.Paint();
-            borderPaint.setColor(Skia.Color("#E0E0E0"));
-            borderPaint.setStyle(1); // 塗りつぶしの継ぎ接ぎではなく、角丸のStroke1本で描画する
-
-            const strokeWidth = Math.max(1, Math.round(Math.min(canvasW, canvasH) * 0.0025));
-            // 余白は画像サイズの1%
-            const marginX = Math.round(canvasW * 0.01);
-            const marginY = Math.round(canvasH * 0.01);
-            borderPaint.setStrokeWidth(strokeWidth);
-
-            // 角丸の半径 (エディタのUIの borderRadius: 12 に近い比率)
-            const borderRadius = Math.max(4, Math.round(Math.min(canvasW, canvasH) * 0.015));
-
-            const rect = Skia.XYWHRect(
-                marginX + strokeWidth / 2,
-                marginY + strokeWidth / 2,
-                canvasW - marginX * 2 - strokeWidth,
-                canvasH - marginY * 2 - strokeWidth
-            );
-
-            const rrect = Skia.RRectXY(rect, borderRadius, borderRadius);
-            canvas.drawRRect(rrect, borderPaint);
-        }
+        // 枠線描画は廃止（ユーザー要望により、白いフチのベースのみ残す）
 
         // 確定
         surface.flush();

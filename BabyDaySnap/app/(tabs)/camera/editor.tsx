@@ -423,8 +423,6 @@ export default function EditorScreen() {
             <View style={[styles.previewContainer, {
                 height: previewHeight,
                 backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
-                borderWidth: tpl.hasFrame ? 1 : 0,
-                borderColor: "#E0E0E0"
             }]}>
                 {/* Photo Layer */}
                 <View style={{
