@@ -9,6 +9,7 @@ import {
     Alert,
     Dimensions,
     Share,
+    FlatList,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
@@ -17,22 +18,28 @@ import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { formatDateDisplay, msToDateISO } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
+import type { AppLibraryItem } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const IMAGE_WIDTH = SCREEN_WIDTH - 32;
+const IMAGE_WIDTH = SCREEN_WIDTH;
 
 export default function LibraryDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { library, babies } = useAppState();
+    const { library, babies, activeBabyId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
 
-    const item = useMemo(
-        () => library.find((i) => i.id === id),
-        [library, id],
-    );
+    const filteredLibrary = useMemo(() => {
+        if (!activeBabyId) return library;
+        return library.filter((item) => item.babyIds.includes(activeBabyId));
+    }, [library, activeBabyId]);
 
-    if (!item) {
+    const initialIndex = useMemo(() => {
+        const idx = filteredLibrary.findIndex((i) => i.id === id);
+        return idx >= 0 ? idx : 0;
+    }, [filteredLibrary, id]);
+
+    if (filteredLibrary.length === 0) {
         return (
             <View style={styles.container}>
                 <Text style={styles.errorText}>写真が見つかりません</Text>
@@ -40,18 +47,14 @@ export default function LibraryDetailScreen() {
         );
     }
 
-    const tpl = getTemplateConfig(item.templateId);
-    const aspect = item.width / item.height;
-    const imageHeight = IMAGE_WIDTH / aspect;
-
-    const handleSaveToPhotos = async () => {
+    const handleSaveToPhotos = async (item: AppLibraryItem) => {
         const success = await saveToPhotoLibrary(item.renderedFileUri);
         if (success) {
             Alert.alert("保存完了", "写真ライブラリに保存しました。");
         }
     };
 
-    const handleShare = async () => {
+    const handleShare = async (item: AppLibraryItem) => {
         try {
             await Share.share({
                 url: item.renderedFileUri,
@@ -61,7 +64,7 @@ export default function LibraryDetailScreen() {
         }
     };
 
-    const handleReedit = () => {
+    const handleReedit = (item: AppLibraryItem) => {
         // 元画像の復元
         dispatch({
             type: "SET_PHOTO",
@@ -106,7 +109,7 @@ export default function LibraryDetailScreen() {
         router.replace("/(tabs)/camera/editor");
     };
 
-    const handleDelete = () => {
+    const handleDelete = (item: AppLibraryItem) => {
         Alert.alert("削除確認", "この写真を削除しますか？", [
             { text: "キャンセル", style: "cancel" },
             {
@@ -115,116 +118,141 @@ export default function LibraryDetailScreen() {
                 onPress: async () => {
                     await deleteFromAppLibrary(item);
                     dispatch({ type: "LIBRARY_REMOVE", payload: item.id });
-                    router.back();
+                    if (filteredLibrary.length <= 1) {
+                        router.back();
+                    }
                 },
             },
         ]);
     };
 
-    return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* 画像大表示 */}
-            <View style={[styles.imageContainer, {
-                height: imageHeight,
-                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
-            }]}>
-                <Image
-                    source={{ uri: item.renderedFileUri }}
-                    style={styles.image}
-                    resizeMode="contain"
-                />
-            </View>
+    const renderItem = ({ item }: { item: AppLibraryItem }) => {
+        const tpl = getTemplateConfig(item.templateId);
+        const aspect = item.width / item.height;
+        const imageHeight = IMAGE_WIDTH / aspect;
 
-            {/* メタ情報 */}
-            <View style={styles.metaContainer}>
-                {/* 所属する赤ちゃん */}
-                {item.babyIds && item.babyIds.length > 0 && (
-                    <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>赤ちゃん</Text>
-                        <View style={{ flexDirection: "row", gap: 6 }}>
-                            {item.babyIds.map((bid) => {
-                                const b = babies.find((bb) => bb.id === bid);
-                                if (!b) return null;
-                                const bTheme = getThemePreset(b.themeColorHex);
-                                return (
-                                    <View key={bid} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: bTheme.light, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
-                                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bTheme.accent }} />
-                                        <Text style={{ fontSize: 13, color: bTheme.accent, fontWeight: "600" }}>{b.name}</Text>
-                                    </View>
-                                );
-                            })}
-                        </View>
-                    </View>
-                )}
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>生後日数</Text>
-                    <Text style={styles.metaValue}>{item.ageDays}日</Text>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>撮影日</Text>
-                    <Text style={styles.metaValue}>
-                        {formatDateDisplay(item.shotDateISO)}
-                    </Text>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>テンプレート</Text>
-                    <Text style={styles.metaValue}>{tpl.label}</Text>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>日付色</Text>
-                    <View style={styles.colorPreviewRow}>
-                        <View
-                            style={[
-                                styles.colorPreviewDot,
-                                { backgroundColor: item.dateColorHex },
-                                item.dateColorHex === "#FFFFFF" && { borderWidth: 1, borderColor: "#DDD" },
-                            ]}
+        return (
+            <View style={{ width: SCREEN_WIDTH }}>
+                <ScrollView
+                    style={styles.container}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* 画像大表示 */}
+                    <View style={[styles.imageContainer, {
+                        height: imageHeight,
+                        backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
+                    }]}>
+                        <Image
+                            source={{ uri: item.renderedFileUri }}
+                            style={styles.image}
+                            resizeMode="contain"
                         />
-                        <Text style={styles.metaValue}>{item.dateColorHex}</Text>
                     </View>
-                </View>
 
-                {item.commentText ? (
-                    <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>コメント</Text>
-                        <Text style={styles.metaValue}>{item.commentText}</Text>
+                    {/* アクションボタン */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.reeditButton} onPress={() => handleReedit(item)}>
+                            <Ionicons name="color-wand-outline" size={20} color="#FFF" />
+                            <Text style={styles.saveButtonText}>再編集する</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.saveButton} onPress={() => handleSaveToPhotos(item)}>
+                            <Ionicons name="image-outline" size={20} color="#FF8FA3" />
+                            <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(item)}>
+                            <Ionicons name="share-outline" size={20} color="#FF8FA3" />
+                            <Text style={styles.shareButtonText}>共有</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
+                            <Ionicons name="trash-outline" size={20} color="#FF4444" />
+                            <Text style={styles.deleteButtonText}>削除</Text>
+                        </TouchableOpacity>
                     </View>
-                ) : null}
+
+                    {/* メタ情報 */}
+                    <View style={styles.metaContainer}>
+                        {/* 所属する赤ちゃん */}
+                        {item.babyIds && item.babyIds.length > 0 && (
+                            <View style={styles.metaRow}>
+                                <Text style={styles.metaLabel}>赤ちゃん</Text>
+                                <View style={{ flexDirection: "row", gap: 6 }}>
+                                    {item.babyIds.map((bid) => {
+                                        const b = babies.find((bb) => bb.id === bid);
+                                        if (!b) return null;
+                                        const bTheme = getThemePreset(b.themeColorHex);
+                                        return (
+                                            <View key={bid} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: bTheme.light, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
+                                                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bTheme.accent }} />
+                                                <Text style={{ fontSize: 13, color: bTheme.accent, fontWeight: "600" }}>{b.name}</Text>
+                                            </View>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+                        )}
+
+                        <View style={styles.metaRow}>
+                            <Text style={styles.metaLabel}>生後日数</Text>
+                            <Text style={styles.metaValue}>{item.ageDays}日</Text>
+                        </View>
+
+                        <View style={styles.metaRow}>
+                            <Text style={styles.metaLabel}>撮影日</Text>
+                            <Text style={styles.metaValue}>
+                                {formatDateDisplay(item.shotDateISO)}
+                            </Text>
+                        </View>
+
+                        <View style={styles.metaRow}>
+                            <Text style={styles.metaLabel}>テンプレート</Text>
+                            <Text style={styles.metaValue}>{tpl.label}</Text>
+                        </View>
+
+                        <View style={styles.metaRow}>
+                            <Text style={styles.metaLabel}>日付色</Text>
+                            <View style={styles.colorPreviewRow}>
+                                <View
+                                    style={[
+                                        styles.colorPreviewDot,
+                                        { backgroundColor: item.dateColorHex },
+                                        item.dateColorHex === "#FFFFFF" && { borderWidth: 1, borderColor: "#DDD" },
+                                    ]}
+                                />
+                                <Text style={styles.metaValue}>{item.dateColorHex}</Text>
+                            </View>
+                        </View>
+
+                        {item.commentText ? (
+                            <View style={styles.metaRow}>
+                                <Text style={styles.metaLabel}>コメント</Text>
+                                <Text style={styles.metaValue}>{item.commentText}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+
+                    <View style={{ height: 40 }} />
+                </ScrollView>
             </View>
+        );
+    };
 
-            {/* アクションボタン */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.reeditButton} onPress={handleReedit}>
-                    <Ionicons name="color-wand-outline" size={20} color="#FFF" />
-                    <Text style={styles.saveButtonText}>再編集する</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.saveButton} onPress={handleSaveToPhotos}>
-                    <Ionicons name="image-outline" size={20} color="#FF8FA3" />
-                    <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                    <Ionicons name="share-outline" size={20} color="#FF8FA3" />
-                    <Text style={styles.shareButtonText}>共有</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                    <Ionicons name="trash-outline" size={20} color="#FF4444" />
-                    <Text style={styles.deleteButtonText}>削除</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={{ height: 40 }} />
-        </ScrollView>
+    return (
+        <FlatList
+            data={filteredLibrary}
+            keyExtractor={(i) => i.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={initialIndex}
+            getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+            renderItem={renderItem}
+            windowSize={3}
+            maxToRenderPerBatch={3}
+        />
     );
 }
 
@@ -234,21 +262,25 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFF",
     },
     scrollContent: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
+        paddingTop: 0,
     },
     imageContainer: {
         width: IMAGE_WIDTH,
         backgroundColor: "#F5F5F5",
-        borderRadius: 12,
         overflow: "hidden",
     },
     image: {
         width: "100%",
         height: "100%",
     },
+    buttonContainer: {
+        marginTop: 24,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
     metaContainer: {
-        marginTop: 20,
+        marginTop: 24,
+        marginHorizontal: 16,
         backgroundColor: "#FAFAFA",
         borderRadius: 12,
         padding: 16,
@@ -278,10 +310,6 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
         borderRadius: 9,
-    },
-    buttonContainer: {
-        marginTop: 24,
-        gap: 12,
     },
     reeditButton: {
         backgroundColor: "#FF8FA3",
