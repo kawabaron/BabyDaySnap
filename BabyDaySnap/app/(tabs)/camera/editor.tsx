@@ -137,9 +137,6 @@ export default function EditorScreen() {
             await logFileSize("リサイズ後ファイル", renderUri);
         }
 
-        // 保存先の最初の赤ちゃんの名前を使用
-        const babyNameForRender = activeBabyForEditor?.name || settings.babyName;
-
         try {
             const result = await renderCompositeImage({
                 imageUri: renderUri,
@@ -148,7 +145,8 @@ export default function EditorScreen() {
                 editorOptions,
                 computed,
                 fontId: editorOptions.fontId,
-                babyName: babyNameForRender,
+                dateTextLine1,
+                isMultiBaby,
             });
 
             await logFileSize("Skia出力ファイル", result);
@@ -328,7 +326,8 @@ export default function EditorScreen() {
 
     // UIレイアウト計算 (renderImage.ts の定数に合わせる)
     const shortSide = Math.min(PREVIEW_WIDTH, previewHeight);
-    const dateFontSize = shortSide * 0.04;
+    const isMultiBaby = targetBabyIds.length > 1;
+    const dateFontSize = shortSide * 0.04 * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * 0.038;
     const margin = shortSide * 0.04;
     const gap = shortSide * 0.015;
@@ -348,6 +347,41 @@ export default function EditorScreen() {
 
     // 表示用の赤ちゃん名
     const displayBabyName = activeBabyForEditor?.name || settings.babyName;
+
+    // 印字テキストの生成
+    const dateTextLine1 = useMemo(() => {
+        if (!computed) return "";
+        let text = "";
+        if (targetBabyIds.length <= 1) {
+            const parts = [];
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+            if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
+            if (editorOptions.showAge && computed.ageDays !== undefined) parts.push(`生後${computed.ageDays}日`);
+            text = parts.filter(Boolean).join("  ");
+        } else {
+            // 複数人選択時
+            const parts = [];
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+            const babyParts = targetBabyIds.map(id => {
+                const b = babies.find(x => x.id === id);
+                if (!b) return "";
+                let bStr = "";
+                if (editorOptions.showName) bStr += b.name;
+                if (editorOptions.showAge) {
+                    const ageDays = calcAgeDays(b.birthDateISO, computed.shotDateISO || "");
+                    bStr += `(生後${ageDays}日)`;
+                }
+                return bStr;
+            }).filter(Boolean);
+
+            if (babyParts.length > 0) {
+                // 複数人の場合はスペース1つで区切る
+                parts.push(babyParts.join(" "));
+            }
+            text = parts.filter(Boolean).join("  ");
+        }
+        return text;
+    }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
 
     return (
         <ScrollView
@@ -395,11 +429,7 @@ export default function EditorScreen() {
                             textShadowOffset: { width: 1, height: 1 },
                             textShadowRadius: 1,
                         }}>
-                            {[
-                                editorOptions.showDate ? computed.shotDateISO : null,
-                                editorOptions.showName && displayBabyName ? displayBabyName : null,
-                                editorOptions.showAge ? `生後${computed.ageDays}日` : null
-                            ].filter(Boolean).join("  ")}
+                            {dateTextLine1}
                         </Text>
                     )}
                     {editorOptions.commentText ? (

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAppDispatch } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
@@ -19,6 +19,9 @@ import type { BabyProfile } from "@/types";
 export default function OnboardingBirthdateScreen() {
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const { mode } = useLocalSearchParams<{ mode?: string }>();
+    const isAddMode = mode === "add";
+
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(Platform.OS === "ios");
     const [babyName, setBabyName] = useState("");
@@ -50,11 +53,15 @@ export default function OnboardingBirthdateScreen() {
         dispatch({ type: "ADD_BABY", payload: baby });
         dispatch({ type: "SET_ACTIVE_BABY", payload: baby.id });
 
-        // 後方互換（ settings にも保存）
-        dispatch({ type: "SET_BIRTHDATE", payload: iso });
-        dispatch({ type: "SET_BABY_NAME", payload: name });
-        dispatch({ type: "SET_ONBOARDED", payload: true });
-        router.replace("/(tabs)/camera");
+        if (isAddMode) {
+            router.back();
+        } else {
+            // 後方互換（ settings にも保存）
+            dispatch({ type: "SET_BIRTHDATE", payload: iso });
+            dispatch({ type: "SET_BABY_NAME", payload: name });
+            dispatch({ type: "SET_ONBOARDED", payload: true });
+            router.replace("/(tabs)/camera");
+        }
     };
 
     const selectedPreset = THEME_COLOR_PRESETS.find((p) => p.hex === selectedColor) || THEME_COLOR_PRESETS[0];
@@ -68,10 +75,9 @@ export default function OnboardingBirthdateScreen() {
             >
                 {/* ヘッダー */}
                 <View style={styles.header}>
-                    <Text style={styles.emoji}>👶</Text>
-                    <Text style={styles.title}>BabyDaySnap</Text>
+                    <Text style={styles.title}>{isAddMode ? "赤ちゃんを追加" : "BabyDaySnap"}</Text>
                     <Text style={styles.subtitle}>
-                        赤ちゃんの情報を設定して{"\n"}生後日数を記録しましょう
+                        {isAddMode ? "新しい赤ちゃんの情報を入力してください" : "赤ちゃんの情報を設定して\n生後日数を記録しましょう"}
                     </Text>
                 </View>
 
@@ -149,7 +155,7 @@ export default function OnboardingBirthdateScreen() {
                     style={[styles.startButton, { backgroundColor: selectedPreset.accent, shadowColor: selectedPreset.shadow }]}
                     onPress={handleStart}
                 >
-                    <Text style={styles.startButtonText}>開始する</Text>
+                    <Text style={styles.startButtonText}>{isAddMode ? "追加する" : "開始する"}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -164,30 +170,26 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: "center",
         paddingHorizontal: 32,
-        paddingVertical: 24,
+        paddingVertical: 16,
     },
     header: {
         alignItems: "center",
-        marginBottom: 36,
-    },
-    emoji: {
-        fontSize: 64,
-        marginBottom: 16,
+        marginBottom: 24,
     },
     title: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: "800",
         color: "#333",
-        marginBottom: 12,
+        marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
         color: "#888",
         textAlign: "center",
-        lineHeight: 24,
+        lineHeight: 22,
     },
     inputSection: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     inputLabel: {
         fontSize: 16,
@@ -209,12 +211,12 @@ const styles = StyleSheet.create({
     },
     dateSection: {
         alignItems: "center",
-        marginBottom: 24,
+        marginBottom: 20,
     },
     dateButton: {
         backgroundColor: "#FFF",
         paddingHorizontal: 24,
-        paddingVertical: 14,
+        paddingVertical: 12,
         borderRadius: 12,
         borderWidth: 1,
     },
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
     },
     colorSection: {
         alignItems: "center",
-        marginBottom: 36,
+        marginBottom: 28,
     },
     colorRow: {
         flexDirection: "row",

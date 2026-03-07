@@ -1,9 +1,13 @@
+import { useState } from "react";
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
     Alert,
+    Modal,
+    Pressable,
+    ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -17,9 +21,11 @@ import type { PhotoSource } from "@/types";
 
 export default function CameraScreen() {
     const dispatch = useAppDispatch();
-    const { settings, activeBabyId } = useAppState();
+    const { settings, activeBabyId, babies } = useAppState();
     const activeBaby = useActiveBaby();
     const router = useRouter();
+
+    const [showBabyPicker, setShowBabyPicker] = useState(false);
 
     // テーマカラー取得
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
@@ -138,6 +144,11 @@ export default function CameraScreen() {
         }
     };
 
+    const handleSelectBaby = (id: string) => {
+        dispatch({ type: "SET_ACTIVE_BABY", payload: id });
+        setShowBabyPicker(false);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
@@ -146,12 +157,17 @@ export default function CameraScreen() {
                     <Ionicons name="add-circle" size={64} color={theme.accent} />
                     <Text style={styles.title}>新しく作る</Text>
                     {activeBaby && (
-                        <View style={styles.babyBadge}>
+                        <TouchableOpacity
+                            style={styles.babyBadge}
+                            onPress={() => setShowBabyPicker(true)}
+                            activeOpacity={0.7}
+                        >
                             <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
                             <Text style={[styles.babyBadgeText, { color: theme.accent }]}>
                                 {activeBaby.name}
                             </Text>
-                        </View>
+                            <Ionicons name="chevron-down" size={12} color={theme.accent} style={{ marginLeft: 2 }} />
+                        </TouchableOpacity>
                     )}
                 </View>
 
@@ -179,6 +195,38 @@ export default function CameraScreen() {
                 {/* 説明 (削除) */}
                 <View style={{ height: 32 }} />
             </View>
+
+            {/* 赤ちゃん切り替えモーダル */}
+            <Modal
+                visible={showBabyPicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowBabyPicker(false)}
+            >
+                <Pressable style={styles.modalOverlay} onPress={() => setShowBabyPicker(false)}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>赤ちゃんを切り替え</Text>
+                        <ScrollView style={{ maxHeight: 300 }}>
+                            {babies.map((b) => {
+                                const bTheme = getThemePreset(b.themeColorHex);
+                                return (
+                                    <TouchableOpacity
+                                        key={b.id}
+                                        style={styles.babyOption}
+                                        onPress={() => handleSelectBaby(b.id)}
+                                    >
+                                        <View style={[styles.babyBadgeDot, { backgroundColor: bTheme.accent, width: 14, height: 14, borderRadius: 7 }]} />
+                                        <Text style={styles.babyOptionText}>{b.name}</Text>
+                                        {activeBabyId === b.id && (
+                                            <Ionicons name="checkmark" size={20} color={bTheme.accent} />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -258,5 +306,46 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "800",
         letterSpacing: 0.5,
+    },
+    // --- モーダル ---
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.4)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 20,
+    },
+    modalContent: {
+        width: "100%",
+        maxWidth: 320,
+        backgroundColor: "#FFF",
+        borderRadius: 20,
+        padding: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 16,
+        textAlign: "center",
+    },
+    babyOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F0F0F0",
+        gap: 12,
+    },
+    babyOptionText: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
     },
 });

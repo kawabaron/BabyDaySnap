@@ -20,7 +20,8 @@ type RenderParams = {
     editorOptions: EditorOptions;
     computed: ComputedInfo;
     fontId: FontId;
-    babyName: string;
+    dateTextLine1: string;
+    isMultiBaby: boolean;
 };
 
 // 出力画像の最大辺サイズ (メモリ節約のため制限、約534万画素)
@@ -31,7 +32,7 @@ const MAX_OUTPUT_DIMENSION = 2000;
  * @returns 書き出したファイルのURI
  */
 export async function renderCompositeImage(params: RenderParams): Promise<string> {
-    const { imageUri, imageWidth, imageHeight, editorOptions, computed, fontId, babyName } = params;
+    const { imageUri, imageWidth, imageHeight, editorOptions, computed, fontId, dateTextLine1, isMultiBaby } = params;
     const tpl = getTemplateConfig(editorOptions.templateId);
 
     // フォント読み込み (動的に読み込んで使い捨てることでuseFontのメモリリークを防止)
@@ -88,7 +89,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, imageWidth, imageHeight);
 
         // テキスト描画
-        drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, babyName);
+        drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, dateTextLine1, isMultiBaby);
 
         // 枠線描画 (外側に少し白枠の余白を残して描画し、UIの角丸で削られないようにする)
         if (tpl.hasFrame) {
@@ -210,19 +211,16 @@ function drawText(
     hasFrame: boolean,
     hasStroke: boolean,
     typeface: SkTypeface | null,
-    babyName: string,
+    dateTextLine1: string,
+    isMultiBaby: boolean,
 ) {
     const shortSide = Math.min(canvasW, canvasH);
-    const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO;
+    const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
     const margin = shortSide * MARGIN_RATIO;
     const gap = shortSide * 0.015;
 
-    const dateText = [
-        options.showDate ? computed.shotDateISO : null,
-        options.showName && babyName ? babyName : null,
-        options.showAge ? `生後${computed.ageDays}日` : null
-    ].filter(Boolean).join("  ");
+    const dateText = dateTextLine1;
 
     const hasDateText = dateText.length > 0;
 

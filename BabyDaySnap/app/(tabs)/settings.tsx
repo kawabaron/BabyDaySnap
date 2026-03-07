@@ -11,6 +11,7 @@ import {
     TextInput,
     ScrollView,
 } from "react-native";
+import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
@@ -24,17 +25,13 @@ import Constants from "expo-constants";
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const activeBaby = useActiveBaby();
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
 
     const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
-    const [showAddBaby, setShowAddBaby] = useState(false);
-    const [newBabyName, setNewBabyName] = useState("");
-    const [newBabyDate, setNewBabyDate] = useState(new Date());
-    const [newBabyColor, setNewBabyColor] = useState(THEME_COLOR_PRESETS[0].hex);
-    const [showNewDatePicker, setShowNewDatePicker] = useState(Platform.OS === "ios");
 
     const editingBaby = editingBabyId ? babies.find((b) => b.id === editingBabyId) : null;
 
@@ -109,26 +106,7 @@ export default function SettingsScreen() {
     };
 
     const handleAddBaby = () => {
-        const name = newBabyName.trim();
-        if (!name) {
-            Alert.alert("入力エラー", "お名前を入力してください。");
-            return;
-        }
-        const iso = formatDateISO(newBabyDate);
-        const baby: BabyProfile = {
-            id: Date.now().toString(36) + Math.random().toString(36).substring(2),
-            name,
-            birthDateISO: iso,
-            themeColorHex: newBabyColor,
-            createdAtMs: Date.now(),
-            order: babies.length,
-        };
-        dispatch({ type: "ADD_BABY", payload: baby });
-        setShowAddBaby(false);
-        setNewBabyName("");
-        setNewBabyDate(new Date());
-        setNewBabyColor(THEME_COLOR_PRESETS[0].hex);
-        Alert.alert("追加完了", `${name}を追加しました。`);
+        router.push("/onboarding?mode=add");
     };
 
     const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -137,15 +115,6 @@ export default function SettingsScreen() {
         }
         if (selectedDate) {
             setTempDate(selectedDate);
-        }
-    };
-
-    const onNewDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-        if (Platform.OS === "android") {
-            setShowNewDatePicker(false);
-        }
-        if (selectedDate) {
-            setNewBabyDate(selectedDate);
         }
     };
 
@@ -290,7 +259,7 @@ export default function SettingsScreen() {
                                                     onPress={() => handleDeleteBaby(baby)}
                                                 >
                                                     <Ionicons name="trash-outline" size={16} color="#FF4444" />
-                                                    <Text style={styles.deleteBabyText}>この赤ちゃんを削除</Text>
+                                                    <Text style={styles.deleteBabyText}>削除</Text>
                                                 </TouchableOpacity>
                                             )}
                                         </View>
@@ -303,85 +272,11 @@ export default function SettingsScreen() {
                         <View style={styles.divider} />
                         <TouchableOpacity
                             style={styles.addBabyRow}
-                            onPress={() => setShowAddBaby(!showAddBaby)}
+                            onPress={handleAddBaby}
                         >
                             <Ionicons name="add-circle-outline" size={20} color="#999" />
                             <Text style={styles.addBabyText}>赤ちゃんを追加</Text>
                         </TouchableOpacity>
-
-                        {showAddBaby && (
-                            <View style={styles.addBabyPanel}>
-                                <View style={styles.editRow}>
-                                    <Text style={styles.editLabel}>お名前</Text>
-                                    <TextInput
-                                        style={styles.editInput}
-                                        value={newBabyName}
-                                        onChangeText={setNewBabyName}
-                                        placeholder="お名前を入力"
-                                        placeholderTextColor="#CCC"
-                                        maxLength={20}
-                                        returnKeyType="done"
-                                    />
-                                </View>
-
-                                <View style={styles.editRow}>
-                                    <Text style={styles.editLabel}>誕生日</Text>
-                                    {Platform.OS === "android" && (
-                                        <TouchableOpacity
-                                            style={styles.editButton}
-                                            onPress={() => setShowNewDatePicker(true)}
-                                        >
-                                            <Text style={styles.editButtonText}>
-                                                {formatDateDisplay(formatDateISO(newBabyDate))}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                                {showNewDatePicker && (
-                                    <DateTimePicker
-                                        value={newBabyDate}
-                                        mode="date"
-                                        display={Platform.OS === "ios" ? "spinner" : "default"}
-                                        maximumDate={new Date()}
-                                        onChange={onNewDateChange}
-                                        locale="ja"
-                                        style={styles.datePicker}
-                                    />
-                                )}
-
-                                <View style={styles.editRow}>
-                                    <Text style={styles.editLabel}>テーマカラー</Text>
-                                </View>
-                                <View style={styles.colorPickerRow}>
-                                    {THEME_COLOR_PRESETS.map((preset) => (
-                                        <TouchableOpacity
-                                            key={preset.hex}
-                                            style={[
-                                                styles.colorOption,
-                                                { backgroundColor: preset.hex },
-                                                newBabyColor === preset.hex && {
-                                                    borderWidth: 3,
-                                                    borderColor: preset.accent,
-                                                    transform: [{ scale: 1.15 }],
-                                                },
-                                            ]}
-                                            onPress={() => setNewBabyColor(preset.hex)}
-                                        >
-                                            {newBabyColor === preset.hex && (
-                                                <Text style={styles.colorCheck}>✓</Text>
-                                            )}
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-
-                                <TouchableOpacity
-                                    style={[styles.addConfirmButton, { backgroundColor: getThemePreset(newBabyColor).accent }]}
-                                    onPress={handleAddBaby}
-                                >
-                                    <Text style={styles.addConfirmText}>追加する</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
                     </View>
                 </View>
 
@@ -725,17 +620,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#FAFAFA",
         borderTopWidth: 1,
         borderTopColor: "#F0F0F0",
-    },
-    addConfirmButton: {
-        paddingVertical: 12,
-        borderRadius: 10,
-        alignItems: "center",
-        marginTop: 12,
-    },
-    addConfirmText: {
-        color: "#FFF",
-        fontSize: 15,
-        fontWeight: "700",
     },
     // --- 既存スタイル ---
     settingRow: {
