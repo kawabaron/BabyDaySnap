@@ -73,9 +73,19 @@ export default function OnboardingBirthdateScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
+                {/* 戻るボタン (追加モード時のみ) */}
+                {isAddMode && (
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.backButtonText}>{"<"} 戻る</Text>
+                    </TouchableOpacity>
+                )}
+
                 {/* ヘッダー */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>{isAddMode ? "赤ちゃんを追加" : "BabyDaySnap"}</Text>
+                    <Text style={styles.title}>{isAddMode ? "追加" : "BabyDaySnap"}</Text>
                     <Text style={styles.subtitle}>
                         {isAddMode ? "新しい赤ちゃんの情報を入力してください" : "赤ちゃんの情報を設定して\n生後日数を記録しましょう"}
                     </Text>
@@ -88,7 +98,7 @@ export default function OnboardingBirthdateScreen() {
                         style={[styles.textInput, { borderColor: selectedPreset.accent }]}
                         value={babyName}
                         onChangeText={setBabyName}
-                        placeholder="例：はるくん"
+                        placeholder="例：いろはちゃん"
                         placeholderTextColor="#CCC"
                         maxLength={20}
                         returnKeyType="done"
@@ -115,7 +125,6 @@ export default function OnboardingBirthdateScreen() {
                             value={date}
                             mode="date"
                             display={Platform.OS === "ios" ? "spinner" : "default"}
-                            maximumDate={new Date()}
                             onChange={onDateChange}
                             locale="ja"
                             style={styles.picker}
@@ -171,6 +180,18 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         paddingHorizontal: 32,
         paddingVertical: 16,
+    },
+    backButton: {
+        position: "absolute",
+        top: 16,
+        left: 0,
+        padding: 8,
+        zIndex: 10,
+    },
+    backButtonText: {
+        fontSize: 16,
+        color: "#555",
+        fontWeight: "600",
     },
     header: {
         alignItems: "center",

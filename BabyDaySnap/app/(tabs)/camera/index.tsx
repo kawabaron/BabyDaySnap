@@ -155,7 +155,7 @@ export default function CameraScreen() {
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
                     <Ionicons name="add-circle" size={64} color={theme.accent} />
-                    <Text style={styles.title}>新しく作る</Text>
+                    <Text style={styles.title}>作る</Text>
                     {activeBaby && (
                         <TouchableOpacity
                             style={styles.babyBadge}
@@ -205,7 +205,7 @@ export default function CameraScreen() {
             >
                 <Pressable style={styles.modalOverlay} onPress={() => setShowBabyPicker(false)}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>赤ちゃんを切り替え</Text>
+                        <Text style={styles.modalTitle}>切り替え</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {babies.map((b) => {
                                 const bTheme = getThemePreset(b.themeColorHex);

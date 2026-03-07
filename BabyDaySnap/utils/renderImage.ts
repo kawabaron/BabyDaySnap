@@ -217,7 +217,7 @@ function drawText(
     const shortSide = Math.min(canvasW, canvasH);
     const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
-    const margin = shortSide * MARGIN_RATIO;
+    const margin = shortSide * (hasFrame ? 0.08 : 0.04);
     const gap = shortSide * 0.015;
 
     const dateText = dateTextLine1;
