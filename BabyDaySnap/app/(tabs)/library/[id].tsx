@@ -150,29 +150,6 @@ export default function LibraryDetailScreen() {
                         />
                     </View>
 
-                    {/* アクションボタン */}
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.reeditButton} onPress={() => handleReedit(item)}>
-                            <Ionicons name="color-wand-outline" size={20} color="#FFF" />
-                            <Text style={styles.saveButtonText}>再編集する</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.saveButton} onPress={() => handleSaveToPhotos(item)}>
-                            <Ionicons name="image-outline" size={20} color="#FF8FA3" />
-                            <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(item)}>
-                            <Ionicons name="share-outline" size={20} color="#FF8FA3" />
-                            <Text style={styles.shareButtonText}>共有</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
-                            <Ionicons name="trash-outline" size={20} color="#FF4444" />
-                            <Text style={styles.deleteButtonText}>削除</Text>
-                        </TouchableOpacity>
-                    </View>
-
                     {/* メタ情報 */}
                     <View style={styles.metaContainer}>
                         {/* 所属する赤ちゃん */}
@@ -232,6 +209,29 @@ export default function LibraryDetailScreen() {
                                 <Text style={styles.metaValue}>{item.commentText}</Text>
                             </View>
                         ) : null}
+                    </View>
+
+                    {/* アクションボタン */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.reeditButton} onPress={() => handleReedit(item)}>
+                            <Ionicons name="color-wand-outline" size={20} color="#FFF" />
+                            <Text style={styles.saveButtonText}>再編集する</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.saveButton} onPress={() => handleSaveToPhotos(item)}>
+                            <Ionicons name="image-outline" size={20} color="#FF8FA3" />
+                            <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(item)}>
+                            <Ionicons name="share-outline" size={20} color="#FF8FA3" />
+                            <Text style={styles.shareButtonText}>共有</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
+                            <Ionicons name="trash-outline" size={20} color="#FF4444" />
+                            <Text style={styles.deleteButtonText}>削除</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <View style={{ height: 40 }} />
