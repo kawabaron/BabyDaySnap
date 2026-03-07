@@ -374,12 +374,12 @@ export default function EditorScreen() {
 
     // フォーカスが外れた場合はメモリ節約のため軽量プレースホルダーを表示
     if (!editorIsFocused) {
-        return <View style={styles.container} />;
+        return <View style={[styles.container, { backgroundColor: theme.background }]} />;
     }
 
     if (!currentPhoto || !computed || !rnFontsLoaded) {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
                 <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.accent} />
                 <Text style={styles.errorText}>準備中...</Text>
             </View>
@@ -415,7 +415,7 @@ export default function EditorScreen() {
 
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
         >

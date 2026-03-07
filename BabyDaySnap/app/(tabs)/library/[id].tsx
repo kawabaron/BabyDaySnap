@@ -130,11 +130,14 @@ export default function LibraryDetailScreen() {
         const tpl = getTemplateConfig(item.templateId);
         const aspect = item.width / item.height;
         const imageHeight = IMAGE_WIDTH / aspect;
+        const itemTheme = item.babyIds && item.babyIds.length > 0
+            ? getThemePreset(babies.find((b) => b.id === item.babyIds[0])?.themeColorHex || "#FF8FA3")
+            : getThemePreset("#FF8FA3");
 
         return (
-            <View style={{ width: SCREEN_WIDTH }}>
+            <View style={{ width: SCREEN_WIDTH, backgroundColor: itemTheme.background }}>
                 <ScrollView
-                    style={styles.container}
+                    style={[styles.container, { backgroundColor: itemTheme.background }]}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
@@ -213,19 +216,19 @@ export default function LibraryDetailScreen() {
 
                     {/* アクションボタン */}
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.reeditButton} onPress={() => handleReedit(item)}>
+                        <TouchableOpacity style={[styles.reeditButton, { backgroundColor: itemTheme.accent, shadowColor: itemTheme.shadow }]} onPress={() => handleReedit(item)}>
                             <Ionicons name="color-wand-outline" size={20} color="#FFF" />
                             <Text style={styles.saveButtonText}>再編集する</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.saveButton} onPress={() => handleSaveToPhotos(item)}>
-                            <Ionicons name="image-outline" size={20} color="#FF8FA3" />
-                            <Text style={styles.saveButtonTextOutline}>iPhone写真に保存</Text>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: itemTheme.light }]} onPress={() => handleSaveToPhotos(item)}>
+                            <Ionicons name="image-outline" size={20} color={itemTheme.accent} />
+                            <Text style={[styles.saveButtonTextOutline, { color: itemTheme.accent }]}>iPhone写真に保存</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(item)}>
-                            <Ionicons name="share-outline" size={20} color="#FF8FA3" />
-                            <Text style={styles.shareButtonText}>共有</Text>
+                        <TouchableOpacity style={[styles.shareButton, { borderColor: itemTheme.accent }]} onPress={() => handleShare(item)}>
+                            <Ionicons name="share-outline" size={20} color={itemTheme.accent} />
+                            <Text style={[styles.shareButtonText, { color: itemTheme.accent }]}>共有</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>

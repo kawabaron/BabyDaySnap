@@ -150,7 +150,7 @@ export default function CameraScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.content}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
