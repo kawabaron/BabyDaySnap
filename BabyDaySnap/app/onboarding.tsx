@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { useAppDispatch } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
@@ -69,29 +69,35 @@ export default function OnboardingBirthdateScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: selectedPreset.background }]}>
+            <Stack.Screen
+                options={{
+                    headerShown: isAddMode,
+                    headerTitle: "追加",
+                    headerBackTitle: "戻る",
+                    headerTintColor: "#333",
+                    headerShadowVisible: true,
+                    headerStyle: { backgroundColor: selectedPreset.background },
+                }}
+            />
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* 戻るボタン (追加モード時のみ) */}
-                {isAddMode && (
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="#333" />
-                        <Text style={styles.backButtonText}>戻る</Text>
-                    </TouchableOpacity>
-                )}
-
                 {/* ヘッダー */}
-                <View style={styles.header}>
-                    <Text style={styles.title}>{isAddMode ? "追加" : "BabyDaySnap"}</Text>
-                    <Text style={styles.subtitle}>
-                        {isAddMode ? "新しい赤ちゃんの情報を入力してください" : "赤ちゃんの情報を設定して\n生後日数を記録しましょう"}
+                {!isAddMode && (
+                    <View style={styles.header}>
+                        <Text style={styles.title}>BabyDaySnap</Text>
+                        <Text style={styles.subtitle}>
+                            赤ちゃんの情報を設定して{"\n"}生後日数を記録しましょう
+                        </Text>
+                    </View>
+                )}
+                {isAddMode && (
+                    <Text style={[styles.subtitle, { textAlign: "center", marginBottom: 24 }]}>
+                        新しい赤ちゃんの情報を入力してください
                     </Text>
-                </View>
+                )}
 
                 {/* お名前入力 */}
                 <View style={styles.inputSection}>
@@ -182,20 +188,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         paddingHorizontal: 32,
         paddingVertical: 16,
-    },
-    backButton: {
-        position: "absolute",
-        top: 16,
-        left: 0,
-        zIndex: 10,
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 4,
-        marginLeft: -8,
-    },
-    backButtonText: {
-        fontSize: 17,
-        color: "#333",
     },
     header: {
         alignItems: "center",

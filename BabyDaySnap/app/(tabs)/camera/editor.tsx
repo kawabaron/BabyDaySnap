@@ -314,12 +314,24 @@ export default function EditorScreen() {
         let text = "";
         if (targetBabyIds.length <= 1) {
             const parts = [];
+
+            // 対象となる1人の赤ちゃんを特定
+            let targetBabyId = undefined;
+            if (targetBabyIds.length === 1) {
+                targetBabyId = targetBabyIds[0];
+            } else if (activeBabyForEditor) {
+                targetBabyId = activeBabyForEditor.id;
+            }
+
+            const b = babies.find(x => x.id === targetBabyId);
+            const targetAgeDays = b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
+
             // 「現在日付が誕生日よりも前の場合、写真に日付は印字しない」の対応 -> 日数はグレーアウトして出さない、日付は出す
-            const isBeforeBirth = computed.ageDays !== undefined && computed.ageDays < 0;
+            const isBeforeBirth = targetAgeDays !== undefined && targetAgeDays < 0;
 
             if (editorOptions.showDate) parts.push(computed.shotDateISO);
             if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
-            if (editorOptions.showAge && computed.ageDays !== undefined && !isBeforeBirth) parts.push(`生後${computed.ageDays}日`);
+            if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) parts.push(`生後${targetAgeDays}日`);
             text = parts.filter(Boolean).join("  ");
         } else {
             // 複数人選択時
