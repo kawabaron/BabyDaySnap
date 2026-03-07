@@ -314,22 +314,17 @@ export default function EditorScreen() {
         let text = "";
         if (targetBabyIds.length <= 1) {
             const parts = [];
-            // 「現在日付が誕生日よりも前の場合、写真に日付は印字しない」の対応
+            // 「現在日付が誕生日よりも前の場合、写真に日付は印字しない」の対応 -> 日数はグレーアウトして出さない、日付は出す
             const isBeforeBirth = computed.ageDays !== undefined && computed.ageDays < 0;
 
-            if (editorOptions.showDate && !isBeforeBirth) parts.push(computed.shotDateISO);
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
             if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
             if (editorOptions.showAge && computed.ageDays !== undefined && !isBeforeBirth) parts.push(`生後${computed.ageDays}日`);
             text = parts.filter(Boolean).join("  ");
         } else {
             // 複数人選択時
             const parts = [];
-            const allBeforeBirth = targetBabyIds.every(id => {
-                const b = babies.find(x => x.id === id);
-                return b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") < 0 : false;
-            });
-
-            if (editorOptions.showDate && !allBeforeBirth) parts.push(computed.shotDateISO);
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
 
             const babyParts = targetBabyIds.map(id => {
                 const b = babies.find(x => x.id === id);
@@ -355,6 +350,16 @@ export default function EditorScreen() {
         return text;
     }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
 
+    // 保存先が全員（または単独）誕生日前かどうか判定（日数のスイッチをdisabledにするため）
+    const allSelectedBeforeBirth = useMemo(() => {
+        if (!computed || targetBabyIds.length === 0) return false;
+        return targetBabyIds.every(id => {
+            const b = babies.find(x => x.id === id);
+            if (!b) return false;
+            return calcAgeDays(b.birthDateISO, computed.shotDateISO || "") < 0;
+        });
+    }, [targetBabyIds, babies, computed]);
+
     // フォーカスが外れた場合はメモリ節約のため軽量プレースホルダーを表示
     if (!editorIsFocused) {
         return <View style={styles.container} />;
@@ -379,8 +384,8 @@ export default function EditorScreen() {
     const isMultiBaby = targetBabyIds.length > 1;
     const dateFontSize = shortSide * 0.04 * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * 0.038;
-    // フチありの場合は右の余白を増やす (0.04 -> 0.08)
-    const margin = shortSide * (tpl.hasFrame ? 0.08 : 0.04);
+    // フチありの場合は右の余白を増やす。insetが0.06なので0.06にすると写真の右端と揃う
+    const margin = shortSide * (tpl.hasFrame ? 0.06 : 0.04);
     const gap = shortSide * 0.015;
     const inset = shortSide * 0.06;
     const bottomInset = shortSide * 0.18;
@@ -632,12 +637,13 @@ export default function EditorScreen() {
                         />
                     </View>
                     <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>日数</Text>
+                        <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>日数</Text>
                         <Switch
                             value={editorOptions.showAge}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
                             trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             style={styles.switchSmall}
+                            disabled={allSelectedBeforeBirth}
                         />
                     </View>
                 </View>

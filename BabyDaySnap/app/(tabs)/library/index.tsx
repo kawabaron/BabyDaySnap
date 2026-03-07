@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useMemo } from "react";
+import { useCallback, useState, useRef, useMemo, useEffect } from "react";
 import {
     View,
     Text,
@@ -33,6 +33,8 @@ export default function LibraryGridScreen() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+    const pagerRef = useRef<FlatList>(null);
+
     // テーマカラー取得
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
 
@@ -55,6 +57,15 @@ export default function LibraryGridScreen() {
         setIsSelectionMode(!isSelectionMode);
         setSelectedIds([]);
     };
+
+    // タブで赤ちゃんが直接変更された場合にページャーをスクロール
+    useEffect(() => {
+        if (!activeBabyId || babies.length === 0 || !pagerRef.current) return;
+        const index = babies.findIndex((b) => b.id === activeBabyId);
+        if (index >= 0) {
+            pagerRef.current.scrollToIndex({ index, animated: true });
+        }
+    }, [activeBabyId, babies]);
 
     const handlePress = useCallback(
         (item: AppLibraryItem) => {
@@ -95,7 +106,7 @@ export default function LibraryGridScreen() {
         );
     };
 
-    const renderItem = useCallback(
+    const renderGridItem = useCallback(
         ({ item }: { item: AppLibraryItem }) => {
             const isSelected = selectedIds.includes(item.id);
             return (
@@ -181,7 +192,7 @@ export default function LibraryGridScreen() {
                 )}
             </View>
 
-            {filteredLibrary.length === 0 ? (
+            {babies.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="images-outline" size={64} color="#DDD" />
                     <Text style={styles.emptyTitle}>まだ写真がありません</Text>
@@ -192,17 +203,55 @@ export default function LibraryGridScreen() {
             ) : (
                 <View style={styles.listContainer}>
                     <FlatList
-                        data={filteredLibrary}
-                        keyExtractor={(item) => item.id}
-                        numColumns={NUM_COLUMNS}
-                        renderItem={renderItem}
-                        contentContainerStyle={styles.gridContainer}
-                        columnWrapperStyle={styles.columnWrapper}
-                        showsVerticalScrollIndicator={false}
-                        windowSize={5}
-                        removeClippedSubviews={true}
-                        maxToRenderPerBatch={9}
-                        initialNumToRender={12}
+                        ref={pagerRef}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        data={babies}
+                        keyExtractor={(b) => b.id}
+                        getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+                        onMomentumScrollEnd={(e) => {
+                            const x = e.nativeEvent.contentOffset.x;
+                            const idx = Math.round(x / SCREEN_WIDTH);
+                            if (babies[idx] && babies[idx].id !== activeBabyId) {
+                                dispatch({ type: "SET_ACTIVE_BABY", payload: babies[idx].id });
+                                setIsSelectionMode(false);
+                                setSelectedIds([]);
+                            }
+                        }}
+                        renderItem={({ item: baby }) => {
+                            const babyLibrary = library.filter(i => i.babyIds.includes(baby.id));
+
+                            if (babyLibrary.length === 0) {
+                                return (
+                                    <View style={[{ width: SCREEN_WIDTH }, styles.emptyContainer]}>
+                                        <Ionicons name="images-outline" size={64} color="#DDD" />
+                                        <Text style={styles.emptyTitle}>まだ写真がありません</Text>
+                                        <Text style={styles.emptySubtitle}>
+                                            カメラで撮影して{"\n"}最初の1枚を保存しましょう
+                                        </Text>
+                                    </View>
+                                );
+                            }
+
+                            return (
+                                <View style={{ width: SCREEN_WIDTH }}>
+                                    <FlatList
+                                        data={babyLibrary}
+                                        keyExtractor={(item) => item.id}
+                                        numColumns={NUM_COLUMNS}
+                                        renderItem={renderGridItem}
+                                        contentContainerStyle={styles.gridContainer}
+                                        columnWrapperStyle={styles.columnWrapper}
+                                        showsVerticalScrollIndicator={false}
+                                        windowSize={5}
+                                        removeClippedSubviews={true}
+                                        maxToRenderPerBatch={9}
+                                        initialNumToRender={12}
+                                    />
+                                </View>
+                            );
+                        }}
                     />
 
                     {isSelectionMode && (

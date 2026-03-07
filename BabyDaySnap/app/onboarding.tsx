@@ -14,6 +14,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAppDispatch } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
+import { Ionicons } from "@expo/vector-icons";
 import type { BabyProfile } from "@/types";
 
 export default function OnboardingBirthdateScreen() {
@@ -79,7 +80,8 @@ export default function OnboardingBirthdateScreen() {
                         style={styles.backButton}
                         onPress={() => router.back()}
                     >
-                        <Text style={styles.backButtonText}>{"<"} 戻る</Text>
+                        <Ionicons name="chevron-back" size={28} color="#333" />
+                        <Text style={styles.backButtonText}>戻る</Text>
                     </TouchableOpacity>
                 )}
 
@@ -185,13 +187,15 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 16,
         left: 0,
-        padding: 8,
         zIndex: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 4,
+        marginLeft: -8,
     },
     backButtonText: {
-        fontSize: 16,
-        color: "#555",
-        fontWeight: "600",
+        fontSize: 17,
+        color: "#333",
     },
     header: {
         alignItems: "center",
