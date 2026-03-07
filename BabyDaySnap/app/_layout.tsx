@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, useGlobalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AppProvider, useAppState } from "@/context/AppContext";
 import { View, ActivityIndicator } from "react-native";
@@ -11,6 +11,7 @@ function RootLayoutNav() {
   const { settings, loading } = useAppState();
   const router = useRouter();
   const segments = useSegments();
+  const searchParams = useGlobalSearchParams();
 
   const [fontsLoaded] = useFonts({
     font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
@@ -24,13 +25,15 @@ function RootLayoutNav() {
 
     const inOnboarding = segments[0] === "onboarding";
     const needsOnboarding = !settings.hasOnboarded || !settings.birthDateISO;
+    const isAddMode = searchParams.mode === "add";
 
     if (needsOnboarding && !inOnboarding) {
       router.replace("/onboarding");
-    } else if (!needsOnboarding && inOnboarding) {
+    } else if (!needsOnboarding && inOnboarding && !isAddMode) {
+      // 初期登録完了済みで、単なる /onboarding アクセス（追加モードではない）の場合のみカメラへリダイレクト
       router.replace("/(tabs)/camera");
     }
-  }, [loading, fontsLoaded, settings.hasOnboarded, settings.birthDateISO, segments]);
+  }, [loading, fontsLoaded, settings.hasOnboarded, settings.birthDateISO, segments, searchParams.mode]);
 
   if (loading || !fontsLoaded) {
     return (
