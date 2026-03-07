@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef, useMemo } from "react";
 import {
     View,
     Text,
@@ -8,12 +8,15 @@ import {
     StyleSheet,
     Dimensions,
     Alert,
+    ScrollView,
+    Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useAppState, useAppDispatch } from "@/context/AppContext";
+import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteFromAppLibrary } from "@/utils/saveImage";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { AppLibraryItem } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -22,12 +25,31 @@ const GRID_GAP = 2;
 const ITEM_SIZE = (SCREEN_WIDTH - GRID_GAP * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
 export default function LibraryGridScreen() {
-    const { library } = useAppState();
+    const { library, babies, activeBabyId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const activeBaby = useActiveBaby();
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+    // テーマカラー取得
+    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+
+    // アクティブな赤ちゃんのライブラリのみ表示
+    const filteredLibrary = useMemo(() => {
+        if (!activeBabyId) return library;
+        return library.filter((item) => item.babyIds.includes(activeBabyId));
+    }, [library, activeBabyId]);
+
+    // スワイプで赤ちゃん切り替え
+    const handleBabySwitch = (babyId: string) => {
+        if (babyId !== activeBabyId) {
+            dispatch({ type: "SET_ACTIVE_BABY", payload: babyId });
+            setIsSelectionMode(false);
+            setSelectedIds([]);
+        }
+    };
 
     const toggleSelectionMode = () => {
         setIsSelectionMode(!isSelectionMode);
@@ -91,38 +113,75 @@ export default function LibraryGridScreen() {
                         <Text style={styles.dateOverlayText}>{item.shotDateISO}</Text>
                     </View>
                     {isSelectionMode && (
-                        <View style={[styles.selectionOverlay, isSelected && styles.selectionOverlayActive]}>
+                        <View style={[styles.selectionOverlay, isSelected && [styles.selectionOverlayActive, { borderColor: theme.accent }]]}>
                             <Ionicons
                                 name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                                 size={24}
-                                color={isSelected ? "#FF8FA3" : "rgba(255,255,255,0.8)"}
+                                color={isSelected ? theme.accent : "rgba(255,255,255,0.8)"}
                             />
                         </View>
                     )}
                 </TouchableOpacity>
             );
         },
-        [handlePress, isSelectionMode, selectedIds],
+        [handlePress, isSelectionMode, selectedIds, theme],
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top"]}>
+            {/* 赤ちゃん切り替えタブ（2人以上の場合のみ） */}
+            {babies.length > 1 && (
+                <View style={styles.babyTabContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.babyTabContent}
+                    >
+                        {babies.map((baby) => {
+                            const isActive = baby.id === activeBabyId;
+                            const babyTheme = getThemePreset(baby.themeColorHex);
+                            return (
+                                <TouchableOpacity
+                                    key={baby.id}
+                                    style={[
+                                        styles.babyTab,
+                                        isActive && { backgroundColor: babyTheme.accent },
+                                    ]}
+                                    onPress={() => handleBabySwitch(baby.id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[styles.babyDot, { backgroundColor: isActive ? "#FFF" : babyTheme.accent }]} />
+                                    <Text style={[
+                                        styles.babyTabText,
+                                        isActive && { color: "#FFF", fontWeight: "700" },
+                                    ]}>
+                                        {baby.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                </View>
+            )}
+
             {/* ヘッダー */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.headerTitle}>ライブラリ</Text>
-                    <Text style={styles.headerCount}>{library.length}枚</Text>
+                    <Text style={styles.headerTitle}>
+                        {activeBaby ? activeBaby.name : "ライブラリ"}
+                    </Text>
+                    <Text style={[styles.headerCount, { color: theme.accent }]}>{filteredLibrary.length}枚</Text>
                 </View>
-                {library.length > 0 && (
-                    <TouchableOpacity onPress={toggleSelectionMode} style={styles.headerButton}>
-                        <Text style={styles.headerButtonText}>
+                {filteredLibrary.length > 0 && (
+                    <TouchableOpacity onPress={toggleSelectionMode} style={[styles.headerButton, { backgroundColor: theme.light }]}>
+                        <Text style={[styles.headerButtonText, { color: theme.accent }]}>
                             {isSelectionMode ? "キャンセル" : "選択"}
                         </Text>
                     </TouchableOpacity>
                 )}
             </View>
 
-            {library.length === 0 ? (
+            {filteredLibrary.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="images-outline" size={64} color="#DDD" />
                     <Text style={styles.emptyTitle}>まだ写真がありません</Text>
@@ -133,7 +192,7 @@ export default function LibraryGridScreen() {
             ) : (
                 <View style={styles.listContainer}>
                     <FlatList
-                        data={library}
+                        data={filteredLibrary}
                         keyExtractor={(item) => item.id}
                         numColumns={NUM_COLUMNS}
                         renderItem={renderItem}
@@ -169,14 +228,40 @@ export default function LibraryGridScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFF",
+    },
+    babyTabContainer: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    babyTabContent: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    babyTab: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: "#F0F0F0",
+        gap: 6,
+    },
+    babyDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    babyTabText: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: "#666",
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 8,
     },
     headerTitle: {
         fontSize: 28,
@@ -185,7 +270,6 @@ const styles = StyleSheet.create({
     },
     headerCount: {
         fontSize: 15,
-        color: "#888",
         fontWeight: "500",
     },
     gridContainer: {
@@ -245,13 +329,11 @@ const styles = StyleSheet.create({
     headerButton: {
         paddingVertical: 6,
         paddingHorizontal: 12,
-        backgroundColor: "#F0F0F0",
         borderRadius: 16,
     },
     headerButtonText: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#333",
     },
     selectionOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -263,7 +345,6 @@ const styles = StyleSheet.create({
     selectionOverlayActive: {
         backgroundColor: "rgba(255,143,163,0.2)",
         borderWidth: 2,
-        borderColor: "#FF8FA3",
     },
     bottomBar: {
         flexDirection: "row",

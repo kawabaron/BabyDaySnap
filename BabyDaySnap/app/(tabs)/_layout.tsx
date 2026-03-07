@@ -1,12 +1,17 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useActiveBaby } from "@/context/AppContext";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 
 export default function TabsLayout() {
+  const activeBaby = useActiveBaby();
+  const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#FF8FA3",
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: "#BDBDBD",
         tabBarStyle: {
           backgroundColor: "#FFFFFF",

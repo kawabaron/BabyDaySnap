@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -15,13 +15,15 @@ import {
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { useAppState, useAppDispatch } from "@/context/AppContext";
+import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
+import { calcAgeDays } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -31,10 +33,28 @@ export default function EditorScreen() {
     const state = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const activeBaby = useActiveBaby();
 
-    const { currentPhoto, computed, editorOptions, settings, renderedUri, editingLibraryId } = state;
+    const { currentPhoto, computed, editorOptions, settings, renderedUri, editingLibraryId, babies, targetBabyIds, activeBabyId } = state;
     const [saving, setSaving] = useState(false);
     const navigation = useNavigation();
+
+    // テーマカラー: 複数選択時はニュートラル、1人選択時はそのカラー
+    const theme = useMemo(() => {
+        if (targetBabyIds.length === 1) {
+            const baby = babies.find((b) => b.id === targetBabyIds[0]);
+            return baby ? getThemePreset(baby.themeColorHex) : NEUTRAL_THEME;
+        }
+        return NEUTRAL_THEME;
+    }, [targetBabyIds, babies]);
+
+    // 保存先で選択されている赤ちゃんの名前（表示用）
+    const activeBabyForEditor = useMemo(() => {
+        if (targetBabyIds.length === 1) {
+            return babies.find((b) => b.id === targetBabyIds[0]) ?? null;
+        }
+        return null;
+    }, [targetBabyIds, babies]);
 
     // 戻るボタンのカスタマイズ (再編集時はライブラリ詳細へ戻る)
     useEffect(() => {
@@ -117,6 +137,9 @@ export default function EditorScreen() {
             await logFileSize("リサイズ後ファイル", renderUri);
         }
 
+        // 保存先の最初の赤ちゃんの名前を使用
+        const babyNameForRender = activeBabyForEditor?.name || settings.babyName;
+
         try {
             const result = await renderCompositeImage({
                 imageUri: renderUri,
@@ -125,7 +148,7 @@ export default function EditorScreen() {
                 editorOptions,
                 computed,
                 fontId: editorOptions.fontId,
-                babyName: settings.babyName,
+                babyName: babyNameForRender,
             });
 
             await logFileSize("Skia出力ファイル", result);
@@ -177,9 +200,25 @@ export default function EditorScreen() {
         });
     };
 
+    // 保存先の赤ちゃんをトグル
+    const toggleTargetBaby = (babyId: string) => {
+        const current = targetBabyIds;
+        if (current.includes(babyId)) {
+            // 最低1人は選択必須
+            if (current.length <= 1) return;
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: current.filter((id) => id !== babyId) });
+        } else {
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: [...current, babyId] });
+        }
+    };
+
     // アプリ内保存
     const handleSaveToApp = async () => {
         if (!currentPhoto || !computed) return;
+        if (targetBabyIds.length === 0) {
+            Alert.alert("保存先を選択", "少なくとも1人の赤ちゃんを保存先に選択してください。");
+            return;
+        }
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
@@ -196,6 +235,7 @@ export default function EditorScreen() {
                 editorOptions,
                 imageW,
                 imageH,
+                targetBabyIds,
                 editingLibraryId,
             );
 
@@ -275,7 +315,7 @@ export default function EditorScreen() {
     if (!currentPhoto || !computed || !rnFontsLoaded) {
         return (
             <View style={styles.container}>
-                <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#FF8FA3" />
+                <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.accent} />
                 <Text style={styles.errorText}>準備中...</Text>
             </View>
         );
@@ -305,6 +345,9 @@ export default function EditorScreen() {
 
     const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
+
+    // 表示用の赤ちゃん名
+    const displayBabyName = activeBabyForEditor?.name || settings.babyName;
 
     return (
         <ScrollView
@@ -354,7 +397,7 @@ export default function EditorScreen() {
                         }}>
                             {[
                                 editorOptions.showDate ? computed.shotDateISO : null,
-                                editorOptions.showName && settings.babyName ? settings.babyName : null,
+                                editorOptions.showName && displayBabyName ? displayBabyName : null,
                                 editorOptions.showAge ? `生後${computed.ageDays}日` : null
                             ].filter(Boolean).join("  ")}
                         </Text>
@@ -378,11 +421,56 @@ export default function EditorScreen() {
                 {/* Loading overlay for final save */}
                 {saving && (
                     <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
-                        <ActivityIndicator size="large" color="#FF8FA3" />
+                        <ActivityIndicator size="large" color={theme.accent} />
                         <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>保存中...</Text>
                     </View>
                 )}
             </View>
+
+            {/* 保存先（赤ちゃん選択） */}
+            {babies.length > 0 && (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>保存先</Text>
+                    <View style={styles.targetRow}>
+                        {babies.map((baby) => {
+                            const isSelected = targetBabyIds.includes(baby.id);
+                            const babyTheme = getThemePreset(baby.themeColorHex);
+                            return (
+                                <TouchableOpacity
+                                    key={baby.id}
+                                    style={[
+                                        styles.targetChip,
+                                        isSelected
+                                            ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
+                                            : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
+                                    ]}
+                                    onPress={() => toggleTargetBaby(baby.id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[
+                                        styles.targetDot,
+                                        { backgroundColor: isSelected ? "#FFF" : babyTheme.accent },
+                                    ]} />
+                                    <Text style={[
+                                        styles.targetText,
+                                        { color: isSelected ? "#FFF" : "#555" },
+                                    ]}>
+                                        {baby.name}
+                                    </Text>
+                                    {isSelected && (
+                                        <Ionicons name="checkmark" size={16} color="#FFF" />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                    {targetBabyIds.length > 1 && (
+                        <Text style={styles.targetHint}>
+                            全員のライブラリに保存されます
+                        </Text>
+                    )}
+                </View>
+            )}
 
             {/* テンプレート選択 */}
             <View style={styles.section}>
@@ -393,7 +481,7 @@ export default function EditorScreen() {
                             key={t.id}
                             style={[
                                 styles.templateOption,
-                                editorOptions.templateId === t.id && styles.templateOptionActive,
+                                editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                             ]}
                             onPress={() => handleTemplateChange(t.id)}
                         >
@@ -409,7 +497,7 @@ export default function EditorScreen() {
                             <Text
                                 style={[
                                     styles.templateLabel,
-                                    editorOptions.templateId === t.id && styles.templateLabelActive,
+                                    editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }],
                                 ]}
                             >
                                 {t.label}
@@ -428,7 +516,7 @@ export default function EditorScreen() {
                             key={f.id}
                             style={[
                                 styles.fontBadge,
-                                editorOptions.fontId === f.id && styles.fontBadgeActive,
+                                editorOptions.fontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                             ]}
                             onPress={() => handleFontChange(f.id)}
                         >
@@ -436,7 +524,7 @@ export default function EditorScreen() {
                                 style={[
                                     styles.fontBadgeText,
                                     { fontFamily: f.id },
-                                    editorOptions.fontId === f.id && styles.fontBadgeTextActive,
+                                    editorOptions.fontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }],
                                 ]}
                             >
                                 {f.label}
@@ -461,7 +549,7 @@ export default function EditorScreen() {
                                 styles.colorCircle,
                                 { backgroundColor: c.hex },
                                 c.hex === "#FFFFFF" && styles.colorCircleWhite,
-                                editorOptions.dateColorHex === c.hex && styles.colorCircleSelected,
+                                editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
                             ]}
                             onPress={() => handleColorChange(c.hex)}
                         >
@@ -486,7 +574,7 @@ export default function EditorScreen() {
                         <Switch
                             value={editorOptions.showDate}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             style={styles.switchSmall}
                         />
                     </View>
@@ -495,9 +583,9 @@ export default function EditorScreen() {
                         <Switch
                             value={editorOptions.showName}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             style={styles.switchSmall}
-                            disabled={!settings.babyName}
+                            disabled={!displayBabyName}
                         />
                     </View>
                     <View style={styles.toggleItem}>
@@ -505,7 +593,7 @@ export default function EditorScreen() {
                         <Switch
                             value={editorOptions.showAge}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
-                            trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             style={styles.switchSmall}
                         />
                     </View>
@@ -530,7 +618,7 @@ export default function EditorScreen() {
             {/* 保存ボタン */}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                    style={styles.saveButton}
+                    style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
                     onPress={handleSaveToApp}
                     disabled={saving}
                 >
@@ -545,12 +633,12 @@ export default function EditorScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles.photoButton}
+                    style={[styles.photoButton, { borderColor: theme.accent }]}
                     onPress={handleSaveToPhotos}
                     disabled={saving}
                 >
-                    <Ionicons name="image-outline" size={20} color="#FF8FA3" />
-                    <Text style={styles.photoButtonText}>iPhone写真に保存</Text>
+                    <Ionicons name="image-outline" size={20} color={theme.accent} />
+                    <Text style={[styles.photoButtonText, { color: theme.accent }]}>iPhone写真に保存</Text>
                 </TouchableOpacity>
             </View>
 
@@ -576,31 +664,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    previewImage: {
-        width: "100%",
-        height: "100%",
-    },
-    infoRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 12,
-        gap: 12,
-    },
-    infoBadge: {
-        backgroundColor: "#FF8FA3",
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 20,
-    },
-    infoBadgeText: {
-        color: "#FFF",
-        fontSize: 14,
-        fontWeight: "700",
-    },
-    infoDate: {
-        fontSize: 14,
-        color: "#888",
-    },
     section: {
         marginTop: 20,
     },
@@ -610,6 +673,37 @@ const styles = StyleSheet.create({
         color: "#333",
         marginBottom: 10,
     },
+    // --- 保存先チップ ---
+    targetRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    targetChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        gap: 6,
+    },
+    targetDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    targetText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    targetHint: {
+        fontSize: 12,
+        color: "#999",
+        marginTop: 6,
+        paddingLeft: 4,
+    },
+    // --- テンプレート ---
     templateRow: {
         flexDirection: "row",
         gap: 12,
@@ -665,6 +759,7 @@ const styles = StyleSheet.create({
         color: "#FF8FA3",
         fontWeight: "700",
     },
+    // --- フォント ---
     fontRow: {
         flexDirection: "row",
         flexWrap: "wrap",
@@ -690,6 +785,7 @@ const styles = StyleSheet.create({
     fontBadgeTextActive: {
         color: "#FF8FA3",
     },
+    // --- 日付色 ---
     colorRow: {
         flexDirection: "row",
         gap: 10,
@@ -710,6 +806,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "#FF8FA3",
     },
+    // --- コメント ---
     commentInput: {
         borderWidth: 1,
         borderColor: "#E0E0E0",
@@ -720,6 +817,7 @@ const styles = StyleSheet.create({
         color: "#333",
         backgroundColor: "#FAFAFA",
     },
+    // --- トグル ---
     toggleRowContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
@@ -744,19 +842,18 @@ const styles = StyleSheet.create({
     switchSmall: {
         transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }],
     },
+    // --- ボタン ---
     buttonContainer: {
         marginTop: 24,
         gap: 12,
     },
     saveButton: {
-        backgroundColor: "#FF8FA3",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         paddingVertical: 16,
         borderRadius: 14,
         gap: 8,
-        shadowColor: "#FF8FA3",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -774,11 +871,9 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderRadius: 14,
         borderWidth: 2,
-        borderColor: "#FF8FA3",
         gap: 8,
     },
     photoButtonText: {
-        color: "#FF8FA3",
         fontSize: 16,
         fontWeight: "700",
     },

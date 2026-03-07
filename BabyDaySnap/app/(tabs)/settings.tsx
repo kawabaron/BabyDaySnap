@@ -12,23 +12,124 @@ import {
     ScrollView,
 } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { useAppState, useAppDispatch } from "@/context/AppContext";
+import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
-import type { TemplateId, FontId } from "@/types";
+import { THEME_COLOR_PRESETS, getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
+import type { TemplateId, FontId, BabyProfile } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 
 export default function SettingsScreen() {
-    const { settings } = useAppState();
+    const { settings, babies, library } = useAppState();
     const dispatch = useAppDispatch();
+    const activeBaby = useActiveBaby();
+    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+
+    const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [tempDate, setTempDate] = useState(
-        settings.birthDateISO
-            ? new Date(settings.birthDateISO + "T00:00:00")
-            : new Date(),
-    );
+    const [tempDate, setTempDate] = useState(new Date());
+    const [showAddBaby, setShowAddBaby] = useState(false);
+    const [newBabyName, setNewBabyName] = useState("");
+    const [newBabyDate, setNewBabyDate] = useState(new Date());
+    const [newBabyColor, setNewBabyColor] = useState(THEME_COLOR_PRESETS[0].hex);
+    const [showNewDatePicker, setShowNewDatePicker] = useState(Platform.OS === "ios");
+
+    const editingBaby = editingBabyId ? babies.find((b) => b.id === editingBabyId) : null;
+
+    const handleEditBaby = (baby: BabyProfile) => {
+        setEditingBabyId(baby.id);
+        setTempDate(new Date(baby.birthDateISO.replace(/\//g, "-") + "T00:00:00"));
+        setShowDatePicker(false);
+    };
+
+    const handleSaveBabyName = (babyId: string, name: string) => {
+        const baby = babies.find((b) => b.id === babyId);
+        if (baby) {
+            dispatch({
+                type: "UPDATE_BABY",
+                payload: { ...baby, name: name.trim() || baby.name },
+            });
+        }
+    };
+
+    const handleSaveBabyDate = (babyId: string) => {
+        const baby = babies.find((b) => b.id === babyId);
+        if (baby) {
+            const iso = formatDateISO(tempDate);
+            dispatch({
+                type: "UPDATE_BABY",
+                payload: { ...baby, birthDateISO: iso },
+            });
+            // 後方互換: settings にも反映
+            if (babies.indexOf(baby) === 0) {
+                dispatch({ type: "SET_BIRTHDATE", payload: iso });
+            }
+            setShowDatePicker(false);
+            Alert.alert("保存完了", "誕生日を更新しました。");
+        }
+    };
+
+    const handleChangeBabyColor = (babyId: string, colorHex: string) => {
+        const baby = babies.find((b) => b.id === babyId);
+        if (baby) {
+            dispatch({
+                type: "UPDATE_BABY",
+                payload: { ...baby, themeColorHex: colorHex },
+            });
+        }
+    };
+
+    const handleDeleteBaby = (baby: BabyProfile) => {
+        if (babies.length <= 1) {
+            Alert.alert("削除できません", "赤ちゃんの情報は最低1人必要です。");
+            return;
+        }
+        const babyLibraryCount = library.filter((item) =>
+            item.babyIds.includes(baby.id)
+        ).length;
+        Alert.alert(
+            "削除確認",
+            `${baby.name}の情報を削除しますか？${babyLibraryCount > 0 ? `\n(ライブラリに${babyLibraryCount}枚の写真があります)` : ""}`,
+            [
+                { text: "キャンセル", style: "cancel" },
+                {
+                    text: "削除",
+                    style: "destructive",
+                    onPress: () => {
+                        dispatch({ type: "REMOVE_BABY", payload: baby.id });
+                        if (editingBabyId === baby.id) {
+                            setEditingBabyId(null);
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
+    const handleAddBaby = () => {
+        const name = newBabyName.trim();
+        if (!name) {
+            Alert.alert("入力エラー", "お名前を入力してください。");
+            return;
+        }
+        const iso = formatDateISO(newBabyDate);
+        const baby: BabyProfile = {
+            id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+            name,
+            birthDateISO: iso,
+            themeColorHex: newBabyColor,
+            createdAtMs: Date.now(),
+            order: babies.length,
+        };
+        dispatch({ type: "ADD_BABY", payload: baby });
+        setShowAddBaby(false);
+        setNewBabyName("");
+        setNewBabyDate(new Date());
+        setNewBabyColor(THEME_COLOR_PRESETS[0].hex);
+        Alert.alert("追加完了", `${name}を追加しました。`);
+    };
 
     const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
         if (Platform.OS === "android") {
@@ -39,11 +140,13 @@ export default function SettingsScreen() {
         }
     };
 
-    const handleSaveBirthDate = () => {
-        const iso = formatDateISO(tempDate);
-        dispatch({ type: "SET_BIRTHDATE", payload: iso });
-        setShowDatePicker(false);
-        Alert.alert("保存完了", "誕生日を更新しました。");
+    const onNewDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (Platform.OS === "android") {
+            setShowNewDatePicker(false);
+        }
+        if (selectedDate) {
+            setNewBabyDate(selectedDate);
+        }
     };
 
     const handleTemplateChange = (id: TemplateId) => {
@@ -76,71 +179,209 @@ export default function SettingsScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-                {/* 出生日セクション */}
+                {/* 家族の管理 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>赤ちゃんの情報</Text>
+                    <Text style={styles.sectionTitle}>家族の管理</Text>
                     <View style={styles.card}>
-                        <View style={styles.settingRow}>
-                            <View style={styles.settingLeft}>
-                                <Ionicons name="calendar-outline" size={22} color="#FF8FA3" />
-                                <View>
-                                    <Text style={styles.settingLabel}>誕生日</Text>
-                                    <Text style={styles.settingValue}>
-                                        {settings.birthDateISO
-                                            ? formatDateDisplay(settings.birthDateISO)
-                                            : "未設定"}
-                                    </Text>
+                        {babies.map((baby, index) => {
+                            const babyTheme = getThemePreset(baby.themeColorHex);
+                            const isEditing = editingBabyId === baby.id;
+                            return (
+                                <View key={baby.id}>
+                                    {index > 0 && <View style={styles.divider} />}
+                                    <TouchableOpacity
+                                        style={styles.babyRow}
+                                        onPress={() => isEditing ? setEditingBabyId(null) : handleEditBaby(baby)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.babyRowLeft}>
+                                            <View style={[styles.babyColorDot, { backgroundColor: babyTheme.accent }]} />
+                                            <View>
+                                                <Text style={styles.babyName}>{baby.name}</Text>
+                                                <Text style={styles.babyBirth}>
+                                                    {formatDateDisplay(baby.birthDateISO)}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <Ionicons
+                                            name={isEditing ? "chevron-up" : "chevron-down"}
+                                            size={18}
+                                            color="#CCC"
+                                        />
+                                    </TouchableOpacity>
+
+                                    {/* 編集パネル */}
+                                    {isEditing && (
+                                        <View style={styles.editPanel}>
+                                            {/* 名前 */}
+                                            <View style={styles.editRow}>
+                                                <Text style={styles.editLabel}>お名前</Text>
+                                                <TextInput
+                                                    style={styles.editInput}
+                                                    value={baby.name}
+                                                    onChangeText={(text) => handleSaveBabyName(baby.id, text)}
+                                                    maxLength={20}
+                                                    returnKeyType="done"
+                                                />
+                                            </View>
+
+                                            {/* 誕生日 */}
+                                            <View style={styles.editRow}>
+                                                <Text style={styles.editLabel}>誕生日</Text>
+                                                <TouchableOpacity
+                                                    style={styles.editButton}
+                                                    onPress={() => setShowDatePicker(!showDatePicker)}
+                                                >
+                                                    <Text style={[styles.editButtonText, { color: babyTheme.accent }]}>
+                                                        {showDatePicker ? "閉じる" : "変更"}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                            {showDatePicker && (
+                                                <View style={styles.datePickerContainer}>
+                                                    <DateTimePicker
+                                                        value={tempDate}
+                                                        mode="date"
+                                                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                                                        maximumDate={new Date()}
+                                                        onChange={onDateChange}
+                                                        locale="ja"
+                                                        style={styles.datePicker}
+                                                    />
+                                                    <TouchableOpacity
+                                                        style={[styles.saveDateButton, { backgroundColor: babyTheme.accent }]}
+                                                        onPress={() => handleSaveBabyDate(baby.id)}
+                                                    >
+                                                        <Text style={styles.saveDateButtonText}>保存する</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
+
+                                            {/* テーマカラー */}
+                                            <View style={styles.editRow}>
+                                                <Text style={styles.editLabel}>テーマカラー</Text>
+                                            </View>
+                                            <View style={styles.colorPickerRow}>
+                                                {THEME_COLOR_PRESETS.map((preset) => (
+                                                    <TouchableOpacity
+                                                        key={preset.hex}
+                                                        style={[
+                                                            styles.colorOption,
+                                                            { backgroundColor: preset.hex },
+                                                            baby.themeColorHex === preset.hex && {
+                                                                borderWidth: 3,
+                                                                borderColor: preset.accent,
+                                                                transform: [{ scale: 1.15 }],
+                                                            },
+                                                        ]}
+                                                        onPress={() => handleChangeBabyColor(baby.id, preset.hex)}
+                                                    >
+                                                        {baby.themeColorHex === preset.hex && (
+                                                            <Text style={styles.colorCheck}>✓</Text>
+                                                        )}
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+
+                                            {/* 削除 */}
+                                            {babies.length > 1 && (
+                                                <TouchableOpacity
+                                                    style={styles.deleteBabyButton}
+                                                    onPress={() => handleDeleteBaby(baby)}
+                                                >
+                                                    <Ionicons name="trash-outline" size={16} color="#FF4444" />
+                                                    <Text style={styles.deleteBabyText}>この赤ちゃんを削除</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.editButton}
-                                onPress={() => setShowDatePicker(!showDatePicker)}
-                            >
-                                <Text style={styles.editButtonText}>
-                                    {showDatePicker ? "閉じる" : "変更"}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                            );
+                        })}
 
-                        {showDatePicker && (
-                            <View style={styles.datePickerContainer}>
-                                <DateTimePicker
-                                    value={tempDate}
-                                    mode="date"
-                                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                                    maximumDate={new Date()}
-                                    onChange={onDateChange}
-                                    locale="ja"
-                                    style={styles.datePicker}
-                                />
-                                <TouchableOpacity
-                                    style={styles.saveDateButton}
-                                    onPress={handleSaveBirthDate}
-                                >
-                                    <Text style={styles.saveDateButtonText}>保存する</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-
+                        {/* 赤ちゃんを追加 */}
                         <View style={styles.divider} />
+                        <TouchableOpacity
+                            style={styles.addBabyRow}
+                            onPress={() => setShowAddBaby(!showAddBaby)}
+                        >
+                            <Ionicons name="add-circle-outline" size={20} color="#999" />
+                            <Text style={styles.addBabyText}>赤ちゃんを追加</Text>
+                        </TouchableOpacity>
 
-                        <View style={styles.settingRow}>
-                            <View style={styles.settingLeft}>
-                                <Ionicons name="person-outline" size={22} color="#FF8FA3" />
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.settingLabel}>お名前</Text>
+                        {showAddBaby && (
+                            <View style={styles.addBabyPanel}>
+                                <View style={styles.editRow}>
+                                    <Text style={styles.editLabel}>お名前</Text>
                                     <TextInput
-                                        style={styles.nameInput}
-                                        value={settings.babyName}
-                                        onChangeText={(text) => dispatch({ type: "SET_BABY_NAME", payload: text })}
-                                        placeholder="未設定"
+                                        style={styles.editInput}
+                                        value={newBabyName}
+                                        onChangeText={setNewBabyName}
+                                        placeholder="お名前を入力"
                                         placeholderTextColor="#CCC"
                                         maxLength={20}
                                         returnKeyType="done"
                                     />
                                 </View>
+
+                                <View style={styles.editRow}>
+                                    <Text style={styles.editLabel}>誕生日</Text>
+                                    {Platform.OS === "android" && (
+                                        <TouchableOpacity
+                                            style={styles.editButton}
+                                            onPress={() => setShowNewDatePicker(true)}
+                                        >
+                                            <Text style={styles.editButtonText}>
+                                                {formatDateDisplay(formatDateISO(newBabyDate))}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                                {showNewDatePicker && (
+                                    <DateTimePicker
+                                        value={newBabyDate}
+                                        mode="date"
+                                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                                        maximumDate={new Date()}
+                                        onChange={onNewDateChange}
+                                        locale="ja"
+                                        style={styles.datePicker}
+                                    />
+                                )}
+
+                                <View style={styles.editRow}>
+                                    <Text style={styles.editLabel}>テーマカラー</Text>
+                                </View>
+                                <View style={styles.colorPickerRow}>
+                                    {THEME_COLOR_PRESETS.map((preset) => (
+                                        <TouchableOpacity
+                                            key={preset.hex}
+                                            style={[
+                                                styles.colorOption,
+                                                { backgroundColor: preset.hex },
+                                                newBabyColor === preset.hex && {
+                                                    borderWidth: 3,
+                                                    borderColor: preset.accent,
+                                                    transform: [{ scale: 1.15 }],
+                                                },
+                                            ]}
+                                            onPress={() => setNewBabyColor(preset.hex)}
+                                        >
+                                            {newBabyColor === preset.hex && (
+                                                <Text style={styles.colorCheck}>✓</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.addConfirmButton, { backgroundColor: getThemePreset(newBabyColor).accent }]}
+                                    onPress={handleAddBaby}
+                                >
+                                    <Text style={styles.addConfirmText}>追加する</Text>
+                                </TouchableOpacity>
                             </View>
-                        </View>
+                        )}
                     </View>
                 </View>
 
@@ -164,7 +405,7 @@ export default function SettingsScreen() {
                                         }
                                     })
                                 }
-                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                                trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             />
                         </View>
 
@@ -186,7 +427,7 @@ export default function SettingsScreen() {
                                         }
                                     })
                                 }
-                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                                trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             />
                         </View>
 
@@ -208,7 +449,7 @@ export default function SettingsScreen() {
                                         }
                                     })
                                 }
-                                trackColor={{ false: "#E0E0E0", true: "#FF8FA3" }}
+                                trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             />
                         </View>
                     </View>
@@ -225,7 +466,7 @@ export default function SettingsScreen() {
                                 key={t.id}
                                 style={[
                                     styles.templateOption,
-                                    settings.defaultTemplateId === t.id && styles.templateOptionActive,
+                                    settings.defaultTemplateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                                 ]}
                                 onPress={() => handleTemplateChange(t.id)}
                                 activeOpacity={0.7}
@@ -241,7 +482,7 @@ export default function SettingsScreen() {
                                 <Text
                                     style={[
                                         styles.templateLabel,
-                                        settings.defaultTemplateId === t.id && styles.templateLabelActive,
+                                        settings.defaultTemplateId === t.id && [styles.templateLabelActive, { color: theme.accent }],
                                     ]}
                                 >
                                     {t.label}
@@ -257,7 +498,7 @@ export default function SettingsScreen() {
                                 key={f.id}
                                 style={[
                                     styles.fontBadge,
-                                    settings.defaultFontId === f.id && styles.fontBadgeActive,
+                                    settings.defaultFontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                                 ]}
                                 onPress={() => handleFontChange(f.id)}
                                 activeOpacity={0.7}
@@ -266,7 +507,7 @@ export default function SettingsScreen() {
                                     style={[
                                         styles.fontBadgeText,
                                         { fontFamily: f.id },
-                                        settings.defaultFontId === f.id && styles.fontBadgeTextActive,
+                                        settings.defaultFontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }],
                                     ]}
                                 >
                                     {f.label}
@@ -365,6 +606,138 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 1,
     },
+    // --- 赤ちゃん管理 ---
+    babyRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 16,
+    },
+    babyRowLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    babyColorDot: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    babyName: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
+    },
+    babyBirth: {
+        fontSize: 13,
+        color: "#888",
+        marginTop: 2,
+    },
+    editPanel: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        backgroundColor: "#FAFAFA",
+        borderTopWidth: 1,
+        borderTopColor: "#F0F0F0",
+    },
+    editRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 10,
+    },
+    editLabel: {
+        fontSize: 14,
+        color: "#666",
+        fontWeight: "500",
+    },
+    editInput: {
+        fontSize: 16,
+        color: "#333",
+        fontWeight: "600",
+        textAlign: "right",
+        flex: 1,
+        marginLeft: 16,
+        padding: 0,
+    },
+    editButton: {
+        backgroundColor: "#FFF",
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#E0E0E0",
+    },
+    editButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    colorPickerRow: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 12,
+        paddingVertical: 8,
+    },
+    colorOption: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    colorCheck: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "800",
+        textShadowColor: "rgba(0,0,0,0.3)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+    },
+    deleteBabyButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        paddingVertical: 10,
+        marginTop: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#FFD0D0",
+    },
+    deleteBabyText: {
+        color: "#FF4444",
+        fontSize: 14,
+        fontWeight: "500",
+    },
+    addBabyRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        padding: 16,
+    },
+    addBabyText: {
+        fontSize: 15,
+        color: "#999",
+    },
+    addBabyPanel: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        backgroundColor: "#FAFAFA",
+        borderTopWidth: 1,
+        borderTopColor: "#F0F0F0",
+    },
+    addConfirmButton: {
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: "center",
+        marginTop: 12,
+    },
+    addConfirmText: {
+        color: "#FFF",
+        fontSize: 15,
+        fontWeight: "700",
+    },
+    // --- 既存スタイル ---
     settingRow: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -376,27 +749,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 12,
     },
-    settingLabel: {
-        fontSize: 13,
-        color: "#888",
-    },
-    settingValue: {
-        fontSize: 16,
-        color: "#333",
-        fontWeight: "600",
-        marginTop: 2,
-    },
-    editButton: {
-        backgroundColor: "#FFF0F3",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
-    },
-    editButtonText: {
-        color: "#FF8FA3",
-        fontSize: 14,
-        fontWeight: "600",
-    },
     datePickerContainer: {
         borderTopWidth: 1,
         borderTopColor: "#F0F0F0",
@@ -407,7 +759,6 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     saveDateButton: {
-        backgroundColor: "#FF8FA3",
         paddingHorizontal: 32,
         paddingVertical: 12,
         borderRadius: 10,
@@ -417,13 +768,6 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 15,
         fontWeight: "700",
-    },
-    nameInput: {
-        fontSize: 16,
-        color: "#333",
-        fontWeight: "600",
-        marginTop: 2,
-        padding: 0,
     },
     linkRow: {
         flexDirection: "row",
@@ -500,19 +844,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    templateSquare: {
-        width: 40,
-        height: 40,
-    },
     templateInner: {
         width: 42,
         height: 30,
         backgroundColor: "#E0E0E0",
         borderRadius: 2,
-    },
-    templateInnerSquare: {
-        width: 30,
-        height: 30,
     },
     templateLabel: {
         fontSize: 11,

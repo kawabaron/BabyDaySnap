@@ -2,11 +2,12 @@
 // BabyDaySnap - AsyncStorage ユーティリティ
 // ============================================================
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { UserSettings, AppLibraryItem } from "@/types";
+import type { UserSettings, AppLibraryItem, BabyProfile } from "@/types";
 
 const KEYS = {
     SETTINGS: "@babydaysnap/settings",
     LIBRARY: "@babydaysnap/library",
+    BABIES: "@babydaysnap/babies",
 } as const;
 
 // --- デフォルト値 ---
@@ -56,7 +57,13 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
     try {
         const raw = await AsyncStorage.getItem(KEYS.LIBRARY);
         if (raw) {
-            return JSON.parse(raw);
+            const items: AppLibraryItem[] = JSON.parse(raw);
+            // マイグレーション: babyIds が無い既存アイテムには空配列を付与
+            // (実際のIDの付与は AppContext 側でbabiesロード後に行う)
+            return items.map((item) => ({
+                ...item,
+                babyIds: item.babyIds || [],
+            }));
         }
         return [];
     } catch (e) {
@@ -70,5 +77,27 @@ export async function saveLibrary(library: AppLibraryItem[]): Promise<void> {
         await AsyncStorage.setItem(KEYS.LIBRARY, JSON.stringify(library));
     } catch (e) {
         console.warn("saveLibrary error:", e);
+    }
+}
+
+// --- Babies ---
+export async function loadBabies(): Promise<BabyProfile[]> {
+    try {
+        const raw = await AsyncStorage.getItem(KEYS.BABIES);
+        if (raw) {
+            return JSON.parse(raw);
+        }
+        return [];
+    } catch (e) {
+        console.warn("loadBabies error:", e);
+        return [];
+    }
+}
+
+export async function saveBabies(babies: BabyProfile[]): Promise<void> {
+    try {
+        await AsyncStorage.setItem(KEYS.BABIES, JSON.stringify(babies));
+    } catch (e) {
+        console.warn("saveBabies error:", e);
     }
 }

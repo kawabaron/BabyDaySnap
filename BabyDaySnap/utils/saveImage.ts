@@ -28,6 +28,7 @@ export async function saveToAppLibrary(
     editorOptions: EditorOptions,
     imageWidth: number,
     imageHeight: number,
+    babyIds: string[],
     existingId?: string | null,
 ): Promise<AppLibraryItem> {
     const dirPath = await getLibraryDirPath();
@@ -58,6 +59,7 @@ export async function saveToAppLibrary(
 
     const item: AppLibraryItem = {
         id,
+        babyIds,
         createdAtMs: Date.now(),
         source: photoSource.source,
         originalFileUri: originalDestUri,

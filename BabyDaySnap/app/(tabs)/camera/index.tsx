@@ -8,20 +8,32 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { useRouter } from "expo-router";
-import { useAppDispatch, useAppState } from "@/context/AppContext";
+import { useAppDispatch, useAppState, useActiveBaby } from "@/context/AppContext";
 import { getShotDateISO, calcAgeDays } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { PhotoSource } from "@/types";
 
 export default function CameraScreen() {
     const dispatch = useAppDispatch();
-    const { settings } = useAppState();
+    const { settings, activeBabyId } = useAppState();
+    const activeBaby = useActiveBaby();
     const router = useRouter();
 
+    // テーマカラー取得
+    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+
     const navigateToEditor = (photo: PhotoSource) => {
+        // アクティブな赤ちゃんの誕生日を使って生後日数を計算
+        const birthDate = activeBaby?.birthDateISO || settings.birthDateISO;
+        if (!birthDate) {
+            Alert.alert("エラー", "赤ちゃんの誕生日が設定されていません。");
+            return;
+        }
+
         const shotDateISO = getShotDateISO(photo.source, photo.creationTimeMs);
-        const ageDays = calcAgeDays(settings.birthDateISO!, shotDateISO);
+        const ageDays = calcAgeDays(birthDate, shotDateISO);
 
         dispatch({ type: "RESET_EDITOR" });
         dispatch({ type: "SET_PHOTO", payload: photo });
@@ -29,6 +41,10 @@ export default function CameraScreen() {
             type: "SET_COMPUTED",
             payload: { shotDateISO, ageDays },
         });
+        // 保存先をアクティブな赤ちゃんに設定
+        if (activeBabyId) {
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: [activeBabyId] });
+        }
         router.push("/(tabs)/camera/editor");
     };
 
@@ -127,14 +143,22 @@ export default function CameraScreen() {
             <View style={styles.content}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
-                    <Ionicons name="add-circle" size={64} color="#FF8FA3" />
+                    <Ionicons name="add-circle" size={64} color={theme.accent} />
                     <Text style={styles.title}>新しく作る</Text>
+                    {activeBaby && (
+                        <View style={styles.babyBadge}>
+                            <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
+                            <Text style={[styles.babyBadgeText, { color: theme.accent }]}>
+                                {activeBaby.name}
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* ボタンエリア */}
                 <View style={styles.buttonArea}>
                     <TouchableOpacity
-                        style={styles.captureButton}
+                        style={[styles.captureButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
                         onPress={handleCapture}
                         activeOpacity={0.8}
                     >
@@ -143,12 +167,12 @@ export default function CameraScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.importButton}
+                        style={[styles.importButton, { borderColor: theme.accent }]}
                         onPress={handleImport}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="images-outline" size={32} color="#FF8FA3" />
-                        <Text style={styles.importButtonText}>写真から選ぶ</Text>
+                        <Ionicons name="images-outline" size={32} color={theme.accent} />
+                        <Text style={[styles.importButtonText, { color: theme.accent }]}>写真から選ぶ</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -180,26 +204,36 @@ const styles = StyleSheet.create({
         color: "#333",
         marginTop: 16,
     },
-    subtitle: {
-        fontSize: 15,
-        color: "#999",
-        textAlign: "center",
-        lineHeight: 22,
+    babyBadge: {
+        flexDirection: "row",
+        alignItems: "center",
         marginTop: 8,
+        gap: 6,
+        backgroundColor: "#F5F5F5",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    babyBadgeDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    babyBadgeText: {
+        fontSize: 14,
+        fontWeight: "600",
     },
     buttonArea: {
         width: "100%",
         gap: 16,
     },
     captureButton: {
-        backgroundColor: "#FF8FA3",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         paddingVertical: 28,
         borderRadius: 24,
         gap: 16,
-        shadowColor: "#FF8FA3",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 10,
@@ -218,20 +252,11 @@ const styles = StyleSheet.create({
         paddingVertical: 28,
         borderRadius: 24,
         borderWidth: 2,
-        borderColor: "#FF8FA3",
         gap: 16,
     },
     importButtonText: {
-        color: "#FF8FA3",
         fontSize: 24,
         fontWeight: "800",
         letterSpacing: 0.5,
-    },
-    hint: {
-        fontSize: 13,
-        color: "#CCC",
-        textAlign: "center",
-        lineHeight: 20,
-        marginTop: 32,
     },
 });

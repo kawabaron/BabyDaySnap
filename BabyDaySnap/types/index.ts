@@ -2,6 +2,16 @@
 // BabyDaySnap - 型定義
 // ============================================================
 
+// --- 赤ちゃんプロフィール ---
+export type BabyProfile = {
+    id: string;            // uuid
+    name: string;
+    birthDateISO: string;
+    themeColorHex: string; // テーマカラー (hex)
+    createdAtMs: number;
+    order: number;         // 表示順
+};
+
 // --- テンプレート ---
 export type TemplateId =
     | "tpl_noframe_full"   // フチ無し全面（黒縁取り白文字デフォ）
@@ -42,6 +52,7 @@ export type EditorOptions = {
 // --- アプリ内ライブラリアイテム ---
 export type AppLibraryItem = {
     id: string; // uuid
+    babyIds: string[]; // この写真が属する赤ちゃんのID（複数可）
     source: "camera" | "import";
     originalFileUri: string; // 再編集用
     renderedFileUri: string;
@@ -86,6 +97,9 @@ export type UserSettings = {
 // --- アプリ状態 ---
 export type AppState = {
     settings: UserSettings;
+    babies: BabyProfile[];
+    activeBabyId: string | null;   // 現在選択中の赤ちゃん
+    targetBabyIds: string[];       // エディタでの保存先（複数可）
     library: AppLibraryItem[];
 
     currentPhoto: PhotoSource | null;
@@ -124,7 +138,14 @@ export type AppAction =
     | { type: "SET_LOADING"; payload: boolean }
     | { type: "SET_ERROR"; payload: string | undefined }
     // 全設定ロード
-    | { type: "LOAD_SETTINGS"; payload: UserSettings };
+    | { type: "LOAD_SETTINGS"; payload: UserSettings }
+    // 赤ちゃん管理
+    | { type: "LOAD_BABIES"; payload: BabyProfile[] }
+    | { type: "ADD_BABY"; payload: BabyProfile }
+    | { type: "UPDATE_BABY"; payload: BabyProfile }
+    | { type: "REMOVE_BABY"; payload: string }
+    | { type: "SET_ACTIVE_BABY"; payload: string }
+    | { type: "SET_TARGET_BABY_IDS"; payload: string[] };
 
 // --- テンプレート定義 ---
 export type TemplateConfig = {

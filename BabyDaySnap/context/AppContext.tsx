@@ -1,9 +1,9 @@
 // ============================================================
 // BabyDaySnap - グローバル状態管理（Context + useReducer）
 // ============================================================
-import React, { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from "react";
-import type { AppState, AppAction, EditorOptions } from "@/types";
-import { loadSettings, saveSettings, loadLibrary, saveLibrary, DEFAULT_SETTINGS } from "@/utils/storage";
+import React, { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from "react";
+import type { AppState, AppAction, EditorOptions, BabyProfile } from "@/types";
+import { loadSettings, saveSettings, loadLibrary, saveLibrary, loadBabies, saveBabies, DEFAULT_SETTINGS } from "@/utils/storage";
 import { getTemplateConfig } from "@/utils/templates";
 import * as FileSystem from "expo-file-system/legacy";
 
@@ -20,6 +20,9 @@ const initialEditorOptions: EditorOptions = {
 
 const initialState: AppState = {
     settings: DEFAULT_SETTINGS,
+    babies: [],
+    activeBabyId: null,
+    targetBabyIds: [],
     library: [],
     currentPhoto: null,
     computed: null,
@@ -83,6 +86,46 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     lastDateColorHex: action.payload.lastDateColorHex,
                     lastFontId: action.payload.lastFontId,
                 },
+            };
+
+        // 赤ちゃん管理
+        case "LOAD_BABIES":
+            return {
+                ...state,
+                babies: action.payload,
+                activeBabyId: action.payload.length > 0 ? action.payload[0].id : null,
+            };
+        case "ADD_BABY":
+            return {
+                ...state,
+                babies: [...state.babies, action.payload],
+            };
+        case "UPDATE_BABY":
+            return {
+                ...state,
+                babies: state.babies.map((b) =>
+                    b.id === action.payload.id ? action.payload : b
+                ),
+            };
+        case "REMOVE_BABY":
+            return {
+                ...state,
+                babies: state.babies.filter((b) => b.id !== action.payload),
+                activeBabyId:
+                    state.activeBabyId === action.payload
+                        ? (state.babies.find((b) => b.id !== action.payload)?.id ?? null)
+                        : state.activeBabyId,
+            };
+        case "SET_ACTIVE_BABY":
+            return {
+                ...state,
+                activeBabyId: action.payload,
+                targetBabyIds: [action.payload],
+            };
+        case "SET_TARGET_BABY_IDS":
+            return {
+                ...state,
+                targetBabyIds: action.payload,
             };
 
         // 編集
@@ -175,12 +218,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         (async () => {
             try {
-                const [settings, library] = await Promise.all([
+                const [settings, library, babies] = await Promise.all([
                     loadSettings(),
                     loadLibrary(),
+                    loadBabies(),
                 ]);
                 dispatch({ type: "LOAD_SETTINGS", payload: settings });
-                dispatch({ type: "LIBRARY_LOAD", payload: library });
+
+                // マイグレーション: babies が空で既存の babyName/birthDateISO がある場合
+                let resolvedBabies = babies;
+                if (babies.length === 0 && settings.birthDateISO) {
+                    const migratedBaby: BabyProfile = {
+                        id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+                        name: settings.babyName || "赤ちゃん",
+                        birthDateISO: settings.birthDateISO,
+                        themeColorHex: "#FFB5C2",
+                        createdAtMs: Date.now(),
+                        order: 0,
+                    };
+                    resolvedBabies = [migratedBaby];
+
+                    // 既存ライブラリアイテムに babyId を付与
+                    const migratedLibrary = library.map((item) => ({
+                        ...item,
+                        babyIds: item.babyIds.length === 0 ? [migratedBaby.id] : item.babyIds,
+                    }));
+                    dispatch({ type: "LIBRARY_LOAD", payload: migratedLibrary });
+                } else {
+                    dispatch({ type: "LIBRARY_LOAD", payload: library });
+                }
+
+                dispatch({ type: "LOAD_BABIES", payload: resolvedBabies });
             } catch (e) {
                 console.warn("Initial load error:", e);
             } finally {
@@ -203,6 +271,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [state.library, state.loading]);
 
+    // babies が変更されたら自動保存
+    useEffect(() => {
+        if (!state.loading) {
+            saveBabies(state.babies);
+        }
+    }, [state.babies, state.loading]);
+
     return (
         <AppStateContext.Provider value={state}>
             <AppDispatchContext.Provider value={dispatch}>
@@ -219,4 +294,13 @@ export function useAppState(): AppState {
 
 export function useAppDispatch(): React.Dispatch<AppAction> {
     return useContext(AppDispatchContext);
+}
+
+/** 現在アクティブな赤ちゃんのプロフィールを返す */
+export function useActiveBaby(): BabyProfile | null {
+    const { babies, activeBabyId } = useAppState();
+    return useMemo(
+        () => babies.find((b) => b.id === activeBabyId) ?? null,
+        [babies, activeBabyId]
+    );
 }

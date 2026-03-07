@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
+import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { formatDateDisplay, msToDateISO } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
@@ -22,7 +23,7 @@ const IMAGE_WIDTH = SCREEN_WIDTH - 32;
 
 export default function LibraryDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { library } = useAppState();
+    const { library, babies } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
 
@@ -98,6 +99,10 @@ export default function LibraryDetailScreen() {
             type: "SET_EDITING_LIBRARY_ID",
             payload: item.id,
         });
+        // 保存先を復元
+        if (item.babyIds && item.babyIds.length > 0) {
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: item.babyIds });
+        }
         router.replace("/(tabs)/camera/editor");
     };
 
@@ -136,6 +141,26 @@ export default function LibraryDetailScreen() {
 
             {/* メタ情報 */}
             <View style={styles.metaContainer}>
+                {/* 所属する赤ちゃん */}
+                {item.babyIds && item.babyIds.length > 0 && (
+                    <View style={styles.metaRow}>
+                        <Text style={styles.metaLabel}>赤ちゃん</Text>
+                        <View style={{ flexDirection: "row", gap: 6 }}>
+                            {item.babyIds.map((bid) => {
+                                const b = babies.find((bb) => bb.id === bid);
+                                if (!b) return null;
+                                const bTheme = getThemePreset(b.themeColorHex);
+                                return (
+                                    <View key={bid} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: bTheme.light, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
+                                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bTheme.accent }} />
+                                        <Text style={{ fontSize: 13, color: bTheme.accent, fontWeight: "600" }}>{b.name}</Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </View>
+                )}
+
                 <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>生後日数</Text>
                     <Text style={styles.metaValue}>{item.ageDays}日</Text>
