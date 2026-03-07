@@ -305,6 +305,44 @@ export default function EditorScreen() {
 
     const editorIsFocused = useIsFocused();
 
+    // 表示用の赤ちゃん名
+    const displayBabyName = activeBabyForEditor?.name || settings.babyName;
+
+    // 印字テキストの生成
+    const dateTextLine1 = useMemo(() => {
+        if (!computed) return "";
+        let text = "";
+        if (targetBabyIds.length <= 1) {
+            const parts = [];
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+            if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
+            if (editorOptions.showAge && computed.ageDays !== undefined) parts.push(`生後${computed.ageDays}日`);
+            text = parts.filter(Boolean).join("  ");
+        } else {
+            // 複数人選択時
+            const parts = [];
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+            const babyParts = targetBabyIds.map(id => {
+                const b = babies.find(x => x.id === id);
+                if (!b) return "";
+                let bStr = "";
+                if (editorOptions.showName) bStr += b.name;
+                if (editorOptions.showAge) {
+                    const ageDays = calcAgeDays(b.birthDateISO, computed.shotDateISO || "");
+                    bStr += `(生後${ageDays}日)`;
+                }
+                return bStr;
+            }).filter(Boolean);
+
+            if (babyParts.length > 0) {
+                // 複数人の場合はスペース1つで区切る
+                parts.push(babyParts.join(" "));
+            }
+            text = parts.filter(Boolean).join("  ");
+        }
+        return text;
+    }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
+
     // フォーカスが外れた場合はメモリ節約のため軽量プレースホルダーを表示
     if (!editorIsFocused) {
         return <View style={styles.container} />;
@@ -344,44 +382,6 @@ export default function EditorScreen() {
 
     const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
-
-    // 表示用の赤ちゃん名
-    const displayBabyName = activeBabyForEditor?.name || settings.babyName;
-
-    // 印字テキストの生成
-    const dateTextLine1 = useMemo(() => {
-        if (!computed) return "";
-        let text = "";
-        if (targetBabyIds.length <= 1) {
-            const parts = [];
-            if (editorOptions.showDate) parts.push(computed.shotDateISO);
-            if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
-            if (editorOptions.showAge && computed.ageDays !== undefined) parts.push(`生後${computed.ageDays}日`);
-            text = parts.filter(Boolean).join("  ");
-        } else {
-            // 複数人選択時
-            const parts = [];
-            if (editorOptions.showDate) parts.push(computed.shotDateISO);
-            const babyParts = targetBabyIds.map(id => {
-                const b = babies.find(x => x.id === id);
-                if (!b) return "";
-                let bStr = "";
-                if (editorOptions.showName) bStr += b.name;
-                if (editorOptions.showAge) {
-                    const ageDays = calcAgeDays(b.birthDateISO, computed.shotDateISO || "");
-                    bStr += `(生後${ageDays}日)`;
-                }
-                return bStr;
-            }).filter(Boolean);
-
-            if (babyParts.length > 0) {
-                // 複数人の場合はスペース1つで区切る
-                parts.push(babyParts.join(" "));
-            }
-            text = parts.filter(Boolean).join("  ");
-        }
-        return text;
-    }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
 
     return (
         <ScrollView
