@@ -45,9 +45,16 @@ export default function EditorScreen() {
                         const libId = editingLibraryId;
                         dispatch({ type: "RESET_EDITOR" });
                         if (libId) {
-                            router.replace(`/(tabs)/library/${libId}`);
+                            router.navigate(`/(tabs)/library/${libId}`);
+                            setTimeout(() => {
+                                (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
+                            }, 100);
                         } else {
-                            router.replace("/(tabs)/camera");
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace("/(tabs)/camera");
+                            }
                         }
                     }}
                     style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
@@ -225,9 +232,11 @@ export default function EditorScreen() {
                         console.log(`[NAV] エディタクリーンアップ開始`);
                         dispatch({ type: "RESET_EDITOR" });
 
+                        router.navigate("/(tabs)/library");
+
                         setTimeout(() => {
-                            router.replace("/(tabs)/library");
-                        }, 50);
+                            (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
+                        }, 100);
                     },
                 },
             ]);
