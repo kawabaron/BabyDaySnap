@@ -38,8 +38,7 @@ export async function loadSettings(): Promise<UserSettings> {
             return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
         }
         return DEFAULT_SETTINGS;
-    } catch (e) {
-        console.warn("loadSettings error:", e);
+    } catch {
         return DEFAULT_SETTINGS;
     }
 }
@@ -47,8 +46,7 @@ export async function loadSettings(): Promise<UserSettings> {
 export async function saveSettings(settings: UserSettings): Promise<void> {
     try {
         await AsyncStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
-    } catch (e) {
-        console.warn("saveSettings error:", e);
+    } catch {
     }
 }
 
@@ -66,8 +64,7 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
             }));
         }
         return [];
-    } catch (e) {
-        console.warn("loadLibrary error:", e);
+    } catch {
         return [];
     }
 }
@@ -75,8 +72,7 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
 export async function saveLibrary(library: AppLibraryItem[]): Promise<void> {
     try {
         await AsyncStorage.setItem(KEYS.LIBRARY, JSON.stringify(library));
-    } catch (e) {
-        console.warn("saveLibrary error:", e);
+    } catch {
     }
 }
 
@@ -88,8 +84,7 @@ export async function loadBabies(): Promise<BabyProfile[]> {
             return JSON.parse(raw);
         }
         return [];
-    } catch (e) {
-        console.warn("loadBabies error:", e);
+    } catch {
         return [];
     }
 }
@@ -97,7 +92,6 @@ export async function loadBabies(): Promise<BabyProfile[]> {
 export async function saveBabies(babies: BabyProfile[]): Promise<void> {
     try {
         await AsyncStorage.setItem(KEYS.BABIES, JSON.stringify(babies));
-    } catch (e) {
-        console.warn("saveBabies error:", e);
+    } catch {
     }
 }

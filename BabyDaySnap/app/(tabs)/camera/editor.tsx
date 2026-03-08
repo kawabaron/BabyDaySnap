@@ -94,28 +94,12 @@ export default function EditorScreen() {
         font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
     });
 
-    // メモリ使用量ログ（ファイルサイズとタイミング計測）
-    const logFileSize = async (label: string, uri: string) => {
-        try {
-            const info = await FileSystem.getInfoAsync(uri);
-            if (info.exists && 'size' in info) {
-                console.log(`[MEMORY] ${label}: ${(info.size / 1024 / 1024).toFixed(2)}MB, uri=${uri.substring(0, 60)}...`);
-            } else {
-                console.log(`[MEMORY] ${label}: file not found`);
-            }
-        } catch (_) {
-            console.log(`[MEMORY] ${label}: unable to check file`);
-        }
-    };
-
     // 最終保存時にのみSkia合成を実行
     // manipulateAsyncで先に安全にリサイズしてからSkiaに渡す（メモリ爆発防止＆全URI形式対応）
     const runFinalRender = async () => {
         if (!currentPhoto || !computed) throw new Error("Missing data");
 
-        console.log(`[SAVE] === 保存開始 ===`);
-        console.log(`[SAVE] 元画像: ${currentPhoto.width}x${currentPhoto.height}`);
-        await logFileSize("元画像ファイル", currentPhoto.uri);
+        if (!currentPhoto || !computed) throw new Error("Missing data");
 
         // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
         const MAX_RENDER = 2000;  // 2000px = 約534万画素（Skiaメモリ約34MBに抑制）
@@ -127,14 +111,12 @@ export default function EditorScreen() {
             const scale = MAX_RENDER / Math.max(renderW, renderH);
             renderW = Math.round(renderW * scale);
             renderH = Math.round(renderH * scale);
-            console.log(`[SAVE] リサイズ: ${renderW}x${renderH}`);
             const resized = await manipulateAsync(
                 currentPhoto.uri,
                 [{ resize: { width: renderW, height: renderH } }],
                 { compress: 1.0, format: SaveFormat.JPEG }
             );
             renderUri = resized.uri;
-            await logFileSize("リサイズ後ファイル", renderUri);
         }
 
         try {
@@ -149,8 +131,6 @@ export default function EditorScreen() {
                 isMultiBaby,
             });
 
-            await logFileSize("Skia出力ファイル", result);
-            console.log(`[SAVE] === 保存完了 ===`);
             return result;
         } finally {
             // 一時リサイズファイルを削除
@@ -267,7 +247,6 @@ export default function EditorScreen() {
                 {
                     text: "OK",
                     onPress: () => {
-                        console.log(`[NAV] エディタクリーンアップ開始`);
                         dispatch({ type: "RESET_EDITOR" });
 
                         router.navigate("/(tabs)/library");
@@ -278,8 +257,7 @@ export default function EditorScreen() {
                     },
                 },
             ]);
-        } catch (e) {
-            console.error("Save error:", e);
+        } catch {
             Alert.alert("エラー", "保存に失敗しました。");
         } finally {
             setSaving(false);

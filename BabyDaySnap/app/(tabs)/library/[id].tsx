@@ -59,8 +59,7 @@ export default function LibraryDetailScreen() {
             await Share.share({
                 url: item.renderedFileUri,
             });
-        } catch (e) {
-            console.error("Share error:", e);
+        } catch {
         }
     };
 

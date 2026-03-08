@@ -52,8 +52,6 @@ export async function saveToAppLibrary(
                 from: photoSource.uri,
                 to: originalDestUri
             });
-        } else {
-            console.warn("Original photo source does not exist:", photoSource.uri);
         }
     }
 
@@ -104,8 +102,7 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
 
         await MediaLibrary.createAssetAsync(uri);
         return true;
-    } catch (e) {
-        console.error("saveToPhotoLibrary error:", e);
+    } catch {
         Alert.alert("エラー", "写真の保存に失敗しました。");
         return false;
     }
@@ -119,7 +116,6 @@ export async function deleteFromAppLibrary(item: AppLibraryItem): Promise<void> 
         if (item.originalFileUri) {
             await FileSystem.deleteAsync(item.originalFileUri, { idempotent: true });
         }
-    } catch (e) {
-        console.warn("deleteFromAppLibrary error:", e);
+    } catch {
     }
 }

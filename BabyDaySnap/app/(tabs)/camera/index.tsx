@@ -92,7 +92,6 @@ export default function CameraScreen() {
 
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
-                console.log(`[CAMERA] 撮影完了: ${asset.width}x${asset.height}, uri=${asset.uri.substring(0, 80)}`);
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
 
                 const photo: PhotoSource = {
@@ -108,7 +107,6 @@ export default function CameraScreen() {
                 navigateToEditor(photo);
             }
         } catch (e) {
-            console.error("Capture error:", e);
             Alert.alert("エラー", `撮影に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
         }
     };
@@ -138,8 +136,7 @@ export default function CameraScreen() {
                 };
                 navigateToEditor(photo);
             }
-        } catch (e) {
-            console.error("Import error:", e);
+        } catch {
             Alert.alert("エラー", "写真の取り込みに失敗しました。");
         }
     };

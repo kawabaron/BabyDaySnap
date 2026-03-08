@@ -249,8 +249,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 }
 
                 dispatch({ type: "LOAD_BABIES", payload: resolvedBabies });
-            } catch (e) {
-                console.warn("Initial load error:", e);
+            } catch {
             } finally {
                 dispatch({ type: "SET_LOADING", payload: false });
             }
