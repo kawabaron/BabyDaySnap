@@ -16,6 +16,7 @@ import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
 import { Ionicons } from "@expo/vector-icons";
 import type { BabyProfile } from "@/types";
+import i18n from "@/lib/i18n";
 
 export default function OnboardingBirthdateScreen() {
     const dispatch = useAppDispatch();
@@ -39,7 +40,7 @@ export default function OnboardingBirthdateScreen() {
 
     const handleStart = () => {
         const iso = formatDateISO(date);
-        const name = babyName.trim() || "赤ちゃん";
+        const name = babyName.trim() || i18n.t("onboarding.namePlaceholder").replace("例：", "").replace("e.g., ", "");
 
         // BabyProfile を作成
         const baby: BabyProfile = {
@@ -72,8 +73,8 @@ export default function OnboardingBirthdateScreen() {
             <Stack.Screen
                 options={{
                     headerShown: isAddMode,
-                    headerTitle: "追加",
-                    headerBackTitle: "戻る",
+                    headerTitle: i18n.t("onboarding.addButton").replace("する", " 追加"), // Adjust loosely for header title
+                    headerBackTitle: i18n.t("editor.backButton"),
                     headerTintColor: "#333",
                     headerShadowVisible: true,
                     headerStyle: { backgroundColor: selectedPreset.background },
@@ -87,26 +88,26 @@ export default function OnboardingBirthdateScreen() {
                 {/* ヘッダー */}
                 {!isAddMode && (
                     <View style={styles.header}>
-                        <Text style={styles.title}>BabyDaySnap</Text>
+                        <Text style={styles.title}>{i18n.t("onboarding.title")}</Text>
                         <Text style={styles.subtitle}>
-                            赤ちゃんの情報を設定して{"\n"}生後日数を記録しましょう
+                            {i18n.t("onboarding.subtitle")}
                         </Text>
                     </View>
                 )}
                 {isAddMode && (
                     <Text style={[styles.subtitle, { textAlign: "center", marginBottom: 24 }]}>
-                        新しい赤ちゃんの情報を入力してください
+                        {i18n.t("onboarding.subtitleAdd")}
                     </Text>
                 )}
 
                 {/* お名前入力 */}
                 <View style={styles.inputSection}>
-                    <Text style={styles.inputLabel}>お名前</Text>
+                    <Text style={styles.inputLabel}>{i18n.t("onboarding.nameLabel")}</Text>
                     <TextInput
                         style={[styles.textInput, { borderColor: selectedPreset.accent }]}
                         value={babyName}
                         onChangeText={setBabyName}
-                        placeholder="例：いろはちゃん"
+                        placeholder={i18n.t("onboarding.namePlaceholder")}
                         placeholderTextColor="#CCC"
                         maxLength={20}
                         returnKeyType="done"
@@ -115,7 +116,7 @@ export default function OnboardingBirthdateScreen() {
 
                 {/* 日付選択 */}
                 <View style={styles.dateSection}>
-                    <Text style={styles.inputLabel}>誕生日</Text>
+                    <Text style={styles.inputLabel}>{i18n.t("onboarding.birthDateLabel")}</Text>
 
                     {Platform.OS === "android" && (
                         <TouchableOpacity
@@ -142,7 +143,7 @@ export default function OnboardingBirthdateScreen() {
 
                 {/* テーマカラー選択 */}
                 <View style={styles.colorSection}>
-                    <Text style={styles.inputLabel}>テーマカラー</Text>
+                    <Text style={styles.inputLabel}>{i18n.t("onboarding.themeColorLabel")}</Text>
                     <View style={styles.colorRow}>
                         {THEME_COLOR_PRESETS.map((preset) => (
                             <TouchableOpacity
@@ -172,7 +173,7 @@ export default function OnboardingBirthdateScreen() {
                     style={[styles.startButton, { backgroundColor: selectedPreset.accent, shadowColor: selectedPreset.shadow }]}
                     onPress={handleStart}
                 >
-                    <Text style={styles.startButtonText}>{isAddMode ? "追加する" : "開始する"}</Text>
+                    <Text style={styles.startButtonText}>{isAddMode ? i18n.t("onboarding.addButton") : i18n.t("onboarding.startButton")}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

@@ -21,6 +21,7 @@ import type { TemplateId, FontId, BabyProfile } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
+import i18n from "@/lib/i18n";
 
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
@@ -64,7 +65,7 @@ export default function SettingsScreen() {
                 dispatch({ type: "SET_BIRTHDATE", payload: iso });
             }
             setShowDatePicker(false);
-            Alert.alert("保存完了", "誕生日を更新しました。");
+            Alert.alert(i18n.t("settings.saveDateSuccessTitle"), i18n.t("settings.saveDateSuccessMsg"));
         }
     };
 
@@ -80,19 +81,21 @@ export default function SettingsScreen() {
 
     const handleDeleteBaby = (baby: BabyProfile) => {
         if (babies.length <= 1) {
-            Alert.alert("削除できません", "赤ちゃんの情報は最低1人必要です。");
+            Alert.alert(i18n.t("settings.cannotDeleteTitle"), i18n.t("settings.cannotDeleteMsg"));
             return;
         }
         const babyLibraryCount = library.filter((item) =>
             item.babyIds.includes(baby.id)
         ).length;
         Alert.alert(
-            "削除確認",
-            `${baby.name}の情報を削除しますか？${babyLibraryCount > 0 ? `\n(ライブラリに${babyLibraryCount}枚の写真があります)` : ""}`,
+            i18n.t("settings.deleteConfirmTitle"),
+            babyLibraryCount > 0
+                ? i18n.t("settings.deleteConfirmMsg", { name: baby.name, count: babyLibraryCount })
+                : i18n.t("settings.deleteConfirmMsgNoPhotos", { name: baby.name }),
             [
-                { text: "キャンセル", style: "cancel" },
+                { text: i18n.t("library.cancel"), style: "cancel" },
                 {
-                    text: "削除",
+                    text: i18n.t("settings.deleteBabyButton"),
                     style: "destructive",
                     onPress: () => {
                         dispatch({ type: "REMOVE_BABY", payload: baby.id });
@@ -143,14 +146,14 @@ export default function SettingsScreen() {
     return (
         <SafeAreaView style={styles.container} edges={["top"]}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>設定</Text>
+                <Text style={styles.headerTitle}>{i18n.t("settings.headerTitle")}</Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
                 {/* 家族の管理 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>家族の管理</Text>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.familySection")}</Text>
                     <View style={styles.card}>
                         {babies.map((baby, index) => {
                             const babyTheme = getThemePreset(baby.themeColorHex);
@@ -184,7 +187,7 @@ export default function SettingsScreen() {
                                         <View style={styles.editPanel}>
                                             {/* 名前 */}
                                             <View style={styles.editRow}>
-                                                <Text style={styles.editLabel}>お名前</Text>
+                                                <Text style={styles.editLabel}>{i18n.t("settings.editNameLabel")}</Text>
                                                 <TextInput
                                                     style={styles.editInput}
                                                     value={baby.name}
@@ -196,13 +199,13 @@ export default function SettingsScreen() {
 
                                             {/* 誕生日 */}
                                             <View style={styles.editRow}>
-                                                <Text style={styles.editLabel}>誕生日</Text>
+                                                <Text style={styles.editLabel}>{i18n.t("settings.editBirthLabel")}</Text>
                                                 <TouchableOpacity
                                                     style={styles.editButton}
                                                     onPress={() => setShowDatePicker(!showDatePicker)}
                                                 >
                                                     <Text style={[styles.editButtonText, { color: babyTheme.accent }]}>
-                                                        {showDatePicker ? "閉じる" : "変更"}
+                                                        {showDatePicker ? i18n.t("settings.editCloseButton") : i18n.t("settings.editChangeButton")}
                                                     </Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -221,14 +224,14 @@ export default function SettingsScreen() {
                                                         style={[styles.saveDateButton, { backgroundColor: babyTheme.accent }]}
                                                         onPress={() => handleSaveBabyDate(baby.id)}
                                                     >
-                                                        <Text style={styles.saveDateButtonText}>保存する</Text>
+                                                        <Text style={styles.saveDateButtonText}>{i18n.t("settings.editSaveButton")}</Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             )}
 
                                             {/* テーマカラー */}
                                             <View style={styles.editRow}>
-                                                <Text style={styles.editLabel}>テーマカラー</Text>
+                                                <Text style={styles.editLabel}>{i18n.t("settings.editColorLabel")}</Text>
                                             </View>
                                             <View style={styles.colorPickerRow}>
                                                 {THEME_COLOR_PRESETS.map((preset) => (
@@ -259,7 +262,7 @@ export default function SettingsScreen() {
                                                     onPress={() => handleDeleteBaby(baby)}
                                                 >
                                                     <Ionicons name="trash-outline" size={16} color="#FF4444" />
-                                                    <Text style={styles.deleteBabyText}>削除</Text>
+                                                    <Text style={styles.deleteBabyText}>{i18n.t("settings.deleteBabyButton")}</Text>
                                                 </TouchableOpacity>
                                             )}
                                         </View>
@@ -275,19 +278,19 @@ export default function SettingsScreen() {
                             onPress={handleAddBaby}
                         >
                             <Ionicons name="add-circle-outline" size={20} color="#999" />
-                            <Text style={styles.addBabyText}>赤ちゃんを追加</Text>
+                            <Text style={styles.addBabyText}>{i18n.t("settings.addBabyButton")}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* 初期表示設定 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>テキストの初期表示</Text>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.defaultTextSection")}</Text>
                     <View style={styles.card}>
                         <View style={styles.settingRow}>
                             <View style={styles.settingLeft}>
                                 <Ionicons name="calendar-outline" size={22} color="#888" />
-                                <Text style={styles.linkText}>日付</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.defaultDate")}</Text>
                             </View>
                             <Switch
                                 value={settings.defaultShowDate}
@@ -310,7 +313,7 @@ export default function SettingsScreen() {
                         <View style={styles.settingRow}>
                             <View style={styles.settingLeft}>
                                 <Ionicons name="person-outline" size={22} color="#888" />
-                                <Text style={styles.linkText}>お名前</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.defaultName")}</Text>
                             </View>
                             <Switch
                                 value={settings.defaultShowName}
@@ -333,7 +336,7 @@ export default function SettingsScreen() {
                         <View style={styles.settingRow}>
                             <View style={styles.settingLeft}>
                                 <Ionicons name="time-outline" size={22} color="#888" />
-                                <Text style={styles.linkText}>生後日数</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.defaultAge")}</Text>
                             </View>
                             <Switch
                                 value={settings.defaultShowAge}
@@ -363,7 +366,7 @@ export default function SettingsScreen() {
                                         }
                                     })}
                                 >
-                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "days" && { color: theme.accent }]}>n日</Text>
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
                                 </TouchableOpacity>
                                 <View style={styles.formatSegmentDivider} />
                                 <TouchableOpacity
@@ -377,7 +380,7 @@ export default function SettingsScreen() {
                                         }
                                     })}
                                 >
-                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "months_days" && { color: theme.accent }]}>xヶ月y日</Text>
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -386,9 +389,9 @@ export default function SettingsScreen() {
 
                 {/* デフォルトのスタイル */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>デフォルトのスタイル</Text>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.defaultStyleSection")}</Text>
 
-                    <Text style={styles.subTitle}>テンプレート</Text>
+                    <Text style={styles.subTitle}>{i18n.t("settings.templateSubtitle")}</Text>
                     <View style={styles.templateRow}>
                         {TEMPLATES.map((t) => (
                             <TouchableOpacity
@@ -420,7 +423,7 @@ export default function SettingsScreen() {
                         ))}
                     </View>
 
-                    <Text style={styles.subTitle}>フォント</Text>
+                    <Text style={styles.subTitle}>{i18n.t("settings.fontSubtitle")}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
                         {FONT_OPTIONS.map((f) => (
                             <TouchableOpacity
@@ -448,7 +451,7 @@ export default function SettingsScreen() {
 
                 {/* リンクセクション */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>情報</Text>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.infoSection")}</Text>
                     <View style={styles.card}>
                         <TouchableOpacity
                             style={styles.linkRow}
@@ -456,7 +459,7 @@ export default function SettingsScreen() {
                         >
                             <View style={styles.linkLeft}>
                                 <Ionicons name="document-text-outline" size={20} color="#888" />
-                                <Text style={styles.linkText}>利用規約</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.termsLink")}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
@@ -469,7 +472,7 @@ export default function SettingsScreen() {
                         >
                             <View style={styles.linkLeft}>
                                 <Ionicons name="shield-checkmark-outline" size={20} color="#888" />
-                                <Text style={styles.linkText}>プライバシーポリシー</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.privacyLink")}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
@@ -482,7 +485,7 @@ export default function SettingsScreen() {
                         >
                             <View style={styles.linkLeft}>
                                 <Ionicons name="mail-outline" size={20} color="#888" />
-                                <Text style={styles.linkText}>お問い合わせ</Text>
+                                <Text style={styles.linkText}>{i18n.t("settings.contactLink")}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>

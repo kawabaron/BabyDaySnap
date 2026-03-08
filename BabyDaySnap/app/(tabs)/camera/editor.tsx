@@ -25,6 +25,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId } from "@/types";
+import i18n from "@/lib/i18n";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -80,7 +81,7 @@ export default function EditorScreen() {
                     style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
                 >
                     <Ionicons name="chevron-back" size={28} color="#333" />
-                    <Text style={{ fontSize: 17, color: "#333" }}>戻る</Text>
+                    <Text style={{ fontSize: 17, color: "#333" }}>{i18n.t("editor.backButton")}</Text>
                 </TouchableOpacity>
             ),
         });
@@ -194,7 +195,7 @@ export default function EditorScreen() {
     const handleSaveToApp = async () => {
         if (!currentPhoto || !computed) return;
         if (targetBabyIds.length === 0) {
-            Alert.alert("保存先を選択", "少なくとも1人の赤ちゃんを保存先に選択してください。");
+            Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
             return;
         }
         setSaving(true);
@@ -243,7 +244,7 @@ export default function EditorScreen() {
                     lastFontId: editorOptions.fontId,
                 },
             });
-            Alert.alert("保存完了", "ライブラリに保存しました。", [
+            Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
                 {
                     text: "OK",
                     onPress: () => {
@@ -258,7 +259,7 @@ export default function EditorScreen() {
                 },
             ]);
         } catch {
-            Alert.alert("エラー", "保存に失敗しました。");
+            Alert.alert("Error", i18n.t("editor.saveFailed"));
         } finally {
             setSaving(false);
         }
@@ -274,7 +275,7 @@ export default function EditorScreen() {
             // 一時ファイル削除（メモリ蓄積防止）
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
             if (success) {
-                Alert.alert("保存完了", "写真ライブラリに保存しました。");
+                Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"));
             }
         } finally {
             setSaving(false);
@@ -316,14 +317,14 @@ export default function EditorScreen() {
                 if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
                     const { months, days } = targetAgeMonthsAndDays;
                     if (months === 0) {
-                        parts.push(`生後${days}日`);
+                        parts.push(i18n.t("editor.ageTextDays", { days }));
                     } else if (days === 0) {
-                        parts.push(`生後${months}ヶ月`);
+                        parts.push(i18n.t("editor.ageTextMonths", { months }));
                     } else {
-                        parts.push(`生後${months}ヶ月${days}日`);
+                        parts.push(i18n.t("editor.ageTextMonthsDays", { months, days }));
                     }
                 } else {
-                    parts.push(`生後${targetAgeDays}日`);
+                    parts.push(i18n.t("editor.ageTextDays", { days: targetAgeDays }));
                 }
             }
             text = parts.filter(Boolean).join("  ");
@@ -346,14 +347,14 @@ export default function EditorScreen() {
                     if (editorOptions.ageFormat === "months_days") {
                         const { months, days } = targetAgeMonthsAndDays;
                         if (months === 0) {
-                            bStr += `(生後${days}日)`;
+                            bStr += `(${i18n.t("editor.ageTextDays", { days })})`;
                         } else if (days === 0) {
-                            bStr += `(生後${months}ヶ月)`;
+                            bStr += `(${i18n.t("editor.ageTextMonths", { months })})`;
                         } else {
-                            bStr += `(生後${months}ヶ月${days}日)`;
+                            bStr += `(${i18n.t("editor.ageTextMonthsDays", { months, days })})`;
                         }
                     } else {
-                        bStr += `(生後${ageDays}日)`;
+                        bStr += `(${i18n.t("editor.ageTextDays", { days: ageDays })})`;
                     }
                 }
                 return bStr;
@@ -387,7 +388,7 @@ export default function EditorScreen() {
         return (
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.accent} />
-                <Text style={styles.errorText}>準備中...</Text>
+                <Text style={styles.errorText}>{i18n.t("editor.preparing")}</Text>
             </View>
         );
     }
@@ -486,7 +487,7 @@ export default function EditorScreen() {
                 {saving && (
                     <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
                         <ActivityIndicator size="large" color={theme.accent} />
-                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>保存中...</Text>
+                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
                     </View>
                 )}
             </View>
@@ -494,7 +495,7 @@ export default function EditorScreen() {
             {/* 保存先（赤ちゃん選択） */}
             {babies.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>保存先</Text>
+                    <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
                     <View style={styles.targetRow}>
                         {babies.map((baby) => {
                             const isSelected = targetBabyIds.includes(baby.id);
@@ -530,7 +531,7 @@ export default function EditorScreen() {
                     </View>
                     {targetBabyIds.length > 1 && (
                         <Text style={styles.targetHint}>
-                            全員のライブラリに保存されます
+                            {i18n.t("editor.saveTargetHint")}
                         </Text>
                     )}
                 </View>
@@ -538,7 +539,7 @@ export default function EditorScreen() {
 
             {/* テンプレート選択 */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>テンプレート</Text>
+                <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
                 <View style={styles.templateRow}>
                     {TEMPLATES.map((t) => (
                         <TouchableOpacity
@@ -573,7 +574,7 @@ export default function EditorScreen() {
 
             {/* フォント選択 */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>フォント</Text>
+                <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
                 <View style={styles.fontRow}>
                     {FONT_OPTIONS.map((f) => (
                         <TouchableOpacity
@@ -600,7 +601,7 @@ export default function EditorScreen() {
 
             {/* 日付色選択 */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>日付色</Text>
+                <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -631,10 +632,10 @@ export default function EditorScreen() {
 
             {/* 表示項目切り替え */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>印字テキスト</Text>
+                <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
                 <View style={styles.toggleRowContainer}>
                     <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>日付</Text>
+                        <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
                         <Switch
                             value={editorOptions.showDate}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
@@ -643,7 +644,7 @@ export default function EditorScreen() {
                         />
                     </View>
                     <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>名前</Text>
+                        <Text style={styles.toggleLabel}>{i18n.t("editor.nameLabel")}</Text>
                         <Switch
                             value={editorOptions.showName}
                             onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
@@ -654,7 +655,7 @@ export default function EditorScreen() {
                     </View>
                     <View style={{ width: "100%" }}>
                         <View style={[styles.toggleItem, { width: 100 }]}>
-                            <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>生後表示</Text>
+                            <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
                             <Switch
                                 value={editorOptions.showAge}
                                 onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
@@ -669,14 +670,14 @@ export default function EditorScreen() {
                                     style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]}
                                     onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}
                                 >
-                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>n日</Text>
+                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
                                 </TouchableOpacity>
                                 <View style={styles.formatSegmentDivider} />
                                 <TouchableOpacity
                                     style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]}
                                     onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
                                 >
-                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>xヶ月y日</Text>
+                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -686,12 +687,12 @@ export default function EditorScreen() {
 
             {/* コメント入力 */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>コメント（任意）</Text>
+                <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
                 <TextInput
                     style={styles.commentInput}
                     value={editorOptions.commentText}
                     onChangeText={handleCommentChange}
-                    placeholder="コメントを入力..."
+                    placeholder={i18n.t("editor.commentPlaceholder")}
                     placeholderTextColor="#BDBDBD"
                     maxLength={50}
                     returnKeyType="done"
@@ -711,7 +712,7 @@ export default function EditorScreen() {
                     ) : (
                         <>
                             <Ionicons name="download-outline" size={20} color="#FFF" />
-                            <Text style={styles.saveButtonText}>アプリ内に保存</Text>
+                            <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -722,7 +723,7 @@ export default function EditorScreen() {
                     disabled={saving}
                 >
                     <Ionicons name="image-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.photoButtonText, { color: theme.accent }]}>iPhone写真に保存</Text>
+                    <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
                 </TouchableOpacity>
             </View>
 

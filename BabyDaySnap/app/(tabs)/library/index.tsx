@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { AppLibraryItem } from "@/types";
+import i18n from "@/lib/i18n";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const NUM_COLUMNS = 3;
@@ -85,12 +86,12 @@ export default function LibraryGridScreen() {
     const handleDeleteSelected = () => {
         if (selectedIds.length === 0) return;
         Alert.alert(
-            "削除確認",
-            `${selectedIds.length}枚の写真を削除しますか？`,
+            i18n.t("library.deleteConfirmTitle"),
+            i18n.t("library.deleteConfirmMsg", { count: selectedIds.length }),
             [
-                { text: "キャンセル", style: "cancel" },
+                { text: i18n.t("library.cancel"), style: "cancel" },
                 {
-                    text: "削除",
+                    text: i18n.t("library.delete"),
                     style: "destructive",
                     onPress: async () => {
                         const itemsToDelete = library.filter((i) => selectedIds.includes(i.id));
@@ -118,9 +119,9 @@ export default function LibraryGridScreen() {
         }
 
         if (successCount === itemsToSave.length) {
-            Alert.alert("保存完了", `${successCount}枚の写真をiPhoneに保存しました。`);
+            Alert.alert(i18n.t("library.saveCompleteTitle"), i18n.t("library.saveCompleteMsg", { count: successCount }));
         } else if (successCount > 0) {
-            Alert.alert("保存完了", `${successCount}枚の写真を保存しましたが、一部失敗しました。`);
+            Alert.alert(i18n.t("library.saveCompleteTitle"), i18n.t("library.savePartialMsg", { count: successCount }));
         }
 
         setIsSelectionMode(false);
@@ -200,14 +201,14 @@ export default function LibraryGridScreen() {
             <View style={styles.header}>
                 <View>
                     <Text style={styles.headerTitle}>
-                        {activeBaby ? activeBaby.name : "ライブラリ"}
+                        {activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
                     </Text>
-                    <Text style={[styles.headerCount, { color: theme.accent }]}>{filteredLibrary.length}枚</Text>
+                    <Text style={[styles.headerCount, { color: theme.accent }]}>{i18n.t("library.headerCount", { count: filteredLibrary.length })}</Text>
                 </View>
                 {filteredLibrary.length > 0 && (
                     <TouchableOpacity onPress={toggleSelectionMode} style={[styles.headerButton, { backgroundColor: theme.light }]}>
                         <Text style={[styles.headerButtonText, { color: theme.accent }]}>
-                            {isSelectionMode ? "キャンセル" : "選択"}
+                            {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -216,9 +217,9 @@ export default function LibraryGridScreen() {
             {babies.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="images-outline" size={64} color="#DDD" />
-                    <Text style={styles.emptyTitle}>まだ写真がありません</Text>
+                    <Text style={styles.emptyTitle}>{i18n.t("library.emptyTitle")}</Text>
                     <Text style={styles.emptySubtitle}>
-                        カメラで撮影して{"\n"}最初の1枚を保存しましょう
+                        {i18n.t("library.emptySubtitle")}
                     </Text>
                 </View>
             ) : (
@@ -247,9 +248,9 @@ export default function LibraryGridScreen() {
                                 return (
                                     <View style={[{ width: SCREEN_WIDTH }, styles.emptyContainer]}>
                                         <Ionicons name="images-outline" size={64} color="#DDD" />
-                                        <Text style={styles.emptyTitle}>まだ写真がありません</Text>
+                                        <Text style={styles.emptyTitle}>{i18n.t("library.emptyTitle")}</Text>
                                         <Text style={styles.emptySubtitle}>
-                                            カメラで撮影して{"\n"}最初の1枚を保存しましょう
+                                            {i18n.t("library.emptySubtitle")}
                                         </Text>
                                     </View>
                                 );
@@ -284,7 +285,7 @@ export default function LibraryGridScreen() {
                             >
                                 <Ionicons name="trash-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#FF4444"} />
                                 <Text style={[styles.buttonText, styles.deleteButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
-                                    削除 ({selectedIds.length})
+                                    {i18n.t("library.deleteButton", { count: selectedIds.length })}
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -294,7 +295,7 @@ export default function LibraryGridScreen() {
                             >
                                 <Ionicons name="download-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#4CAF50"} />
                                 <Text style={[styles.buttonText, styles.saveButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
-                                    保存 ({selectedIds.length})
+                                    {i18n.t("library.saveButton", { count: selectedIds.length })}
                                 </Text>
                             </TouchableOpacity>
                         </View>

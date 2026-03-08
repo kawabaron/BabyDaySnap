@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useActiveBaby } from "@/context/AppContext";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
+import i18n from "@/lib/i18n";
 
 export default function TabsLayout() {
   const activeBaby = useActiveBaby();
@@ -30,7 +31,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="camera"
         options={{
-          title: "作る",
+          title: i18n.t("tabs.camera"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
@@ -39,7 +40,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="library"
         options={{
-          title: "ライブラリ",
+          title: i18n.t("tabs.library"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="images" size={size} color={color} />
           ),
@@ -48,7 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "設定",
+          title: i18n.t("tabs.settings"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),

@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { PhotoSource } from "@/types";
+import i18n from "@/lib/i18n";
 
 export default function CameraScreen() {
     const dispatch = useAppDispatch();
@@ -34,7 +35,7 @@ export default function CameraScreen() {
         // アクティブな赤ちゃんの誕生日を使って生後日数を計算
         const birthDate = activeBaby?.birthDateISO || settings.birthDateISO;
         if (!birthDate) {
-            Alert.alert("エラー", "赤ちゃんの誕生日が設定されていません。");
+            Alert.alert(i18n.t("editor.missingBirthDate").replace("。", ""), i18n.t("editor.missingBirthDate"));
             return;
         }
 
@@ -80,7 +81,7 @@ export default function CameraScreen() {
             // カメラ権限リクエスト
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert("カメラへのアクセス", "撮影にはカメラへのアクセス許可が必要です。\n設定アプリから許可してください。");
+                Alert.alert(i18n.t("camera.cameraPermissionTitle"), i18n.t("camera.cameraPermissionMsg"));
                 return;
             }
 
@@ -107,7 +108,7 @@ export default function CameraScreen() {
                 navigateToEditor(photo);
             }
         } catch (e) {
-            Alert.alert("エラー", `撮影に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+            Alert.alert("Error", i18n.t("camera.captureFailed", { error: e instanceof Error ? e.message : String(e) }));
         }
     };
 
@@ -137,7 +138,7 @@ export default function CameraScreen() {
                 navigateToEditor(photo);
             }
         } catch {
-            Alert.alert("エラー", "写真の取り込みに失敗しました。");
+            Alert.alert("Error", i18n.t("camera.importFailed"));
         }
     };
 
@@ -152,7 +153,7 @@ export default function CameraScreen() {
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
                     <Ionicons name="add-circle" size={64} color={theme.accent} />
-                    <Text style={styles.title}>作る</Text>
+                    <Text style={styles.title}>{i18n.t("camera.headerTitle")}</Text>
                     {activeBaby && (
                         <TouchableOpacity
                             style={styles.babyBadge}
@@ -176,7 +177,7 @@ export default function CameraScreen() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="camera-outline" size={32} color="#FFF" />
-                        <Text style={styles.captureButtonText}>カメラで撮影</Text>
+                        <Text style={styles.captureButtonText}>{i18n.t("camera.captureButton")}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -185,7 +186,7 @@ export default function CameraScreen() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="images-outline" size={32} color={theme.accent} />
-                        <Text style={[styles.importButtonText, { color: theme.accent }]}>写真から選ぶ</Text>
+                        <Text style={[styles.importButtonText, { color: theme.accent }]}>{i18n.t("camera.importButton")}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -202,7 +203,7 @@ export default function CameraScreen() {
             >
                 <Pressable style={styles.modalOverlay} onPress={() => setShowBabyPicker(false)}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>切り替え</Text>
+                        <Text style={styles.modalTitle}>{i18n.t("camera.switchBabyTitle")}</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {babies.map((b) => {
                                 const bTheme = getThemePreset(b.themeColorHex);

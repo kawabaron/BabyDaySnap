@@ -1,6 +1,7 @@
 // ============================================================
 // BabyDaySnap - 日付ユーティリティ
 // ============================================================
+import i18n from '@/lib/i18n';
 
 /**
  * 生後日数を計算
@@ -77,7 +78,7 @@ export function msToDateISO(ms: number): string {
 export function formatDateDisplay(dateStr: string): string {
     const cleanStr = dateStr.replace(/-/g, "/");
     const [y, m, d] = cleanStr.split("/").map(Number);
-    return `${y}年${m}月${d}日`;
+    return i18n.t("editor.dateDisplay", { year: y, month: m, day: d });
 }
 
 /**

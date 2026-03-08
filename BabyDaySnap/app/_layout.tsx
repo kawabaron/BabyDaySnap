@@ -6,6 +6,7 @@ import { View, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
 import { FONT_OPTIONS } from "@/utils/templates";
 import "../global.css";
+import "@/lib/i18n";
 
 function RootLayoutNav() {
   const { settings, loading } = useAppState();
