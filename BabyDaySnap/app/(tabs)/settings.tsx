@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     fontBadge: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 10,
         backgroundColor: "#F5F5F5",
         borderRadius: 20,
