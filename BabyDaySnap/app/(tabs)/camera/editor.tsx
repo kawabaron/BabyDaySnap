@@ -19,7 +19,7 @@ import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
-import { calcAgeDays } from "@/utils/date";
+import { calcAgeDays, calcAgeMonthsAndDays } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -304,12 +304,28 @@ export default function EditorScreen() {
             const b = babies.find(x => x.id === targetBabyId);
             const targetAgeDays = b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
 
+            // "nヶ月n日"形式の計算
+            const targetAgeMonthsAndDays = b ? calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "") : null;
+
             // 「現在日付が誕生日よりも前の場合、写真に日付は印字しない」の対応 -> 日数はグレーアウトして出さない、日付は出す
             const isBeforeBirth = targetAgeDays !== undefined && targetAgeDays < 0;
 
             if (editorOptions.showDate) parts.push(computed.shotDateISO);
             if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
-            if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) parts.push(`生後${targetAgeDays}日`);
+            if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) {
+                if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
+                    const { months, days } = targetAgeMonthsAndDays;
+                    if (months === 0) {
+                        parts.push(`生後${days}日`);
+                    } else if (days === 0) {
+                        parts.push(`生後${months}ヶ月`);
+                    } else {
+                        parts.push(`生後${months}ヶ月${days}日`);
+                    }
+                } else {
+                    parts.push(`生後${targetAgeDays}日`);
+                }
+            }
             text = parts.filter(Boolean).join("  ");
         } else {
             // 複数人選択時
@@ -322,11 +338,23 @@ export default function EditorScreen() {
                 let bStr = "";
                 if (editorOptions.showName) bStr += b.name;
 
-                const ageDays = calcAgeDays(b.birthDateISO, computed.shotDateISO || "");
+                const targetAgeMonthsAndDays = calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "");
+                const ageDays = targetAgeMonthsAndDays.totalDays;
                 const isBeforeBirth = ageDays < 0;
 
                 if (editorOptions.showAge && !isBeforeBirth) {
-                    bStr += `(生後${ageDays}日)`;
+                    if (editorOptions.ageFormat === "months_days") {
+                        const { months, days } = targetAgeMonthsAndDays;
+                        if (months === 0) {
+                            bStr += `(生後${days}日)`;
+                        } else if (days === 0) {
+                            bStr += `(生後${months}ヶ月)`;
+                        } else {
+                            bStr += `(生後${months}ヶ月${days}日)`;
+                        }
+                    } else {
+                        bStr += `(生後${ageDays}日)`;
+                    }
                 }
                 return bStr;
             }).filter(Boolean);
@@ -624,15 +652,34 @@ export default function EditorScreen() {
                             disabled={!displayBabyName}
                         />
                     </View>
-                    <View style={styles.toggleItem}>
-                        <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>日数</Text>
-                        <Switch
-                            value={editorOptions.showAge}
-                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
-                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                            style={styles.switchSmall}
-                            disabled={allSelectedBeforeBirth}
-                        />
+                    <View style={{ width: "100%" }}>
+                        <View style={[styles.toggleItem, { width: 100 }]}>
+                            <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>生後表示</Text>
+                            <Switch
+                                value={editorOptions.showAge}
+                                onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
+                                trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                style={styles.switchSmall}
+                                disabled={allSelectedBeforeBirth}
+                            />
+                        </View>
+                        {editorOptions.showAge && !allSelectedBeforeBirth && (
+                            <View style={styles.formatSegmentContainer}>
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}
+                                >
+                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>n日</Text>
+                                </TouchableOpacity>
+                                <View style={styles.formatSegmentDivider} />
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
+                                >
+                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>xヶ月y日</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 </View>
             </View>
@@ -878,6 +925,38 @@ const styles = StyleSheet.create({
     },
     switchSmall: {
         transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }],
+    },
+    formatSegmentContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F5F5F5",
+        borderRadius: 8,
+        marginTop: 8,
+        padding: 4,
+    },
+    formatSegmentButton: {
+        flex: 1,
+        paddingVertical: 6,
+        alignItems: "center",
+        borderRadius: 6,
+    },
+    formatSegmentButtonActive: {
+        backgroundColor: "#FFF",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    formatSegmentDivider: {
+        width: 1,
+        height: "60%",
+        backgroundColor: "#E0E0E0",
+    },
+    formatSegmentText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "#888",
     },
     // --- ボタン ---
     buttonContainer: {

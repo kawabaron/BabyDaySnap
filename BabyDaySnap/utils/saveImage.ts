@@ -75,6 +75,7 @@ export async function saveToAppLibrary(
         showDate: editorOptions.showDate,
         showName: editorOptions.showName,
         showAge: editorOptions.showAge,
+        ageFormat: editorOptions.ageFormat,
     };
 
     return item;

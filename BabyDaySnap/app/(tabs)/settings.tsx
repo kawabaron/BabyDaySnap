@@ -296,7 +296,8 @@ export default function SettingsScreen() {
                                         type: "SET_DEFAULT_TOGGLES", payload: {
                                             defaultShowDate: val,
                                             defaultShowName: settings.defaultShowName,
-                                            defaultShowAge: settings.defaultShowAge
+                                            defaultShowAge: settings.defaultShowAge,
+                                            defaultAgeFormat: settings.defaultAgeFormat
                                         }
                                     })
                                 }
@@ -318,7 +319,8 @@ export default function SettingsScreen() {
                                         type: "SET_DEFAULT_TOGGLES", payload: {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: val,
-                                            defaultShowAge: settings.defaultShowAge
+                                            defaultShowAge: settings.defaultShowAge,
+                                            defaultAgeFormat: settings.defaultAgeFormat
                                         }
                                     })
                                 }
@@ -340,13 +342,45 @@ export default function SettingsScreen() {
                                         type: "SET_DEFAULT_TOGGLES", payload: {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
-                                            defaultShowAge: val
+                                            defaultShowAge: val,
+                                            defaultAgeFormat: settings.defaultAgeFormat
                                         }
                                     })
                                 }
                                 trackColor={{ false: "#E0E0E0", true: theme.accent }}
                             />
                         </View>
+                        {settings.defaultShowAge && (
+                            <View style={styles.formatSegmentContainer}>
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, settings.defaultAgeFormat === "days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: settings.defaultShowDate,
+                                            defaultShowName: settings.defaultShowName,
+                                            defaultShowAge: settings.defaultShowAge,
+                                            defaultAgeFormat: "days"
+                                        }
+                                    })}
+                                >
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "days" && { color: theme.accent }]}>n日</Text>
+                                </TouchableOpacity>
+                                <View style={styles.formatSegmentDivider} />
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, settings.defaultAgeFormat === "months_days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: settings.defaultShowDate,
+                                            defaultShowName: settings.defaultShowName,
+                                            defaultShowAge: settings.defaultShowAge,
+                                            defaultAgeFormat: "months_days"
+                                        }
+                                    })}
+                                >
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "months_days" && { color: theme.accent }]}>xヶ月y日</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 </View>
 
@@ -638,6 +672,39 @@ const styles = StyleSheet.create({
         borderTopColor: "#F0F0F0",
         padding: 16,
         alignItems: "center",
+    },
+    formatSegmentContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#F5F5F5",
+        borderRadius: 8,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        padding: 4,
+    },
+    formatSegmentButton: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: "center",
+        borderRadius: 6,
+    },
+    formatSegmentButtonActive: {
+        backgroundColor: "#FFF",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    formatSegmentDivider: {
+        width: 1,
+        height: "60%",
+        backgroundColor: "#E0E0E0",
+    },
+    formatSegmentText: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#888",
     },
     datePicker: {
         width: "100%",

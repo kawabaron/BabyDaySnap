@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     defaultShowDate: true,
     defaultShowName: true,
     defaultShowAge: true,
+    defaultAgeFormat: "days",
     lastTemplateId: "tpl_noframe_full",
     lastFontId: "font_standard",
     lastDateColorHex: "#FFFFFF",
@@ -61,6 +62,7 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
             return items.map((item) => ({
                 ...item,
                 babyIds: item.babyIds || [],
+                ageFormat: item.ageFormat || "days",
             }));
         }
         return [];

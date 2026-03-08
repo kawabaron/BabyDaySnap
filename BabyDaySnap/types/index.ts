@@ -39,6 +39,8 @@ export type ComputedInfo = {
 };
 
 // --- エディタオプション ---
+export type AgeFormat = "days" | "months_days";
+
 export type EditorOptions = {
     templateId: TemplateId;
     dateColorHex: string;
@@ -47,6 +49,7 @@ export type EditorOptions = {
     showDate: boolean;
     showName: boolean;
     showAge: boolean;
+    ageFormat: AgeFormat;
 };
 
 // --- アプリ内ライブラリアイテム ---
@@ -69,6 +72,7 @@ export type AppLibraryItem = {
     showDate: boolean;
     showName: boolean;
     showAge: boolean;
+    ageFormat: AgeFormat;
     createdAtMs: number;
 };
 
@@ -88,6 +92,7 @@ export type UserSettings = {
     defaultShowDate: boolean;
     defaultShowName: boolean;
     defaultShowAge: boolean;
+    defaultAgeFormat: AgeFormat;
     lastTemplateId: TemplateId;
     lastFontId: FontId;
     lastDateColorHex: string;
@@ -118,7 +123,7 @@ export type AppAction =
     | { type: "SET_ONBOARDED"; payload: boolean }
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_BABY_NAME"; payload: string }
-    | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean } }
+    | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean; defaultAgeFormat: AgeFormat } }
     | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
