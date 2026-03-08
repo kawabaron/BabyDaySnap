@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { deleteFromAppLibrary } from "@/utils/saveImage";
+import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { AppLibraryItem } from "@/types";
 
@@ -104,6 +104,27 @@ export default function LibraryGridScreen() {
                 },
             ],
         );
+    };
+
+    const handleSaveSelected = async () => {
+        if (selectedIds.length === 0) return;
+
+        const itemsToSave = library.filter((i) => selectedIds.includes(i.id));
+        let successCount = 0;
+
+        for (const item of itemsToSave) {
+            const success = await saveToPhotoLibrary(item.renderedFileUri);
+            if (success) successCount++;
+        }
+
+        if (successCount === itemsToSave.length) {
+            Alert.alert("保存完了", `${successCount}枚の写真をiPhoneに保存しました。`);
+        } else if (successCount > 0) {
+            Alert.alert("保存完了", `${successCount}枚の写真を保存しましたが、一部失敗しました。`);
+        }
+
+        setIsSelectionMode(false);
+        setSelectedIds([]);
     };
 
     const renderGridItem = useCallback(
@@ -257,13 +278,23 @@ export default function LibraryGridScreen() {
                     {isSelectionMode && (
                         <View style={styles.bottomBar}>
                             <TouchableOpacity
-                                style={[styles.deleteButton, selectedIds.length === 0 && styles.deleteButtonDisabled]}
+                                style={[styles.bottomButton, styles.deleteButton, selectedIds.length === 0 && styles.buttonDisabled]}
                                 onPress={handleDeleteSelected}
                                 disabled={selectedIds.length === 0}
                             >
                                 <Ionicons name="trash-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#FF4444"} />
-                                <Text style={[styles.deleteButtonText, selectedIds.length === 0 && styles.deleteButtonTextDisabled]}>
+                                <Text style={[styles.buttonText, styles.deleteButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
                                     削除 ({selectedIds.length})
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.bottomButton, styles.saveButton, selectedIds.length === 0 && styles.buttonDisabled]}
+                                onPress={handleSaveSelected}
+                                disabled={selectedIds.length === 0}
+                            >
+                                <Ionicons name="download-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#4CAF50"} />
+                                <Text style={[styles.buttonText, styles.saveButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
+                                    保存 ({selectedIds.length})
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -397,13 +428,13 @@ const styles = StyleSheet.create({
     },
     bottomBar: {
         flexDirection: "row",
-        justifyContent: "center",
+        justifyContent: "space-evenly",
         paddingVertical: 12,
         borderTopWidth: 1,
         borderColor: "#EEE",
         backgroundColor: "#FFF",
     },
-    deleteButton: {
+    bottomButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
@@ -411,17 +442,27 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 24,
         borderRadius: 20,
+    },
+    deleteButton: {
         backgroundColor: "#FFEAEA",
     },
-    deleteButtonDisabled: {
+    saveButton: {
+        backgroundColor: "#E8F5E9",
+    },
+    buttonDisabled: {
         backgroundColor: "#F5F5F5",
     },
-    deleteButtonText: {
-        color: "#FF4444",
+    buttonText: {
         fontSize: 16,
         fontWeight: "600",
     },
-    deleteButtonTextDisabled: {
+    deleteButtonText: {
+        color: "#FF4444",
+    },
+    saveButtonText: {
+        color: "#4CAF50",
+    },
+    buttonTextDisabled: {
         color: "#CCC",
     },
 });
