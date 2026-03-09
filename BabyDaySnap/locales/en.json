@@ -8,7 +8,9 @@
         "birthDateLabel": "Birthday",
         "themeColorLabel": "Theme Color",
         "startButton": "Start",
-        "addButton": "Add"
+        "addButton": "Add",
+        "headerTitleAdd": "Add",
+        "headerTitleStart": "Initial Setup"
     },
     "tabs": {
         "camera": "Create",
@@ -144,5 +146,14 @@
         "templateLabel": "Template",
         "colorLabel": "Color",
         "commentLabel": "Comment"
+    },
+    "colors": {
+        "pink": "Pink",
+        "lavender": "Lavender",
+        "mint": "Mint",
+        "sky": "Sky",
+        "peach": "Peach",
+        "lemon": "Lemon",
+        "neutral": "Neutral"
     }
 }

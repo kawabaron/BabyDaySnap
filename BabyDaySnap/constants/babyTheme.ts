@@ -1,6 +1,7 @@
 // ============================================================
 // BabyDaySnap - テーマカラープリセット
 // ============================================================
+import i18n from "@/lib/i18n";
 
 export type ThemeColorPreset = {
     hex: string;
@@ -22,7 +23,7 @@ export type ThemeColorPreset = {
 export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     {
         hex: "#FFB5C2",
-        label: "ピンク",
+        get label() { return i18n.t("colors.pink"); },
         background: "#FFF5F7",
         accent: "#FF8FA3",
         light: "#FFF0F3",
@@ -30,7 +31,7 @@ export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     },
     {
         hex: "#C5B9F2",
-        label: "ラベンダー",
+        get label() { return i18n.t("colors.lavender"); },
         background: "#F5F3FF",
         accent: "#A78BFA",
         light: "#EDE9FE",
@@ -38,7 +39,7 @@ export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     },
     {
         hex: "#A8E6CF",
-        label: "ミント",
+        get label() { return i18n.t("colors.mint"); },
         background: "#F0FFF4",
         accent: "#6BCB9A",
         light: "#E6FFF0",
@@ -46,7 +47,7 @@ export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     },
     {
         hex: "#A8D8F0",
-        label: "スカイ",
+        get label() { return i18n.t("colors.sky"); },
         background: "#F0F8FF",
         accent: "#64B5F6",
         light: "#E3F2FD",
@@ -54,7 +55,7 @@ export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     },
     {
         hex: "#FFDAB9",
-        label: "ピーチ",
+        get label() { return i18n.t("colors.peach"); },
         background: "#FFF8F0",
         accent: "#FFB07C",
         light: "#FFF3E8",
@@ -62,7 +63,7 @@ export const THEME_COLOR_PRESETS: ThemeColorPreset[] = [
     },
     {
         hex: "#FFF3B0",
-        label: "レモン",
+        get label() { return i18n.t("colors.lemon"); },
         background: "#FFFDF0",
         accent: "#FFD54F",
         light: "#FFFDE7",
@@ -78,7 +79,7 @@ export function getThemePreset(hex: string): ThemeColorPreset {
 /** 複数人選択時のニュートラルカラー */
 export const NEUTRAL_THEME: ThemeColorPreset = {
     hex: "#FF8FA3",
-    label: "ニュートラル",
+    get label() { return i18n.t("colors.neutral"); },
     background: "#FFF5F7",
     accent: "#FF8FA3",
     light: "#FFF0F3",

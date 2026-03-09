@@ -146,5 +146,14 @@
         "templateLabel": "テンプレート",
         "colorLabel": "日付色",
         "commentLabel": "コメント"
+    },
+    "colors": {
+        "pink": "ピンク",
+        "lavender": "ラベンダー",
+        "mint": "ミント",
+        "sky": "スカイ",
+        "peach": "ピーチ",
+        "lemon": "レモン",
+        "neutral": "ニュートラル"
     }
 }
