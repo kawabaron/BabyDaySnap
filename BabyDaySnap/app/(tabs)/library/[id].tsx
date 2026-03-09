@@ -327,6 +327,9 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
     const savedTranslateY = useSharedValue(0);
 
     const pinchGesture = Gesture.Pinch()
+        .onStart(() => {
+            savedScale.value = scale.value;
+        })
         .onUpdate((e) => {
             scale.value = savedScale.value * e.scale;
         })
@@ -348,12 +351,15 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
 
     const panGesture = Gesture.Pan()
         .minDistance(10)
+        .onStart(() => {
+            savedTranslateX.value = translateX.value;
+            savedTranslateY.value = translateY.value;
+        })
         .onUpdate((e) => {
             if (scale.value > 1) {
                 translateX.value = savedTranslateX.value + e.translationX;
                 translateY.value = savedTranslateY.value + e.translationY;
             } else {
-                // スワイプダウンで閉じるための動き（下方向のみ）
                 if (e.translationY > 0) {
                     translateY.value = e.translationY;
                 }
@@ -364,7 +370,6 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
                 savedTranslateX.value = translateX.value;
                 savedTranslateY.value = translateY.value;
             } else {
-                // 80px以上下にスワイプしたら閉じる
                 if (e.translationY > 80) {
                     runOnJS(onClose)();
                 } else {
@@ -389,13 +394,16 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             } else {
                 scale.value = withTiming(2.5);
                 savedScale.value = 2.5;
-                // タップした位置を中心に拡大するのは少し複雑なので、まずは中央拡大で実装
                 translateX.value = withTiming(0);
                 translateY.value = withTiming(0);
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
             }
         });
+
+    // Use Exclusive to ensure doubleTap doesn't fire if Pinch/Pan starts
+    const zoomGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+    const composed = Gesture.Exclusive(doubleTapGesture, zoomGesture);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
@@ -404,8 +412,6 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             { scale: scale.value },
         ],
     }));
-
-    const composed = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
 
     return (
         <GestureDetector gesture={composed}>
