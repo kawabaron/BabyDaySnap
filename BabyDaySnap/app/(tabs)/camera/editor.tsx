@@ -314,14 +314,36 @@ export default function EditorScreen() {
             if (editorOptions.showDate) parts.push(computed.shotDateISO);
             if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
             if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) {
-                if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
+                if (editorOptions.ageFormat === "years_months_days" && targetAgeMonthsAndDays) {
+                    const { years, months, days } = targetAgeMonthsAndDays;
+                    if (years === 0) {
+                        if (months === 0) {
+                            parts.push(i18n.t("editor.ageTextDays", { days }));
+                        } else if (days === 0) {
+                            parts.push(i18n.t("editor.ageTextMonths", { months }));
+                        } else {
+                            parts.push(i18n.t("editor.ageTextMonthsDays", { months, days }));
+                        }
+                    } else {
+                        if (months === 0 && days === 0) {
+                            parts.push(i18n.t("editor.ageTextYears", { years }));
+                        } else if (months === 0) {
+                            parts.push(i18n.t("editor.ageTextYearsDays", { years, days }));
+                        } else if (days === 0) {
+                            parts.push(i18n.t("editor.ageTextYearsMonths", { years, months }));
+                        } else {
+                            parts.push(i18n.t("editor.ageTextYearsMonthsDays", { years, months, days }));
+                        }
+                    }
+                } else if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
                     const { months, days } = targetAgeMonthsAndDays;
-                    if (months === 0) {
+                    const totalMonths = targetAgeMonthsAndDays.years * 12 + months;
+                    if (totalMonths === 0) {
                         parts.push(i18n.t("editor.ageTextDays", { days }));
                     } else if (days === 0) {
-                        parts.push(i18n.t("editor.ageTextMonths", { months }));
+                        parts.push(i18n.t("editor.ageTextMonths", { months: totalMonths }));
                     } else {
-                        parts.push(i18n.t("editor.ageTextMonthsDays", { months, days }));
+                        parts.push(i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days }));
                     }
                 } else {
                     parts.push(i18n.t("editor.ageTextDays", { days: targetAgeDays }));
@@ -344,14 +366,36 @@ export default function EditorScreen() {
                 const isBeforeBirth = ageDays < 0;
 
                 if (editorOptions.showAge && !isBeforeBirth) {
-                    if (editorOptions.ageFormat === "months_days") {
-                        const { months, days } = targetAgeMonthsAndDays;
-                        if (months === 0) {
+                    if (editorOptions.ageFormat === "years_months_days") {
+                        const { years, months, days } = targetAgeMonthsAndDays;
+                        if (years === 0) {
+                            if (months === 0) {
+                                bStr += `(${i18n.t("editor.ageTextDays", { days })})`;
+                            } else if (days === 0) {
+                                bStr += `(${i18n.t("editor.ageTextMonths", { months })})`;
+                            } else {
+                                bStr += `(${i18n.t("editor.ageTextMonthsDays", { months, days })})`;
+                            }
+                        } else {
+                            if (months === 0 && days === 0) {
+                                bStr += `(${i18n.t("editor.ageTextYears", { years })})`;
+                            } else if (months === 0) {
+                                bStr += `(${i18n.t("editor.ageTextYearsDays", { years, days })})`;
+                            } else if (days === 0) {
+                                bStr += `(${i18n.t("editor.ageTextYearsMonths", { years, months })})`;
+                            } else {
+                                bStr += `(${i18n.t("editor.ageTextYearsMonthsDays", { years, months, days })})`;
+                            }
+                        }
+                    } else if (editorOptions.ageFormat === "months_days") {
+                        const { years, months, days } = targetAgeMonthsAndDays;
+                        const totalMonths = years * 12 + months;
+                        if (totalMonths === 0) {
                             bStr += `(${i18n.t("editor.ageTextDays", { days })})`;
                         } else if (days === 0) {
-                            bStr += `(${i18n.t("editor.ageTextMonths", { months })})`;
+                            bStr += `(${i18n.t("editor.ageTextMonths", { months: totalMonths })})`;
                         } else {
-                            bStr += `(${i18n.t("editor.ageTextMonthsDays", { months, days })})`;
+                            bStr += `(${i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days })})`;
                         }
                     } else {
                         bStr += `(${i18n.t("editor.ageTextDays", { days: ageDays })})`;
@@ -678,6 +722,13 @@ export default function EditorScreen() {
                                     onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
                                 >
                                     <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
+                                </TouchableOpacity>
+                                <View style={styles.formatSegmentDivider} />
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months_days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months_days" } })}
+                                >
+                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonthsDays")}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}

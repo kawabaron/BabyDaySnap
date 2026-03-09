@@ -382,6 +382,20 @@ export default function SettingsScreen() {
                                 >
                                     <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
                                 </TouchableOpacity>
+                                <View style={styles.formatSegmentDivider} />
+                                <TouchableOpacity
+                                    style={[styles.formatSegmentButton, settings.defaultAgeFormat === "years_months_days" && styles.formatSegmentButtonActive]}
+                                    onPress={() => dispatch({
+                                        type: "SET_DEFAULT_TOGGLES", payload: {
+                                            defaultShowDate: settings.defaultShowDate,
+                                            defaultShowName: settings.defaultShowName,
+                                            defaultShowAge: settings.defaultShowAge,
+                                            defaultAgeFormat: "years_months_days"
+                                        }
+                                    })}
+                                >
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "years_months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonthsDays")}</Text>
+                                </TouchableOpacity>
                             </View>
                         )}
                     </View>

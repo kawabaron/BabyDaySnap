@@ -17,22 +17,23 @@ export function calcAgeDays(birthDateISO: string, shotDateISO: string): number {
 }
 
 /**
- * 生後を「nヶ月n日」で計算
+ * 生後を「n年nヶ月n日」で計算
  * 誕生日当日 = 生後0日
  * 撮影日が誕生日より前の場合はマイナスの総日数を返す扱いとし、（既存挙動との互換のため）
  * その場合の表示用フォーマットは `calcAgeDays` と同じようにマイナス日数を返す方針にします。
  */
-export function calcAgeMonthsAndDays(birthDateISO: string, shotDateISO: string): { months: number; days: number; totalDays: number } {
+export function calcAgeMonthsAndDays(birthDateISO: string, shotDateISO: string): { years: number; months: number; days: number; totalDays: number } {
     const totalDays = calcAgeDays(birthDateISO, shotDateISO);
 
     if (totalDays < 0) {
-        return { months: 0, days: totalDays, totalDays };
+        return { years: 0, months: 0, days: totalDays, totalDays };
     }
 
     const birth = parseLocalDate(birthDateISO);
     const shot = parseLocalDate(shotDateISO);
 
-    let months = (shot.getFullYear() - birth.getFullYear()) * 12 + (shot.getMonth() - birth.getMonth());
+    let years = shot.getFullYear() - birth.getFullYear();
+    let months = shot.getMonth() - birth.getMonth();
     let days = shot.getDate() - birth.getDate();
 
     if (days < 0) {
@@ -42,7 +43,12 @@ export function calcAgeMonthsAndDays(birthDateISO: string, shotDateISO: string):
         days += prevMonth.getDate();
     }
 
-    return { months, days, totalDays };
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    return { years, months, days, totalDays };
 }
 
 /**

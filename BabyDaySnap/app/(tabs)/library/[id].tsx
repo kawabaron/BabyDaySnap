@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
-import { formatDateDisplay, msToDateISO } from "@/utils/date";
+import { formatDateDisplay, msToDateISO, calcAgeMonthsAndDays } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppLibraryItem } from "@/types";
@@ -176,7 +176,35 @@ export default function LibraryDetailScreen() {
 
                         <View style={styles.metaRow}>
                             <Text style={styles.metaLabel}>生後日数</Text>
-                            <Text style={styles.metaValue}>{item.ageDays}日</Text>
+                            <Text style={styles.metaValue}>
+                                {(() => {
+                                    if (item.ageDays < 0) return `${item.ageDays}日`;
+                                    const b = babies.find(x => item.babyIds.includes(x.id)) || babies[0];
+                                    if (!b) return `${item.ageDays}日`;
+
+                                    const format = item.ageFormat || "days";
+                                    if (format === "days") return `${item.ageDays}日`;
+
+                                    const { years, months, days } = calcAgeMonthsAndDays(b.birthDateISO, item.shotDateISO);
+                                    if (format === "years_months_days") {
+                                        if (years === 0) {
+                                            if (months === 0) return `${days}日`;
+                                            if (days === 0) return `${months}ヶ月`;
+                                            return `${months}ヶ月${days}日`;
+                                        }
+                                        const yPart = `${years}年`;
+                                        const mPart = months > 0 ? `${months}ヶ月` : "";
+                                        const dPart = days > 0 ? `${days}日` : "";
+                                        return `${yPart}${mPart}${dPart}`;
+                                    } else {
+                                        // months_days
+                                        const totalMonths = years * 12 + months;
+                                        if (totalMonths === 0) return `${days}日`;
+                                        if (days === 0) return `${totalMonths}ヶ月`;
+                                        return `${totalMonths}ヶ月${days}日`;
+                                    }
+                                })()}
+                            </Text>
                         </View>
 
                         <View style={styles.metaRow}>

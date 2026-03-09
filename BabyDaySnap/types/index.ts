@@ -39,7 +39,7 @@ export type ComputedInfo = {
 };
 
 // --- エディタオプション ---
-export type AgeFormat = "days" | "months_days";
+export type AgeFormat = "days" | "months_days" | "years_months_days";
 
 export type EditorOptions = {
     templateId: TemplateId;
