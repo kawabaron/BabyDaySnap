@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import i18n from "@/lib/i18n";
 
 export default function LibraryStackLayout() {
     return (
@@ -12,10 +13,10 @@ export default function LibraryStackLayout() {
                 name="[id]"
                 options={{
                     headerShown: true,
-                    headerTitle: "詳細",
+                    headerTitle: i18n.t("common.detail"),
                     headerTintColor: "#333",
                     headerStyle: { backgroundColor: "#FFF" },
-                    headerBackTitle: "戻る",
+                    headerBackTitle: i18n.t("common.back"),
                 }}
             />
         </Stack>

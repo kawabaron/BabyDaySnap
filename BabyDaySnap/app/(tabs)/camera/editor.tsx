@@ -259,7 +259,7 @@ export default function EditorScreen() {
                 },
             ]);
         } catch {
-            Alert.alert("Error", i18n.t("editor.saveFailed"));
+            Alert.alert(i18n.t("common.error"), i18n.t("editor.saveFailed"));
         } finally {
             setSaving(false);
         }

@@ -36,9 +36,9 @@
         "dateLabel": "Date",
         "nameLabel": "Name",
         "ageLabel": "Age",
-        "ageFormatDays": "%{n} days",
-        "ageFormatMonthsDays": "%{x} mo %{y} d",
-        "ageFormatYearsMonths": "%{z} y %{x} mo",
+        "ageFormatDays": "n days",
+        "ageFormatMonthsDays": "x mo y d",
+        "ageFormatYearsMonths": "z y x mo",
         "commentTitle": "Comment (Optional)",
         "commentPlaceholder": "Enter comment...",
         "saveToAppButton": "Save to App",
@@ -104,6 +104,45 @@
         "privacyLink": "Privacy Policy",
         "contactLink": "Contact Us",
         "saveDateSuccessTitle": "Saved",
-        "saveDateSuccessMsg": "Birthday updated."
+        "saveDateSuccessMsg": "Birthday updated.",
+        "linkErrorTitle": "Error",
+        "linkErrorMsg": "Could not open the link."
+    },
+    "common": {
+        "error": "Error",
+        "back": "Back",
+        "edit": "Edit",
+        "detail": "Detail"
+    },
+    "templates": {
+        "tpl_noframe_full": "No Frame",
+        "tpl_frame_full": "Frame (Full)",
+        "tpl_frame_crop": "Frame (Crop)"
+    },
+    "fonts": {
+        "font_standard": "Standard",
+        "font_soft": "Soft",
+        "font_stylish": "Stylish",
+        "font_cute": "Cute"
+    },
+    "detail": {
+        "headerTitle": "Details",
+        "notFound": "Photo not found",
+        "saveSuccessTitle": "Saved",
+        "saveSuccessMsg": "Saved to Photos.",
+        "deleteConfirmTitle": "Delete",
+        "deleteConfirmMsg": "Delete this photo?",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "reeditButton": "Re-edit",
+        "saveToiPhoneButton": "Save to iPhone",
+        "shareButton": "Share",
+        "deleteButton": "Delete",
+        "babyLabel": "Baby",
+        "ageLabel": "Age",
+        "shotDateLabel": "Shot Date",
+        "templateLabel": "Template",
+        "colorLabel": "Color",
+        "commentLabel": "Comment"
     }
 }

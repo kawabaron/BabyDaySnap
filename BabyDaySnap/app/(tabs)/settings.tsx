@@ -137,7 +137,7 @@ export default function SettingsScreen() {
 
     const openURL = (url: string) => {
         Linking.openURL(url).catch(() => {
-            Alert.alert("エラー", "リンクを開けませんでした。");
+            Alert.alert(i18n.t("settings.linkErrorTitle"), i18n.t("settings.linkErrorMsg"));
         });
     };
 

@@ -18,6 +18,7 @@ import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { formatDateDisplay, msToDateISO, calcAgeMonthsAndDays } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
+import i18n from "@/lib/i18n";
 import type { AppLibraryItem } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -42,7 +43,7 @@ export default function LibraryDetailScreen() {
     if (filteredLibrary.length === 0) {
         return (
             <View style={styles.container}>
-                <Text style={styles.errorText}>写真が見つかりません</Text>
+                <Text style={styles.errorText}>{i18n.t("detail.notFound")}</Text>
             </View>
         );
     }
@@ -50,7 +51,7 @@ export default function LibraryDetailScreen() {
     const handleSaveToPhotos = async (item: AppLibraryItem) => {
         const success = await saveToPhotoLibrary(item.renderedFileUri);
         if (success) {
-            Alert.alert("保存完了", "写真ライブラリに保存しました。");
+            Alert.alert(i18n.t("detail.saveSuccessTitle"), i18n.t("detail.saveSuccessMsg"));
         }
     };
 
@@ -109,10 +110,10 @@ export default function LibraryDetailScreen() {
     };
 
     const handleDelete = (item: AppLibraryItem) => {
-        Alert.alert("削除確認", "この写真を削除しますか？", [
-            { text: "キャンセル", style: "cancel" },
+        Alert.alert(i18n.t("detail.deleteConfirmTitle"), i18n.t("detail.deleteConfirmMsg"), [
+            { text: i18n.t("detail.cancel"), style: "cancel" },
             {
-                text: "削除",
+                text: i18n.t("detail.delete"),
                 style: "destructive",
                 onPress: async () => {
                     await deleteFromAppLibrary(item);
@@ -157,7 +158,7 @@ export default function LibraryDetailScreen() {
                         {/* 所属する赤ちゃん */}
                         {item.babyIds && item.babyIds.length > 0 && (
                             <View style={styles.metaRow}>
-                                <Text style={styles.metaLabel}>赤ちゃん</Text>
+                                <Text style={styles.metaLabel}>{i18n.t("detail.babyLabel")}</Text>
                                 <View style={{ flexDirection: "row", gap: 6 }}>
                                     {item.babyIds.map((bid) => {
                                         const b = babies.find((bb) => bb.id === bid);
@@ -175,50 +176,49 @@ export default function LibraryDetailScreen() {
                         )}
 
                         <View style={styles.metaRow}>
-                            <Text style={styles.metaLabel}>生後日数</Text>
+                            <Text style={styles.metaLabel}>{i18n.t("detail.ageLabel")}</Text>
                             <Text style={styles.metaValue}>
                                 {(() => {
-                                    if (item.ageDays < 0) return `${item.ageDays}日`;
+                                    if (item.ageDays < 0) return i18n.t("editor.ageTextDays", { days: item.ageDays });
                                     const b = babies.find(x => item.babyIds.includes(x.id)) || babies[0];
-                                    if (!b) return `${item.ageDays}日`;
+                                    if (!b) return i18n.t("editor.ageTextDays", { days: item.ageDays });
 
                                     const format = item.ageFormat || "days";
-                                    if (format === "days") return `${item.ageDays}日`;
+                                    if (format === "days") return i18n.t("editor.ageTextDays", { days: item.ageDays });
 
                                     const { years, months, days } = calcAgeMonthsAndDays(b.birthDateISO, item.shotDateISO);
                                     if (format === "years_months") {
                                         if (years === 0) {
-                                            if (months === 0) return `${days}日`;
-                                            return `${months}ヶ月`;
+                                            if (months === 0) return i18n.t("editor.ageTextDays", { days });
+                                            return i18n.t("editor.ageTextMonths", { months });
                                         }
-                                        const yPart = `${years}年`;
-                                        const mPart = months > 0 ? `${months}ヶ月` : "";
-                                        return `${yPart}${mPart}`;
+                                        if (months === 0) return i18n.t("editor.ageTextYears", { years });
+                                        return i18n.t("editor.ageTextYearsMonths", { years, months });
                                     } else {
                                         // months_days
                                         const totalMonths = years * 12 + months;
-                                        if (totalMonths === 0) return `${days}日`;
-                                        if (days === 0) return `${totalMonths}ヶ月`;
-                                        return `${totalMonths}ヶ月${days}日`;
+                                        if (totalMonths === 0) return i18n.t("editor.ageTextDays", { days });
+                                        if (days === 0) return i18n.t("editor.ageTextMonths", { months: totalMonths });
+                                        return i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days });
                                     }
                                 })()}
                             </Text>
                         </View>
 
                         <View style={styles.metaRow}>
-                            <Text style={styles.metaLabel}>撮影日</Text>
+                            <Text style={styles.metaLabel}>{i18n.t("detail.shotDateLabel")}</Text>
                             <Text style={styles.metaValue}>
                                 {formatDateDisplay(item.shotDateISO)}
                             </Text>
                         </View>
 
                         <View style={styles.metaRow}>
-                            <Text style={styles.metaLabel}>テンプレート</Text>
+                            <Text style={styles.metaLabel}>{i18n.t("detail.templateLabel")}</Text>
                             <Text style={styles.metaValue}>{tpl.label}</Text>
                         </View>
 
                         <View style={styles.metaRow}>
-                            <Text style={styles.metaLabel}>日付色</Text>
+                            <Text style={styles.metaLabel}>{i18n.t("detail.colorLabel")}</Text>
                             <View style={styles.colorPreviewRow}>
                                 <View
                                     style={[
@@ -233,7 +233,7 @@ export default function LibraryDetailScreen() {
 
                         {item.commentText ? (
                             <View style={styles.metaRow}>
-                                <Text style={styles.metaLabel}>コメント</Text>
+                                <Text style={styles.metaLabel}>{i18n.t("detail.commentLabel")}</Text>
                                 <Text style={styles.metaValue}>{item.commentText}</Text>
                             </View>
                         ) : null}
@@ -243,22 +243,22 @@ export default function LibraryDetailScreen() {
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity style={[styles.reeditButton, { backgroundColor: itemTheme.accent, shadowColor: itemTheme.shadow }]} onPress={() => handleReedit(item)}>
                             <Ionicons name="color-wand-outline" size={20} color="#FFF" />
-                            <Text style={styles.saveButtonText}>再編集する</Text>
+                            <Text style={styles.saveButtonText}>{i18n.t("detail.reeditButton")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={[styles.saveButton, { backgroundColor: itemTheme.light }]} onPress={() => handleSaveToPhotos(item)}>
                             <Ionicons name="image-outline" size={20} color={itemTheme.accent} />
-                            <Text style={[styles.saveButtonTextOutline, { color: itemTheme.accent }]}>iPhone写真に保存</Text>
+                            <Text style={[styles.saveButtonTextOutline, { color: itemTheme.accent }]}>{i18n.t("detail.saveToiPhoneButton")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={[styles.shareButton, { borderColor: itemTheme.accent }]} onPress={() => handleShare(item)}>
                             <Ionicons name="share-outline" size={20} color={itemTheme.accent} />
-                            <Text style={[styles.shareButtonText, { color: itemTheme.accent }]}>共有</Text>
+                            <Text style={[styles.shareButtonText, { color: itemTheme.accent }]}>{i18n.t("detail.shareButton")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
                             <Ionicons name="trash-outline" size={20} color="#FF4444" />
-                            <Text style={styles.deleteButtonText}>削除</Text>
+                            <Text style={styles.deleteButtonText}>{i18n.t("detail.deleteButton")}</Text>
                         </TouchableOpacity>
                     </View>
 

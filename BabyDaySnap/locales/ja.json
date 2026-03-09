@@ -106,6 +106,45 @@
         "privacyLink": "プライバシーポリシー",
         "contactLink": "お問い合わせ",
         "saveDateSuccessTitle": "保存完了",
-        "saveDateSuccessMsg": "誕生日を更新しました。"
+        "saveDateSuccessMsg": "誕生日を更新しました。",
+        "linkErrorTitle": "エラー",
+        "linkErrorMsg": "リンクを開けませんでした。"
+    },
+    "common": {
+        "error": "エラー",
+        "back": "戻る",
+        "edit": "編集",
+        "detail": "詳細"
+    },
+    "templates": {
+        "tpl_noframe_full": "フチなし全面",
+        "tpl_frame_full": "フチあり（全体）",
+        "tpl_frame_crop": "フチあり（切取）"
+    },
+    "fonts": {
+        "font_standard": "標準",
+        "font_soft": "柔らかめ",
+        "font_stylish": "おしゃれ",
+        "font_cute": "かわいい"
+    },
+    "detail": {
+        "headerTitle": "詳細",
+        "notFound": "写真が見つかりません",
+        "saveSuccessTitle": "保存完了",
+        "saveSuccessMsg": "写真ライブラリに保存しました。",
+        "deleteConfirmTitle": "削除確認",
+        "deleteConfirmMsg": "この写真を削除しますか？",
+        "cancel": "キャンセル",
+        "delete": "削除",
+        "reeditButton": "再編集する",
+        "saveToiPhoneButton": "iPhone写真に保存",
+        "shareButton": "共有",
+        "deleteButton": "削除",
+        "babyLabel": "赤ちゃん",
+        "ageLabel": "生後日数",
+        "shotDateLabel": "撮影日",
+        "templateLabel": "テンプレート",
+        "colorLabel": "日付色",
+        "commentLabel": "コメント"
     }
 }
