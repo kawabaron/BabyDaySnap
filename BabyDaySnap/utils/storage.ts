@@ -25,9 +25,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
     lastFontId: "font_standard",
     lastDateColorHex: "#FFFFFF",
     policyUrls: {
-        termsUrl: "https://example.com/terms",
-        privacyUrl: "https://example.com/privacy",
-        contactUrl: "https://example.com/contact",
+        termsUrl: "https://kawabaron.github.io/BabyDaySnap/terms.html",
+        privacyUrl: "https://kawabaron.github.io/BabyDaySnap/privacy.html",
+        contactUrl: "https://kawabaron.github.io/BabyDaySnap/contact.html",
     },
 };
 
