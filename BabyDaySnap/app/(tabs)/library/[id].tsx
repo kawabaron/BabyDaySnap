@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -10,7 +10,15 @@ import {
     Dimensions,
     Share,
     FlatList,
+    Modal,
+    Pressable,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+} from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
@@ -29,6 +37,8 @@ export default function LibraryDetailScreen() {
     const { library, babies, activeBabyId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const [isFullImageVisible, setIsFullImageVisible] = useState(false);
+    const [zoomImageUri, setZoomImageUri] = useState("");
 
     const filteredLibrary = useMemo(() => {
         if (!activeBabyId) return library;
@@ -142,16 +152,23 @@ export default function LibraryDetailScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* 画像大表示 */}
-                    <View style={[styles.imageContainer, {
-                        height: imageHeight,
-                        backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
-                    }]}>
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => {
+                            setZoomImageUri(item.renderedFileUri);
+                            setIsFullImageVisible(true);
+                        }}
+                        style={[styles.imageContainer, {
+                            height: imageHeight,
+                            backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
+                        }]}
+                    >
                         <Image
                             source={{ uri: item.renderedFileUri }}
                             style={styles.image}
                             resizeMode="contain"
                         />
-                    </View>
+                    </TouchableOpacity>
 
                     {/* メタ情報 */}
                     <View style={styles.metaContainer}>
@@ -280,7 +297,88 @@ export default function LibraryDetailScreen() {
             renderItem={renderItem}
             windowSize={3}
             maxToRenderPerBatch={3}
+            ListFooterComponent={
+                <Modal visible={isFullImageVisible} transparent={true} animationType="fade">
+                    <View style={styles.modalContainer}>
+                        <ZoomableImage
+                            uri={zoomImageUri}
+                            onClose={() => setIsFullImageVisible(false)}
+                        />
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setIsFullImageVisible(false)}
+                        >
+                            <Ionicons name="close" size={30} color="#FFF" />
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+            }
         />
+    );
+}
+
+function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
+    const scale = useSharedValue(1);
+    const savedScale = useSharedValue(1);
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+    const savedTranslateX = useSharedValue(0);
+    const savedTranslateY = useSharedValue(0);
+
+    const pinchGesture = Gesture.Pinch()
+        .onUpdate((e) => {
+            scale.value = savedScale.value * e.scale;
+        })
+        .onEnd(() => {
+            if (scale.value < 1) {
+                scale.value = withTiming(1);
+                savedScale.value = 1;
+                translateX.value = withTiming(0);
+                translateY.value = withTiming(0);
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+            } else {
+                savedScale.value = scale.value;
+            }
+        });
+
+    const panGesture = Gesture.Pan()
+        .onUpdate((e) => {
+            if (scale.value > 1) {
+                translateX.value = savedTranslateX.value + e.translationX;
+                translateY.value = savedTranslateY.value + e.translationY;
+            }
+        })
+        .onEnd(() => {
+            if (scale.value > 1) {
+                savedTranslateX.value = translateX.value;
+                savedTranslateY.value = translateY.value;
+            } else {
+                translateX.value = withTiming(0);
+                translateY.value = withTiming(0);
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+            }
+        });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: translateX.value },
+            { translateY: translateY.value },
+            { scale: scale.value },
+        ],
+    }));
+
+    const composed = Gesture.Simultaneous(pinchGesture, panGesture);
+
+    return (
+        <GestureDetector gesture={composed}>
+            <Animated.Image
+                source={{ uri }}
+                style={[styles.fullImage, animatedStyle]}
+                resizeMode="contain"
+            />
+        </GestureDetector>
     );
 }
 
@@ -407,5 +505,23 @@ const styles = StyleSheet.create({
         color: "#888",
         textAlign: "center",
         marginTop: 40,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.9)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    fullImage: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_WIDTH * 1.5, // Arbitrary large height, contain handles it
+    },
+    closeButton: {
+        position: "absolute",
+        top: 50,
+        right: 20,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        borderRadius: 20,
+        padding: 5,
     },
 });
