@@ -334,7 +334,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             scale.value = savedScale.value * e.scale;
         })
         .onEnd(() => {
-            if (scale.value < 1) {
+            if (scale.value < 1.1) {
                 scale.value = withTiming(1);
                 savedScale.value = 1;
                 translateX.value = withTiming(0);
@@ -355,20 +355,23 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             savedTranslateY.value = translateY.value;
         })
         .onUpdate((e) => {
-            if (scale.value > 1) {
+            // 拡大中（1.1倍以上）または2本指操作中は、純粋なパン操作として扱う
+            if (scale.value > 1.1 || e.numberOfPointers > 1) {
                 translateX.value = savedTranslateX.value + e.translationX;
                 translateY.value = savedTranslateY.value + e.translationY;
             } else {
+                // 等倍付近かつ1本指の時のみスワイプダウンを許容
                 if (e.translationY > 0) {
                     translateY.value = e.translationY;
                 }
             }
         })
         .onEnd((e) => {
-            if (scale.value > 1) {
+            if (scale.value > 1.1 || e.numberOfPointers > 1) {
                 savedTranslateX.value = translateX.value;
                 savedTranslateY.value = translateY.value;
             } else {
+                // 80px以上下にスワイプしたら閉じる（指が1本の時のみ）
                 if (e.translationY > 80) {
                     runOnJS(onClose)();
                 } else {
