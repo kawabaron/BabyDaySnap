@@ -216,6 +216,7 @@ export default function SettingsScreen() {
                                                         mode="date"
                                                         display={Platform.OS === "ios" ? "spinner" : "default"}
                                                         maximumDate={new Date()}
+                                                        minimumDate={new Date(1900, 0, 1)}
                                                         onChange={onDateChange}
                                                         locale="ja"
                                                         style={styles.datePicker}
@@ -418,8 +419,8 @@ export default function SettingsScreen() {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.templatePreviewBox}>
-                                    {t.id === "tpl_noframe_full" && <View style={styles.templateNoFrame} />}
-                                    {t.id === "tpl_frame_full" && (
+                                    {!t.hasFrame && <View style={styles.templateNoFrame} />}
+                                    {t.hasFrame && (
                                         <View style={styles.templateFrame}>
                                             <View style={styles.templateInner} />
                                         </View>
