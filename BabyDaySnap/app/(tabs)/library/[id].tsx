@@ -360,8 +360,8 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
                 savedTranslateX.value = translateX.value;
                 savedTranslateY.value = translateY.value;
             } else {
-                // 150px以上下にスワイプしたら閉じる
-                if (e.translationY > 150) {
+                // 80px以上下にスワイプしたら閉じる
+                if (e.translationY > 80) {
                     runOnJS(onClose)();
                 } else {
                     translateX.value = withTiming(0);
