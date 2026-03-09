@@ -654,7 +654,7 @@ export default function EditorScreen() {
                         />
                     </View>
                     <View style={{ width: "100%" }}>
-                        <View style={styles.toggleItem}>
+                        <View style={[styles.toggleItem, { width: 140 }]}>
                             <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
                             <Switch
                                 value={editorOptions.showAge}
