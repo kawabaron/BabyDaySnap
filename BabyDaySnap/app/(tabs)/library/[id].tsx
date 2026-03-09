@@ -18,6 +18,7 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
+    runOnJS,
 } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
@@ -347,17 +348,27 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             if (scale.value > 1) {
                 translateX.value = savedTranslateX.value + e.translationX;
                 translateY.value = savedTranslateY.value + e.translationY;
+            } else {
+                // スワイプダウンで閉じるための動き（下方向のみ）
+                if (e.translationY > 0) {
+                    translateY.value = e.translationY;
+                }
             }
         })
-        .onEnd(() => {
+        .onEnd((e) => {
             if (scale.value > 1) {
                 savedTranslateX.value = translateX.value;
                 savedTranslateY.value = translateY.value;
             } else {
-                translateX.value = withTiming(0);
-                translateY.value = withTiming(0);
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
+                // 150px以上下にスワイプしたら閉じる
+                if (e.translationY > 150) {
+                    runOnJS(onClose)();
+                } else {
+                    translateX.value = withTiming(0);
+                    translateY.value = withTiming(0);
+                    savedTranslateX.value = 0;
+                    savedTranslateY.value = 0;
+                }
             }
         });
 
