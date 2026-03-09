@@ -73,7 +73,7 @@ export default function OnboardingBirthdateScreen() {
             <Stack.Screen
                 options={{
                     headerShown: isAddMode,
-                    headerTitle: i18n.t("onboarding.addButton").replace("する", " 追加"), // Adjust loosely for header title
+                    headerTitle: i18n.t(isAddMode ? "onboarding.headerTitleAdd" : "onboarding.headerTitleStart"),
                     headerBackTitle: i18n.t("editor.backButton"),
                     headerTintColor: "#333",
                     headerShadowVisible: true,
@@ -134,6 +134,8 @@ export default function OnboardingBirthdateScreen() {
                             value={date}
                             mode="date"
                             display={Platform.OS === "ios" ? "spinner" : "default"}
+                            maximumDate={new Date()}
+                            minimumDate={new Date(1900, 0, 1)}
                             onChange={onDateChange}
                             locale="ja"
                             style={styles.picker}
