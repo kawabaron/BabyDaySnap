@@ -8,6 +8,8 @@ import { FONT_OPTIONS } from "@/utils/templates";
 import "../global.css";
 import "@/lib/i18n";
 
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 function RootLayoutNav() {
   const { settings, loading } = useAppState();
   const router = useRouter();
@@ -58,8 +60,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <RootLayoutNav />
-    </AppProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <RootLayoutNav />
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 }
