@@ -8,7 +8,9 @@
         "birthDateLabel": "誕生日",
         "themeColorLabel": "テーマカラー",
         "startButton": "開始する",
-        "addButton": "追加する"
+        "addButton": "追加する",
+        "headerTitleAdd": "追加",
+        "headerTitleStart": "初期設定"
     },
     "tabs": {
         "camera": "作る",
