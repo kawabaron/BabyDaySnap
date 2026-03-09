@@ -350,7 +350,6 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
         });
 
     const panGesture = Gesture.Pan()
-        .minDistance(10)
         .onStart(() => {
             savedTranslateX.value = translateX.value;
             savedTranslateY.value = translateY.value;
@@ -383,7 +382,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
 
     const doubleTapGesture = Gesture.Tap()
         .numberOfTaps(2)
-        .onStart((e) => {
+        .onStart(() => {
             if (scale.value > 1) {
                 scale.value = withTiming(1);
                 savedScale.value = 1;
@@ -401,9 +400,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             }
         });
 
-    // Use Exclusive to ensure doubleTap doesn't fire if Pinch/Pan starts
-    const zoomGesture = Gesture.Simultaneous(pinchGesture, panGesture);
-    const composed = Gesture.Exclusive(doubleTapGesture, zoomGesture);
+    const composed = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
