@@ -215,14 +215,31 @@ function drawText(
     isMultiBaby: boolean,
 ) {
     const shortSide = Math.min(canvasW, canvasH);
-    const dateFontSize = shortSide * FONT_SIZE_DATE_RATIO * (isMultiBaby ? 0.75 : 1);
-    const commentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
+    const baseDateFontSize = shortSide * FONT_SIZE_DATE_RATIO * (isMultiBaby ? 0.75 : 1);
+    const baseCommentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
     const margin = shortSide * (hasFrame ? 0.08 : 0.04);
     const gap = shortSide * 0.015;
 
     const dateText = dateTextLine1;
-
     const hasDateText = dateText.length > 0;
+    const hasComment = options.commentText.trim().length > 0;
+
+    // 利用可能な最大幅
+    const maxWidth = canvasW - margin * 2;
+
+    // フォントサイズの決定ロジック
+    const getAdjustedFontSize = (text: string, baseSize: number) => {
+        let size = baseSize;
+        const font = Skia.Font(typeface || undefined, size);
+        const textWidth = font.measureText(text).width;
+        if (textWidth > maxWidth) {
+            size = (maxWidth / textWidth) * baseSize;
+        }
+        return size;
+    };
+
+    const dateFontSize = hasDateText ? getAdjustedFontSize(dateText, baseDateFontSize) : baseDateFontSize;
+    const commentFontSize = hasComment ? getAdjustedFontSize(options.commentText, baseCommentFontSize) : baseCommentFontSize;
 
     // フォント生成
     const dateFont = Skia.Font(typeface || undefined, dateFontSize);
@@ -234,7 +251,6 @@ function drawText(
 
     let dateY = 0;
     let commentY = 0;
-    const hasComment = options.commentText.trim().length > 0;
 
     if (hasFrame) {
         // フチあり: 写真の下端を基準に上詰め配置

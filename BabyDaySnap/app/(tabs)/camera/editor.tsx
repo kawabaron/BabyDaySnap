@@ -452,6 +452,20 @@ export default function EditorScreen() {
     const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
 
+    // --- 自動サイズ調整ロジック (Preview用) ---
+    // Skia側のロジック (renderImage.ts) と極力合わせる
+    const hasComment = (editorOptions.commentText || "").trim().length > 0;
+    const hasDateText = (dateTextLine1 || "").length > 0;
+    const previewMaxWidth = PREVIEW_WIDTH - margin * 2;
+
+    // 日本語フォント等の幅計算は正確には難しいが、
+    // adjustsFontSizeToFit が効くので、ここでは「最大サイズ」を指定し、
+    // adjustsFontSizeToFit で収める方針にする。
+    // ただし、fontSize を固定にしておかないと位置計算がズレるため、
+    // ここではベースのサイズを定義し、コンポーネント側で調整する。
+    const previewDateFontSize = dateFontSize;
+    const previewCommentFontSize = commentFontSize;
+
     return (
         <ScrollView
             style={[styles.container, { backgroundColor: theme.background }]}
@@ -487,29 +501,41 @@ export default function EditorScreen() {
                     alignItems: "flex-end",
                 }}>
                     {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
-                        <Text style={{
-                            fontFamily: editorOptions.fontId,
-                            fontSize: dateFontSize,
-                            color: editorOptions.dateColorHex,
-                            fontWeight: "bold",
-                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                            textShadowOffset: { width: 1, height: 1 },
-                            textShadowRadius: 1,
-                        }}>
+                        <Text
+                            style={{
+                                fontFamily: editorOptions.fontId,
+                                fontSize: previewDateFontSize,
+                                color: editorOptions.dateColorHex,
+                                fontWeight: "bold",
+                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                textShadowOffset: { width: 1, height: 1 },
+                                textShadowRadius: 1,
+                                width: previewMaxWidth,
+                                textAlign: "right",
+                            }}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                        >
                             {dateTextLine1}
                         </Text>
                     )}
                     {editorOptions.commentText ? (
-                        <Text style={{
-                            fontFamily: editorOptions.fontId,
-                            fontSize: commentFontSize,
-                            color: editorOptions.dateColorHex,
-                            fontWeight: "bold",
-                            marginTop: gap,
-                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                            textShadowOffset: { width: 1, height: 1 },
-                            textShadowRadius: 1,
-                        }}>
+                        <Text
+                            style={{
+                                fontFamily: editorOptions.fontId,
+                                fontSize: previewCommentFontSize,
+                                color: editorOptions.dateColorHex,
+                                fontWeight: "bold",
+                                marginTop: gap,
+                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                textShadowOffset: { width: 1, height: 1 },
+                                textShadowRadius: 1,
+                                width: previewMaxWidth,
+                                textAlign: "right",
+                            }}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                        >
                             {editorOptions.commentText}
                         </Text>
                     ) : null}
