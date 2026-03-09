@@ -83,7 +83,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         }
 
         // 写真描画
-        drawPhoto(canvas, skImage, canvasW, canvasH, tpl.hasFrame, imageWidth, imageHeight);
+        drawPhoto(canvas, skImage, canvasW, canvasH, editorOptions.templateId, tpl.hasFrame, imageWidth, imageHeight);
 
         // テキスト描画
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, dateTextLine1, isMultiBaby);
@@ -167,6 +167,7 @@ function drawPhoto(
     image: SkImage,
     canvasW: number,
     canvasH: number,
+    templateId: TemplateId,
     hasFrame: boolean,
     origW: number,
     origH: number,
@@ -186,11 +187,18 @@ function drawPhoto(
         const containerX = inset;
         const containerY = inset;
 
-        const contain = getContainRect(origW, origH, containerW, containerH);
-        const srcRect = Skia.XYWHRect(0, 0, origW, origH);
-        const dstRect = Skia.XYWHRect(containerX + contain.x, containerY + contain.y, contain.w, contain.h);
-
-        canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
+        if (templateId === "tpl_frame_full") {
+            const contain = getContainRect(origW, origH, containerW, containerH);
+            const srcRect = Skia.XYWHRect(0, 0, origW, origH);
+            const dstRect = Skia.XYWHRect(containerX + contain.x, containerY + contain.y, contain.w, contain.h);
+            canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
+        } else {
+            // tpl_frame_crop or others: cover
+            const cover = getCoverRect(origW, origH, containerW, containerH);
+            const srcRect = Skia.XYWHRect(cover.x, cover.y, cover.w, cover.h);
+            const dstRect = Skia.XYWHRect(containerX, containerY, containerW, containerH);
+            canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
+        }
     }
 }
 

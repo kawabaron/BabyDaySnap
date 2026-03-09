@@ -15,7 +15,8 @@ export type BabyProfile = {
 // --- テンプレート ---
 export type TemplateId =
     | "tpl_noframe_full"   // フチ無し全面（黒縁取り白文字デフォ）
-    | "tpl_frame_full";     // フチあり全面（黒文字）
+    | "tpl_frame_full"      // フチあり（全体）
+    | "tpl_frame_crop";     // フチあり（切取）
 
 // --- フォント ---
 export type FontId = "font_standard" | "font_soft" | "font_stylish" | "font_cute";

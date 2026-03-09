@@ -14,7 +14,15 @@ export const TEMPLATES: TemplateConfig[] = [
     },
     {
         id: "tpl_frame_full",
-        label: "フチあり",
+        label: "フチあり（全体）",
+        hasFrame: true,
+        isSquare: false,
+        defaultDateColorHex: "#000000",
+        hasTextStroke: false,
+    },
+    {
+        id: "tpl_frame_crop",
+        label: "フチあり（切取）",
         hasFrame: true,
         isSquare: false,
         defaultDateColorHex: "#000000",
