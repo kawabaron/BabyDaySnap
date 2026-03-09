@@ -383,193 +383,167 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
                     savedTranslateX.value = 0;
                     savedTranslateY.value = 0;
                 }
+                const zoomGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+
+                const animatedStyle = useAnimatedStyle(() => ({
+                    transform: [
+                        { translateX: translateX.value },
+                        { translateY: translateY.value },
+                        { scale: scale.value },
+                    ],
+                }));
+
+                return (
+                    <GestureDetector gesture={zoomGesture}>
+                        <Animated.Image
+                            source={{ uri }}
+                            style={[styles.fullImage, animatedStyle]}
+                            resizeMode="contain"
+                        />
+                    </GestureDetector>
+                );
             }
-        });
 
-    const doubleTapGesture = Gesture.Tap()
-        .numberOfTaps(2)
-        .onStart((e) => {
-            if (scale.value > 1.05) {
-                // 等倍に戻す
-                scale.value = withSpring(1);
-                savedScale.value = 1;
-                translateX.value = withSpring(0);
-                translateY.value = withSpring(0);
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
-            } else {
-                // 2.5倍に拡大
-                scale.value = withSpring(2.5);
-                savedScale.value = 2.5;
-                // タップ位置へのオフセット計算（簡易版。中央拡大をベースに調整が必要な場合は将来対応）
-                translateX.value = withSpring(0);
-                translateY.value = withSpring(0);
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
-            }
-        });
-
-    const composed = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { translateX: translateX.value },
-            { translateY: translateY.value },
-            { scale: scale.value },
-        ],
-    }));
-
-    return (
-        <GestureDetector gesture={composed}>
-            <Animated.Image
-                source={{ uri }}
-                style={[styles.fullImage, animatedStyle]}
-                resizeMode="contain"
-            />
-        </GestureDetector>
-    );
-}
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#FFF",
-    },
-    scrollContent: {
-        paddingTop: 0,
-    },
-    imageContainer: {
-        width: IMAGE_WIDTH,
-        backgroundColor: "#F5F5F5",
-        overflow: "hidden",
-    },
-    image: {
-        width: "100%",
-        height: "100%",
-    },
-    buttonContainer: {
-        marginTop: 24,
-        paddingHorizontal: 16,
-        gap: 12,
-    },
-    metaContainer: {
-        marginTop: 24,
-        marginHorizontal: 16,
-        backgroundColor: "#FAFAFA",
-        borderRadius: 12,
-        padding: 16,
-        gap: 14,
-    },
-    metaRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    metaLabel: {
-        fontSize: 14,
-        color: "#888",
-        fontWeight: "500",
-    },
-    metaValue: {
-        fontSize: 14,
-        color: "#333",
-        fontWeight: "600",
-    },
-    colorPreviewRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    colorPreviewDot: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-    },
-    reeditButton: {
-        backgroundColor: "#FF8FA3",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 16,
-        borderRadius: 14,
-        gap: 8,
-        shadowColor: "#FF8FA3",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    saveButton: {
-        backgroundColor: "#FFF0F3",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 14,
-        borderRadius: 14,
-        gap: 8,
-    },
-    saveButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "700",
-    },
-    saveButtonTextOutline: {
-        color: "#FF8FA3",
-        fontSize: 16,
-        fontWeight: "700",
-    },
-    shareButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 14,
-        borderRadius: 14,
-        borderWidth: 2,
-        borderColor: "#FF8FA3",
-        gap: 8,
-    },
-    shareButtonText: {
-        color: "#FF8FA3",
-        fontSize: 16,
-        fontWeight: "700",
-    },
-    deleteButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 14,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: "#FFD0D0",
-        gap: 8,
-    },
-    deleteButtonText: {
-        color: "#FF4444",
-        fontSize: 15,
-        fontWeight: "600",
-    },
-    errorText: {
-        fontSize: 16,
-        color: "#888",
-        textAlign: "center",
-        marginTop: 40,
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.9)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    fullImage: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_WIDTH * 1.5, // Arbitrary large height, contain handles it
-    },
-    closeButton: {
-        position: "absolute",
-        top: 50,
-        right: 20,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        borderRadius: 20,
-        padding: 5,
-    },
-});
+            const styles = StyleSheet.create({
+                container: {
+                    flex: 1,
+                    backgroundColor: "#FFF",
+                },
+                scrollContent: {
+                    paddingTop: 0,
+                },
+                imageContainer: {
+                    width: IMAGE_WIDTH,
+                    backgroundColor: "#F5F5F5",
+                    overflow: "hidden",
+                },
+                image: {
+                    width: "100%",
+                    height: "100%",
+                },
+                buttonContainer: {
+                    marginTop: 24,
+                    paddingHorizontal: 16,
+                    gap: 12,
+                },
+                metaContainer: {
+                    marginTop: 24,
+                    marginHorizontal: 16,
+                    backgroundColor: "#FAFAFA",
+                    borderRadius: 12,
+                    padding: 16,
+                    gap: 14,
+                },
+                metaRow: {
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                },
+                metaLabel: {
+                    fontSize: 14,
+                    color: "#888",
+                    fontWeight: "500",
+                },
+                metaValue: {
+                    fontSize: 14,
+                    color: "#333",
+                    fontWeight: "600",
+                },
+                colorPreviewRow: {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                },
+                colorPreviewDot: {
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                },
+                reeditButton: {
+                    backgroundColor: "#FF8FA3",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 16,
+                    borderRadius: 14,
+                    gap: 8,
+                    shadowColor: "#FF8FA3",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 4,
+                },
+                saveButton: {
+                    backgroundColor: "#FFF0F3",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 14,
+                    borderRadius: 14,
+                    gap: 8,
+                },
+                saveButtonText: {
+                    color: "#FFF",
+                    fontSize: 16,
+                    fontWeight: "700",
+                },
+                saveButtonTextOutline: {
+                    color: "#FF8FA3",
+                    fontSize: 16,
+                    fontWeight: "700",
+                },
+                shareButton: {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 14,
+                    borderRadius: 14,
+                    borderWidth: 2,
+                    borderColor: "#FF8FA3",
+                    gap: 8,
+                },
+                shareButtonText: {
+                    color: "#FF8FA3",
+                    fontSize: 16,
+                    fontWeight: "700",
+                },
+                deleteButton: {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: 14,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: "#FFD0D0",
+                    gap: 8,
+                },
+                deleteButtonText: {
+                    color: "#FF4444",
+                    fontSize: 15,
+                    fontWeight: "600",
+                },
+                errorText: {
+                    fontSize: 16,
+                    color: "#888",
+                    textAlign: "center",
+                    marginTop: 40,
+                },
+                modalContainer: {
+                    flex: 1,
+                    backgroundColor: "rgba(0,0,0,0.9)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                },
+                fullImage: {
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_WIDTH * 1.5, // Arbitrary large height, contain handles it
+                },
+                closeButton: {
+                    position: "absolute",
+                    top: 50,
+                    right: 20,
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    borderRadius: 20,
+                    padding: 5,
+                },
+            });
