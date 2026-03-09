@@ -372,6 +372,27 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             }
         });
 
+    const doubleTapGesture = Gesture.Tap()
+        .numberOfTaps(2)
+        .onStart((e) => {
+            if (scale.value > 1) {
+                scale.value = withTiming(1);
+                savedScale.value = 1;
+                translateX.value = withTiming(0);
+                translateY.value = withTiming(0);
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+            } else {
+                scale.value = withTiming(2.5);
+                savedScale.value = 2.5;
+                // タップした位置を中心に拡大するのは少し複雑なので、まずは中央拡大で実装
+                translateX.value = withTiming(0);
+                translateY.value = withTiming(0);
+                savedTranslateX.value = 0;
+                savedTranslateY.value = 0;
+            }
+        });
+
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
             { translateX: translateX.value },
@@ -380,7 +401,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
         ],
     }));
 
-    const composed = Gesture.Simultaneous(pinchGesture, panGesture);
+    const composed = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
 
     return (
         <GestureDetector gesture={composed}>
