@@ -18,6 +18,7 @@ import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
+    withSpring,
     runOnJS,
 } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -326,23 +327,26 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
     const savedTranslateX = useSharedValue(0);
     const savedTranslateY = useSharedValue(0);
 
+    const isZoomedAtStart = useSharedValue(false);
+
     const pinchGesture = Gesture.Pinch()
         .onStart(() => {
             savedScale.value = scale.value;
         })
         .onUpdate((e) => {
-            scale.value = savedScale.value * e.scale;
+            const nextScale = savedScale.value * e.scale;
+            scale.value = nextScale < 0.5 ? 0.5 : nextScale;
         })
         .onEnd(() => {
-            if (scale.value < 1.1) {
-                scale.value = withTiming(1);
+            if (scale.value < 1.05) {
+                scale.value = withSpring(1);
                 savedScale.value = 1;
-                translateX.value = withTiming(0);
-                translateY.value = withTiming(0);
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
             } else if (scale.value > 5) {
-                scale.value = withTiming(5);
+                scale.value = withSpring(5);
                 savedScale.value = 5;
             } else {
                 savedScale.value = scale.value;
@@ -353,30 +357,29 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
         .onStart(() => {
             savedTranslateX.value = translateX.value;
             savedTranslateY.value = translateY.value;
+            isZoomedAtStart.value = scale.value > 1.05;
         })
         .onUpdate((e) => {
-            // 拡大中（1.1倍以上）または2本指操作中は、純粋なパン操作として扱う
-            if (scale.value > 1.1 || e.numberOfPointers > 1) {
+            if (isZoomedAtStart.value || scale.value > 1.05 || e.numberOfPointers > 1) {
                 translateX.value = savedTranslateX.value + e.translationX;
                 translateY.value = savedTranslateY.value + e.translationY;
             } else {
-                // 等倍付近かつ1本指の時のみスワイプダウンを許容
                 if (e.translationY > 0) {
                     translateY.value = e.translationY;
                 }
             }
         })
         .onEnd((e) => {
-            if (scale.value > 1.1 || e.numberOfPointers > 1) {
+            if (isZoomedAtStart.value || scale.value > 1.05) {
                 savedTranslateX.value = translateX.value;
                 savedTranslateY.value = translateY.value;
             } else {
-                // 80px以上下にスワイプしたら閉じる（指が1本の時のみ）
-                if (e.translationY > 80) {
+                // 等倍スタートかつ1本指で大きくスワイプダウンした場合のみ閉じる
+                if (e.translationY > 150) {
                     runOnJS(onClose)();
                 } else {
-                    translateX.value = withTiming(0);
-                    translateY.value = withTiming(0);
+                    translateX.value = withSpring(0);
+                    translateY.value = withSpring(0);
                     savedTranslateX.value = 0;
                     savedTranslateY.value = 0;
                 }
@@ -387,17 +390,17 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
         .numberOfTaps(2)
         .onStart(() => {
             if (scale.value > 1) {
-                scale.value = withTiming(1);
+                scale.value = withSpring(1);
                 savedScale.value = 1;
-                translateX.value = withTiming(0);
-                translateY.value = withTiming(0);
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
             } else {
-                scale.value = withTiming(2.5);
+                scale.value = withSpring(2.5);
                 savedScale.value = 2.5;
-                translateX.value = withTiming(0);
-                translateY.value = withTiming(0);
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
             }
