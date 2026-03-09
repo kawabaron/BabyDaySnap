@@ -186,16 +186,14 @@ export default function LibraryDetailScreen() {
                                     if (format === "days") return `${item.ageDays}日`;
 
                                     const { years, months, days } = calcAgeMonthsAndDays(b.birthDateISO, item.shotDateISO);
-                                    if (format === "years_months_days") {
+                                    if (format === "years_months") {
                                         if (years === 0) {
                                             if (months === 0) return `${days}日`;
-                                            if (days === 0) return `${months}ヶ月`;
-                                            return `${months}ヶ月${days}日`;
+                                            return `${months}ヶ月`;
                                         }
                                         const yPart = `${years}年`;
                                         const mPart = months > 0 ? `${months}ヶ月` : "";
-                                        const dPart = days > 0 ? `${days}日` : "";
-                                        return `${yPart}${mPart}${dPart}`;
+                                        return `${yPart}${mPart}`;
                                     } else {
                                         // months_days
                                         const totalMonths = years * 12 + months;

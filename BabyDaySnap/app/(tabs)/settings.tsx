@@ -384,17 +384,17 @@ export default function SettingsScreen() {
                                 </TouchableOpacity>
                                 <View style={styles.formatSegmentDivider} />
                                 <TouchableOpacity
-                                    style={[styles.formatSegmentButton, settings.defaultAgeFormat === "years_months_days" && styles.formatSegmentButtonActive]}
+                                    style={[styles.formatSegmentButton, settings.defaultAgeFormat === "years_months" && styles.formatSegmentButtonActive]}
                                     onPress={() => dispatch({
                                         type: "SET_DEFAULT_TOGGLES", payload: {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: "years_months_days"
+                                            defaultAgeFormat: "years_months"
                                         }
                                     })}
                                 >
-                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "years_months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonthsDays")}</Text>
+                                    <Text style={[styles.formatSegmentText, settings.defaultAgeFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}

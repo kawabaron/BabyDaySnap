@@ -38,7 +38,7 @@
         "ageLabel": "Age",
         "ageFormatDays": "%{n} days",
         "ageFormatMonthsDays": "%{x} mo %{y} d",
-        "ageFormatYearsMonthsDays": "%{z} y %{x} mo %{y} d",
+        "ageFormatYearsMonths": "%{z} y %{x} mo",
         "commentTitle": "Comment (Optional)",
         "commentPlaceholder": "Enter comment...",
         "saveToAppButton": "Save to App",
@@ -57,8 +57,6 @@
         "ageTextMonthsDays": "%{months} months %{days} days old",
         "ageTextYears": "%{years} years old",
         "ageTextYearsMonths": "%{years} years %{months} months old",
-        "ageTextYearsDays": "%{years} years %{days} days old",
-        "ageTextYearsMonthsDays": "%{years} years %{months} months %{days} days old",
         "dateDisplay": "%{year}/%{month}/%{day}"
     },
     "library": {

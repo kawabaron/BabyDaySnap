@@ -38,7 +38,7 @@
         "ageLabel": "生後日数",
         "ageFormatDays": "n日",
         "ageFormatMonthsDays": "xヶ月y日",
-        "ageFormatYearsMonthsDays": "z年xヶ月y日",
+        "ageFormatYearsMonths": "z年xヶ月",
         "commentTitle": "コメント（任意）",
         "commentPlaceholder": "コメントを入力...",
         "saveToAppButton": "アプリ内に保存",
@@ -57,8 +57,6 @@
         "ageTextMonthsDays": "生後%{months}ヶ月%{days}日",
         "ageTextYears": "生後%{years}年",
         "ageTextYearsMonths": "生後%{years}年%{months}ヶ月",
-        "ageTextYearsDays": "生後%{years}年%{days}日",
-        "ageTextYearsMonthsDays": "生後%{years}年%{months}ヶ月%{days}日",
         "dateDisplay": "%{year}年%{month}月%{day}日"
     },
     "library": {
