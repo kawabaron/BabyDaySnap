@@ -143,6 +143,25 @@ function getCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
     return { x: sX, y: sY, w: sW, h: sH };
 }
 
+function getContainRect(srcW: number, srcH: number, dstW: number, dstH: number) {
+    const srcAspect = srcW / srcH;
+    const dstAspect = dstW / dstH;
+
+    let dW = dstW;
+    let dH = dstH;
+    let dX = 0;
+    let dY = 0;
+
+    if (srcAspect > dstAspect) {
+        dH = dstW / srcAspect;
+        dY = (dstH - dH) / 2;
+    } else {
+        dW = dstH * srcAspect;
+        dX = (dstW - dW) / 2;
+    }
+    return { x: dX, y: dY, w: dW, h: dH };
+}
+
 function drawPhoto(
     canvas: SkCanvas,
     image: SkImage,
@@ -162,14 +181,14 @@ function drawPhoto(
         const inset = shortSide * INSET_RATIO;
         const bottomInset = shortSide * BOTTOM_INSET_RATIO;
 
-        const dstW = canvasW - inset * 2;
-        const dstH = canvasH - inset - bottomInset;
-        const dstX = inset;
-        const dstY = inset;
+        const containerW = canvasW - inset * 2;
+        const containerH = canvasH - inset - bottomInset;
+        const containerX = inset;
+        const containerY = inset;
 
-        const cover = getCoverRect(origW, origH, dstW, dstH);
-        const srcRect = Skia.XYWHRect(cover.x, cover.y, cover.w, cover.h);
-        const dstRect = Skia.XYWHRect(dstX, dstY, dstW, dstH);
+        const contain = getContainRect(origW, origH, containerW, containerH);
+        const srcRect = Skia.XYWHRect(0, 0, origW, origH);
+        const dstRect = Skia.XYWHRect(containerX + contain.x, containerY + contain.y, contain.w, contain.h);
 
         canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
     }

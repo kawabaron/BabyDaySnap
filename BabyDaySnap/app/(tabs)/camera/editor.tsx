@@ -487,7 +487,7 @@ export default function EditorScreen() {
                     <Image
                         source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
                         style={{ width: "100%", height: "100%" }}
-                        resizeMode="cover"
+                        resizeMode={tpl.hasFrame ? "contain" : "cover"}
                     />
                 </View>
 
