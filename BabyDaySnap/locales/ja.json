@@ -35,7 +35,7 @@
         "textVisibilityTitle": "印字テキスト",
         "dateLabel": "日付",
         "nameLabel": "名前",
-        "ageLabel": "生後表示",
+        "ageLabel": "生後日数",
         "ageFormatDays": "n日",
         "ageFormatMonthsDays": "xヶ月y日",
         "commentTitle": "コメント（任意）",
