@@ -386,27 +386,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
             }
         });
 
-    const doubleTapGesture = Gesture.Tap()
-        .numberOfTaps(2)
-        .onStart(() => {
-            if (scale.value > 1) {
-                scale.value = withSpring(1);
-                savedScale.value = 1;
-                translateX.value = withSpring(0);
-                translateY.value = withSpring(0);
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
-            } else {
-                scale.value = withSpring(2.5);
-                savedScale.value = 2.5;
-                translateX.value = withSpring(0);
-                translateY.value = withSpring(0);
-                savedTranslateX.value = 0;
-                savedTranslateY.value = 0;
-            }
-        });
-
-    const composed = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
+    const zoomGesture = Gesture.Simultaneous(pinchGesture, panGesture);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
@@ -417,7 +397,7 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
     }));
 
     return (
-        <GestureDetector gesture={composed}>
+        <GestureDetector gesture={zoomGesture}>
             <Animated.Image
                 source={{ uri }}
                 style={[styles.fullImage, animatedStyle]}
