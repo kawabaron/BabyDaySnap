@@ -338,12 +338,16 @@ function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
                 translateY.value = withTiming(0);
                 savedTranslateX.value = 0;
                 savedTranslateY.value = 0;
+            } else if (scale.value > 5) {
+                scale.value = withTiming(5);
+                savedScale.value = 5;
             } else {
                 savedScale.value = scale.value;
             }
         });
 
     const panGesture = Gesture.Pan()
+        .minDistance(10)
         .onUpdate((e) => {
             if (scale.value > 1) {
                 translateX.value = savedTranslateX.value + e.translationX;
