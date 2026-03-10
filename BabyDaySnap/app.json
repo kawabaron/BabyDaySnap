@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "BabyDaySnap",
-    "slug": "BabyDaySnap",
+    "name": "BSnap",
+    "slug": "bsnap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "babydaysnap",
+    "scheme": "bsnap",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.babydaysnap.app",
+      "bundleIdentifier": "com.bsnap.app",
       "infoPlist": {
         "NSCameraUsageDescription": "赤ちゃんの写真を撮影するためにカメラを使用します",
         "NSPhotoLibraryUsageDescription": "写真を取り込むためにフォトライブラリにアクセスします",
@@ -44,7 +44,7 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO"
       ],
-      "package": "com.babydaysnap.app"
+      "package": "com.bsnap.app"
     },
     "web": {
       "output": "static",
