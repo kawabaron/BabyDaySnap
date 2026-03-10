@@ -19,6 +19,13 @@ export default function LibraryStackLayout() {
                     headerBackTitle: i18n.t("common.back"),
                 }}
             />
+            <Stack.Screen
+                name="viewer"
+                options={{
+                    headerShown: false,
+                    animation: "fade",
+                }}
+            />
         </Stack>
     );
 }

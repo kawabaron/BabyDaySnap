@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     View,
     Text,
@@ -10,15 +10,7 @@ import {
     Dimensions,
     Share,
     FlatList,
-    Modal,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    runOnJS,
-} from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
@@ -29,19 +21,14 @@ import { Ionicons } from "@expo/vector-icons";
 import i18n from "@/lib/i18n";
 import type { AppLibraryItem } from "@/types";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_WIDTH = SCREEN_WIDTH;
-const MAX_ZOOM_SCALE = 4;
-const DOUBLE_TAP_ZOOM_SCALE = 2.5;
-const SWIPE_CLOSE_THRESHOLD = 120;
 
 export default function LibraryDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { library, babies, activeBabyId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const [isFullImageVisible, setIsFullImageVisible] = useState(false);
-    const [zoomImageUri, setZoomImageUri] = useState("");
 
     const filteredLibrary = useMemo(() => {
         if (!activeBabyId) return library;
@@ -157,10 +144,7 @@ export default function LibraryDetailScreen() {
                     {/* 画像大表示 */}
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => {
-                            setZoomImageUri(item.renderedFileUri);
-                            setIsFullImageVisible(true);
-                        }}
+                        onPress={() => router.push({ pathname: "/(tabs)/library/viewer", params: { uri: item.renderedFileUri } })}
                         style={[styles.imageContainer, {
                             height: imageHeight,
                             backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
@@ -300,180 +284,10 @@ export default function LibraryDetailScreen() {
             renderItem={renderItem}
             windowSize={3}
             maxToRenderPerBatch={3}
-            ListFooterComponent={
-                <Modal visible={isFullImageVisible} transparent={true} animationType="fade">
-                    <View style={styles.modalContainer}>
-                        <ZoomableImage uri={zoomImageUri} onClose={() => setIsFullImageVisible(false)} />
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setIsFullImageVisible(false)}
-                        >
-                            <Ionicons name="close" size={30} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
-                </Modal>
-            }
         />
     );
 }
 
-function ZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
-    const scale = useSharedValue(1);
-    const scaleOffset = useSharedValue(1);
-    const translateX = useSharedValue(0);
-    const translateY = useSharedValue(0);
-    const translateOffsetX = useSharedValue(0);
-    const translateOffsetY = useSharedValue(0);
-    const panStartX = useSharedValue(0);
-    const panStartY = useSharedValue(0);
-    const pinchActive = useSharedValue(false);
-    const panMode = useSharedValue(0);
-
-    const resetZoom = () => {
-        "worklet";
-        scale.value = withSpring(1);
-        scaleOffset.value = 1;
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        translateOffsetX.value = 0;
-        translateOffsetY.value = 0;
-        panStartX.value = 0;
-        panStartY.value = 0;
-        panMode.value = 0;
-    };
-
-    const resetDismissPosition = () => {
-        "worklet";
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        translateOffsetX.value = 0;
-        translateOffsetY.value = 0;
-        panStartX.value = 0;
-        panStartY.value = 0;
-        panMode.value = 0;
-    };
-
-    const pinchGesture = Gesture.Pinch()
-        .onBegin(() => {
-            pinchActive.value = true;
-            if (panMode.value === 2) {
-                resetDismissPosition();
-            }
-        })
-        .onUpdate((e) => {
-            const nextScale = scaleOffset.value * e.scale;
-            scale.value = Math.min(Math.max(nextScale, 1), MAX_ZOOM_SCALE);
-        })
-        .onEnd(() => {
-            if (scale.value <= 1.01) {
-                resetZoom();
-            } else {
-                scaleOffset.value = scale.value;
-            }
-        })
-        .onFinalize(() => {
-            pinchActive.value = false;
-        });
-
-    const panGesture = Gesture.Pan()
-        .maxPointers(1)
-        .onStart(() => {
-            const isZoomed = scale.value > 1.01 || scaleOffset.value > 1.01;
-            panMode.value = isZoomed ? 1 : 2;
-            panStartX.value = translateOffsetX.value;
-            panStartY.value = translateOffsetY.value;
-        })
-        .onUpdate((e) => {
-            if (pinchActive.value || e.numberOfPointers > 1) {
-                panMode.value = 0;
-                return;
-            }
-
-            if (panMode.value === 1) {
-                translateX.value = panStartX.value + e.translationX;
-                translateY.value = panStartY.value + e.translationY;
-                return;
-            }
-
-            if (panMode.value === 2) {
-                translateX.value = 0;
-                translateY.value = e.translationY;
-            }
-        })
-        .onEnd((e) => {
-            if (panMode.value === 1) {
-                if (scale.value <= 1.01 && scaleOffset.value <= 1.01) {
-                    resetZoom();
-                } else {
-                    translateOffsetX.value = translateX.value;
-                    translateOffsetY.value = translateY.value;
-                    panMode.value = 0;
-                }
-                return;
-            }
-
-            if (panMode.value === 2) {
-                if (Math.abs(e.translationY) > SWIPE_CLOSE_THRESHOLD) {
-                    runOnJS(onClose)();
-                } else {
-                    resetDismissPosition();
-                }
-            }
-        })
-        .onFinalize(() => {
-            if (panMode.value === 2 && !pinchActive.value) {
-                resetDismissPosition();
-            }
-            panMode.value = 0;
-        });
-
-    const doubleTapGesture = Gesture.Tap()
-        .numberOfTaps(2)
-        .maxDuration(250)
-        .onEnd((_event, success) => {
-            if (!success || pinchActive.value) {
-                return;
-            }
-
-            if (scaleOffset.value > 1.01 || scale.value > 1.01) {
-                resetZoom();
-                return;
-            }
-
-            scale.value = withSpring(DOUBLE_TAP_ZOOM_SCALE);
-            scaleOffset.value = DOUBLE_TAP_ZOOM_SCALE;
-            translateX.value = withSpring(0);
-            translateY.value = withSpring(0);
-            translateOffsetX.value = 0;
-            translateOffsetY.value = 0;
-            panStartX.value = 0;
-            panStartY.value = 0;
-            panMode.value = 0;
-        });
-
-    const zoomGesture = Gesture.Exclusive(
-        doubleTapGesture,
-        Gesture.Simultaneous(pinchGesture, panGesture),
-    );
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { translateX: translateX.value },
-            { translateY: translateY.value },
-            { scale: scale.value },
-        ],
-    }));
-
-    return (
-        <GestureDetector gesture={zoomGesture}>
-            <Animated.Image
-                source={{ uri }}
-                style={[styles.fullImage, animatedStyle]}
-                resizeMode="contain"
-            />
-        </GestureDetector>
-    );
-}
 
 const styles = StyleSheet.create({
     container: {
@@ -598,23 +412,5 @@ const styles = StyleSheet.create({
         color: "#888",
         textAlign: "center",
         marginTop: 40,
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.9)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    fullImage: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
-    },
-    closeButton: {
-        position: "absolute",
-        top: 50,
-        right: 20,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        borderRadius: 20,
-        padding: 5,
     },
 });
