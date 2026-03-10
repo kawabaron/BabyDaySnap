@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAX_SCALE = 4;
 const DOUBLE_TAP_SCALE = 2.5;
-const DISMISS_THRESHOLD = 120;
+const DISMISS_THRESHOLD = 100;
 
 function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
@@ -41,37 +41,23 @@ export default function LibraryImageViewerScreen() {
 function ZoomableFullscreenImage({ uri, onClose }: { uri: string; onClose: () => void }) {
     const scale = useSharedValue(1);
     const scaleOffset = useSharedValue(1);
-    const translateX = useSharedValue(0);
-    const translateY = useSharedValue(0);
-    const startX = useSharedValue(0);
-    const startY = useSharedValue(0);
+    const dismissY = useSharedValue(0);
     const pinchActive = useSharedValue(false);
-    const panMode = useSharedValue(0);
-
-    const resetImage = () => {
-        "worklet";
-        scale.value = withSpring(1);
-        scaleOffset.value = 1;
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        startX.value = 0;
-        startY.value = 0;
-        panMode.value = 0;
-    };
 
     const resetDismiss = () => {
         "worklet";
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        startX.value = 0;
-        startY.value = 0;
-        panMode.value = 0;
+        dismissY.value = withSpring(0, { damping: 20, stiffness: 220 });
+    };
+
+    const resetZoom = () => {
+        "worklet";
+        scale.value = withSpring(1, { damping: 20, stiffness: 220 });
+        scaleOffset.value = 1;
     };
 
     const pinchGesture = Gesture.Pinch()
         .onBegin(() => {
             pinchActive.value = true;
-            panMode.value = 0;
         })
         .onUpdate((event) => {
             const nextScale = clamp(scaleOffset.value * event.scale, 1, MAX_SCALE);
@@ -79,7 +65,7 @@ function ZoomableFullscreenImage({ uri, onClose }: { uri: string; onClose: () =>
         })
         .onEnd(() => {
             if (scale.value <= 1.01) {
-                resetImage();
+                resetZoom();
             } else {
                 scaleOffset.value = scale.value;
             }
@@ -88,42 +74,24 @@ function ZoomableFullscreenImage({ uri, onClose }: { uri: string; onClose: () =>
             pinchActive.value = false;
         });
 
-    const panGesture = Gesture.Pan()
+    const dismissGesture = Gesture.Pan()
         .maxPointers(1)
-        .onStart(() => {
-            const isZoomed = scale.value > 1.01 || scaleOffset.value > 1.01;
-            panMode.value = isZoomed ? 1 : 2;
-            startX.value = translateX.value;
-            startY.value = translateY.value;
-        })
+        .activeOffsetY([-8, 8])
+        .failOffsetX([-40, 40])
         .onUpdate((event) => {
-            if (pinchActive.value || event.numberOfPointers > 1) {
+            if (pinchActive.value || scale.value > 1.01 || scaleOffset.value > 1.01) {
                 return;
             }
 
-            if (panMode.value === 1) {
-                translateX.value = startX.value + event.translationX;
-                translateY.value = startY.value + event.translationY;
-                return;
-            }
-
-            translateX.value = event.translationX * 0.12;
-            translateY.value = event.translationY;
+            dismissY.value = event.translationY;
         })
         .onEnd((event) => {
-            if (panMode.value === 1) {
-                if (scale.value <= 1.01 && scaleOffset.value <= 1.01) {
-                    resetImage();
-                } else {
-                    startX.value = translateX.value;
-                    startY.value = translateY.value;
-                    panMode.value = 0;
-                }
+            if (pinchActive.value || scale.value > 1.01 || scaleOffset.value > 1.01) {
+                resetDismiss();
                 return;
             }
 
-            const isVerticalSwipe = Math.abs(event.translationY) > Math.abs(event.translationX);
-            if (isVerticalSwipe && Math.abs(event.translationY) > DISMISS_THRESHOLD) {
+            if (Math.abs(event.translationY) > DISMISS_THRESHOLD) {
                 runOnJS(onClose)();
                 return;
             }
@@ -131,10 +99,9 @@ function ZoomableFullscreenImage({ uri, onClose }: { uri: string; onClose: () =>
             resetDismiss();
         })
         .onFinalize(() => {
-            if (panMode.value === 2 && !pinchActive.value) {
+            if (!pinchActive.value && scale.value <= 1.01 && scaleOffset.value <= 1.01) {
                 resetDismiss();
             }
-            panMode.value = 0;
         });
 
     const doubleTapGesture = Gesture.Tap()
@@ -147,36 +114,36 @@ function ZoomableFullscreenImage({ uri, onClose }: { uri: string; onClose: () =>
             }
 
             if (scaleOffset.value > 1.01 || scale.value > 1.01) {
-                resetImage();
+                resetZoom();
                 return;
             }
 
-            scale.value = withSpring(DOUBLE_TAP_SCALE);
+            scale.value = withSpring(DOUBLE_TAP_SCALE, { damping: 20, stiffness: 220 });
             scaleOffset.value = DOUBLE_TAP_SCALE;
-            translateX.value = withSpring(0);
-            translateY.value = withSpring(0);
-            startX.value = 0;
-            startY.value = 0;
-            panMode.value = 0;
+            dismissY.value = withSpring(0, { damping: 20, stiffness: 220 });
         });
 
-    const gesture = Gesture.Simultaneous(doubleTapGesture, pinchGesture, panGesture);
+    const gesture = Gesture.Simultaneous(
+        dismissGesture,
+        Gesture.Exclusive(doubleTapGesture, pinchGesture),
+    );
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [
-            { translateX: translateX.value },
-            { translateY: translateY.value },
+            { translateY: dismissY.value },
             { scale: scale.value },
         ],
     }));
 
     return (
         <GestureDetector gesture={gesture}>
-            <Animated.Image
-                source={{ uri }}
-                style={[styles.image, animatedStyle]}
-                resizeMode="contain"
-            />
+            <Animated.View style={styles.imageWrap}>
+                <Animated.Image
+                    source={{ uri }}
+                    style={[styles.image, animatedStyle]}
+                    resizeMode="contain"
+                />
+            </Animated.View>
         </GestureDetector>
     );
 }
@@ -185,6 +152,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#000",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    imageWrap: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT,
         justifyContent: "center",
         alignItems: "center",
     },

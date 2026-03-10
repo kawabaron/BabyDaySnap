@@ -23,7 +23,7 @@ export default function LibraryStackLayout() {
                 name="viewer"
                 options={{
                     headerShown: false,
-                    animation: "fade",
+                    animation: "none",
                 }}
             />
         </Stack>
