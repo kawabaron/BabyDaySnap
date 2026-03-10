@@ -40,23 +40,50 @@ export default function LibraryImageViewerScreen() {
     );
 }
 
+type ZoomableScrollView = ScrollView & {
+    scrollResponderZoomTo?: (rect: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        animated?: boolean;
+    }) => void;
+    setNativeProps?: (props: { zoomScale?: number }) => void;
+};
+
 function NativeZoomableImage({ uri, onClose }: { uri: string; onClose: () => void }) {
     const dismissTranslateY = useRef(new Animated.Value(0)).current;
-    const scrollViewRef = useRef<ScrollView | null>(null);
+    const scrollViewRef = useRef<ZoomableScrollView | null>(null);
     const lastTapAtRef = useRef(0);
     const zoomScaleRef = useRef(1);
 
-    const setZoomScale = (nextScale: number) => {
+    const setZoomScale = (nextScale: number, animated: boolean) => {
         zoomScaleRef.current = nextScale;
 
-        const scrollView = scrollViewRef.current as ScrollView & {
-            setNativeProps?: (props: { zoomScale?: number }) => void;
-        };
+        const scrollView = scrollViewRef.current;
+        if (!scrollView) {
+            return;
+        }
 
-        scrollView?.setNativeProps?.({ zoomScale: nextScale });
+        if (Platform.OS === "ios" && scrollView.scrollResponderZoomTo) {
+            const width = SCREEN_WIDTH / nextScale;
+            const height = SCREEN_HEIGHT / nextScale;
+            const x = Math.max(0, (SCREEN_WIDTH - width) / 2);
+            const y = Math.max(0, (SCREEN_HEIGHT - height) / 2);
+
+            scrollView.scrollResponderZoomTo({
+                x,
+                y,
+                width,
+                height,
+                animated,
+            });
+        } else {
+            scrollView.setNativeProps?.({ zoomScale: nextScale });
+        }
 
         if (nextScale === 1) {
-            scrollView?.scrollTo?.({ x: 0, y: 0, animated: false });
+            scrollView.scrollTo?.({ x: 0, y: 0, animated: false });
         }
     };
 
@@ -70,7 +97,7 @@ function NativeZoomableImage({ uri, onClose }: { uri: string; onClose: () => voi
         }
 
         const nextScale = zoomScaleRef.current > 1.01 ? 1 : DOUBLE_TAP_SCALE;
-        setZoomScale(nextScale);
+        setZoomScale(nextScale, true);
     };
 
     const panResponder = useMemo(() => PanResponder.create({
@@ -112,7 +139,9 @@ function NativeZoomableImage({ uri, onClose }: { uri: string; onClose: () => voi
     return (
         <Animated.View style={[styles.imageWrap, animatedStyle]} {...panResponder.panHandlers}>
             <ScrollView
-                ref={scrollViewRef}
+                ref={(ref) => {
+                    scrollViewRef.current = ref as ZoomableScrollView | null;
+                }}
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 maximumZoomScale={MAX_SCALE}
