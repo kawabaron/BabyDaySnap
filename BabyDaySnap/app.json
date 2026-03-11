@@ -12,6 +12,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.kawabaron.bsnap.app",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "赤ちゃんの写真を撮影するためにカメラを使用します",
         "NSPhotoLibraryUsageDescription": "写真を取り込むためにフォトライブラリにアクセスします",
         "NSPhotoLibraryAddUsageDescription": "作成した写真をフォトライブラリに保存します"
