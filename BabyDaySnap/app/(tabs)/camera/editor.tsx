@@ -18,7 +18,8 @@ import {
     type LayoutChangeEvent,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
@@ -64,7 +65,8 @@ export default function EditorScreen() {
     const [activeTool, setActiveTool] = useState<EditorToolId>("template");
     const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
-    const insets = useSafeAreaInsets();
+    const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabBarHeight();
     const formScrollRef = useRef<ScrollView>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
 
@@ -497,8 +499,13 @@ export default function EditorScreen() {
     const previewWidth = PREVIEW_WIDTH;
     const previewAspect = currentPhoto.width / currentPhoto.height;
     const naturalPreviewHeight = previewWidth / previewAspect;
-    const editorPanelHeight = keyboardVisible ? 320 : 286;
-    const previewStageMaxHeight = Math.max(220, SCREEN_HEIGHT - insets.top - insets.bottom - 60 - editorPanelHeight - 36);
+    const toolBarHeight = 90;
+    const editorPanelHeight = keyboardVisible ? 228 : 188;
+    const editorDockHeight = toolBarHeight + editorPanelHeight;
+    const previewStageMaxHeight = Math.max(
+        220,
+        SCREEN_HEIGHT - insets.top - 60 - tabBarHeight - editorDockHeight - 28,
+    );
     const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
 
@@ -802,7 +809,15 @@ export default function EditorScreen() {
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
                 keyboardVerticalOffset={0}
             >
-                <View style={styles.previewStage}>
+                <View
+                    style={[
+                        styles.previewStage,
+                        {
+                            paddingTop: 12,
+                            paddingBottom: editorDockHeight + tabBarHeight + 12,
+                        },
+                    ]}
+                >
                     <View style={styles.previewSection}>
                         <View
                             style={[
@@ -892,47 +907,50 @@ export default function EditorScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.toolPanel, { height: editorPanelHeight + insets.bottom }]}>
-                    <View style={styles.toolHandle} />
+                <View style={[styles.toolDock, { bottom: tabBarHeight }]}>
                     <Animated.View
-                        key={activeTool}
+                        key={`panel-${activeTool}`}
                         style={[
-                            styles.toolContent,
+                            styles.panelSheet,
                             {
+                                height: editorPanelHeight,
                                 opacity: toolPanelAnimation,
                                 transform: [
                                     {
                                         translateY: toolPanelAnimation.interpolate({
                                             inputRange: [0, 1],
-                                            outputRange: [18, 0],
+                                            outputRange: [48, 0],
                                         }),
                                     },
                                 ],
                             },
                         ]}
                     >
-                        {renderActiveToolPanel()}
+                        <View style={styles.toolHandle} />
+                        <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
                     </Animated.View>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={[styles.toolTabRow, { paddingBottom: Math.max(insets.bottom, 8) }]}
-                    >
-                        {toolTabs.map((tool) => {
-                            const isActive = activeTool === tool.id;
-                            return (
-                                <TouchableOpacity
-                                    key={tool.id}
-                                    style={[styles.toolTab, isActive && { backgroundColor: theme.light }]}
-                                    onPress={() => setActiveTool(tool.id)}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name={tool.icon} size={20} color={isActive ? theme.accent : "#777"} />
-                                    <Text style={[styles.toolTabLabel, isActive && { color: theme.accent }]}>{tool.label}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                    <View style={styles.toolBar}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.toolTabRow}
+                        >
+                            {toolTabs.map((tool) => {
+                                const isActive = activeTool === tool.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={tool.id}
+                                        style={[styles.toolTab, isActive && { backgroundColor: theme.light }]}
+                                        onPress={() => setActiveTool(tool.id)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name={tool.icon} size={20} color={isActive ? theme.accent : "#777"} />
+                                        <Text style={[styles.toolTabLabel, isActive && { color: theme.accent }]}>{tool.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -950,15 +968,13 @@ const styles = StyleSheet.create({
     },
     previewStage: {
         flex: 1,
-        justifyContent: "center",
+        justifyContent: "flex-start",
     },
     previewSection: {
-        flex: 1,
         paddingHorizontal: 16,
-        paddingTop: 16,
         paddingBottom: 10,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
     },
     previewContainer: {
         width: PREVIEW_WIDTH,
@@ -992,7 +1008,13 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "700",
     },
-    toolPanel: {
+    toolDock: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        paddingHorizontal: 0,
+    },
+    panelSheet: {
         backgroundColor: "#FFF",
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
@@ -1014,7 +1036,8 @@ const styles = StyleSheet.create({
     toolContent: {
         flex: 1,
         paddingHorizontal: 18,
-        paddingBottom: 8,
+        paddingTop: 2,
+        paddingBottom: 10,
     },
     toolScrollContent: {
         paddingBottom: 6,
@@ -1030,22 +1053,28 @@ const styles = StyleSheet.create({
     },
     toolTabRow: {
         paddingHorizontal: 10,
-        paddingTop: 6,
-        gap: 4,
+        paddingVertical: 10,
+        gap: 6,
     },
     toolTab: {
-        width: 70,
+        width: 68,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 8,
-        paddingVertical: 8,
-        borderRadius: 16,
+        paddingVertical: 10,
+        borderRadius: 14,
     },
     toolTabLabel: {
         marginTop: 4,
         fontSize: 11,
         fontWeight: "600",
         color: "#777",
+    },
+    toolBar: {
+        backgroundColor: "#FFF",
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: "#E9DDE2",
+        minHeight: 90,
     },
     targetRow: {
         flexDirection: "row",
