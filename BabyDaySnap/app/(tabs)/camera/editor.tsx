@@ -51,6 +51,30 @@ function getFilterOption(filterId?: FilterId) {
 }
 
 type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment" | "save";
+
+function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
+    if (keyboardVisible) {
+        if (toolId === "comment") return 198;
+        if (toolId === "text") return 188;
+    }
+
+    switch (toolId) {
+        case "target":
+            return 104;
+        case "template":
+            return 142;
+        case "font":
+            return 98;
+        case "filter":
+            return 98;
+        case "text":
+            return 170;
+        case "comment":
+            return 156;
+        case "save":
+            return 152;
+    }
+}
 
 export default function EditorScreen() {
     const state = useAppState();
@@ -70,6 +94,7 @@ export default function EditorScreen() {
     const formScrollRef = useRef<ScrollView>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
     const panelDragStart = useRef(1);
+    const activePanelHeight = getToolPanelHeight(activeTool, keyboardVisible);
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ: 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､髫ｰ・ｦ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ遶擾ｽｵ繝ｻ・ｺ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｴ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ
     const theme = useMemo(() => {
@@ -507,12 +532,15 @@ export default function EditorScreen() {
     const previewAspect = currentPhoto.width / currentPhoto.height;
     const naturalPreviewHeight = previewWidth / previewAspect;
     const toolBarHeight = 90;
-    const panelMaxHeight = keyboardVisible ? 228 : 188;
-    const panelExpandedHeight = panelExpanded ? panelMaxHeight : 0;
-    const editorDockHeight = toolBarHeight + panelExpandedHeight + 20;
+    const panelHandleHeight = 28;
+    const panelExpandedHeight = panelExpanded ? activePanelHeight : 0;
+    const previewBottomSpacing = panelExpanded
+        ? (activeTool === "save" || activeTool === "comment" || activeTool === "text" ? 22 : 18)
+        : 12;
+    const editorDockHeight = toolBarHeight + panelHandleHeight + panelExpandedHeight + 20;
     const previewStageMaxHeight = Math.max(
-        220,
-        SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - 28,
+        168,
+        SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - previewBottomSpacing - 28,
     );
     const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
@@ -568,7 +596,7 @@ export default function EditorScreen() {
             });
         },
         onPanResponderMove: (_, gestureState) => {
-            const dragRange = Math.max(panelMaxHeight, 1);
+            const dragRange = Math.max(activePanelHeight, 1);
             const nextValue = Math.max(0, Math.min(1, panelDragStart.current - gestureState.dy / dragRange));
             toolPanelAnimation.setValue(nextValue);
         },
@@ -583,7 +611,7 @@ export default function EditorScreen() {
         onPanResponderTerminate: () => {
             animatePanelTo(panelExpanded);
         },
-    }), [animatePanelTo, panelExpanded, panelMaxHeight, toolPanelAnimation]);
+    }), [activePanelHeight, animatePanelTo, panelExpanded, toolPanelAnimation]);
 
     const renderActiveToolPanel = () => {
         switch (activeTool) {
@@ -858,11 +886,11 @@ export default function EditorScreen() {
                         styles.previewStage,
                         {
                             paddingTop: 12,
-                            paddingBottom: 12,
+                            paddingBottom: 0,
                         },
                     ]}
                 >
-                    <View style={styles.previewSection}>
+                    <View style={[styles.previewSection, { paddingBottom: previewBottomSpacing }]}>
                         <View
                             style={[
                                 styles.previewContainer,
@@ -966,7 +994,7 @@ export default function EditorScreen() {
                                 {
                                     height: toolPanelAnimation.interpolate({
                                         inputRange: [0, 1],
-                                        outputRange: [0, panelMaxHeight],
+                                        outputRange: [0, activePanelHeight],
                                     }),
                                     opacity: toolPanelAnimation,
                                     transform: [
@@ -1029,7 +1057,6 @@ const styles = StyleSheet.create({
     },
     previewSection: {
         paddingHorizontal: 16,
-        paddingBottom: 16,
         alignItems: "center",
         justifyContent: "flex-start",
     },
@@ -1067,7 +1094,6 @@ const styles = StyleSheet.create({
     },
     toolDock: {
         backgroundColor: "#FFF",
-        marginTop: 8,
     },
     panelSheet: {
         backgroundColor: "#FFF",
@@ -1084,7 +1110,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     toolHandleButton: {
-        minHeight: 32,
+        minHeight: 28,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -1095,21 +1121,21 @@ const styles = StyleSheet.create({
         backgroundColor: "#D9D4D6",
     },
     toolContent: {
-        paddingHorizontal: 18,
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingHorizontal: 16,
+        paddingTop: 4,
+        paddingBottom: 6,
     },
     toolScrollContent: {
-        paddingBottom: 6,
+        paddingBottom: 0,
     },
     panelTitle: {
         fontSize: 16,
         fontWeight: "700",
         color: "#2B2628",
-        marginBottom: 14,
+        marginBottom: 8,
     },
     panelTitleSpaced: {
-        marginTop: 18,
+        marginTop: 14,
     },
     toolTabRow: {
         paddingHorizontal: 10,
@@ -1162,7 +1188,7 @@ const styles = StyleSheet.create({
     targetHint: {
         fontSize: 12,
         color: "#999",
-        marginTop: 6,
+        marginTop: 4,
         paddingLeft: 4,
     },
     templateRow: {
@@ -1224,7 +1250,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 8,
-        paddingVertical: 4,
+        paddingVertical: 2,
     },
     fontBadge: {
         paddingHorizontal: 12,
@@ -1248,7 +1274,7 @@ const styles = StyleSheet.create({
     filterRow: {
         flexDirection: "row",
         gap: 8,
-        paddingVertical: 4,
+        paddingVertical: 2,
     },
     filterChip: {
         flexDirection: "row",
@@ -1308,14 +1334,14 @@ const styles = StyleSheet.create({
         backgroundColor: "#FAFAFA",
     },
     commentComposer: {
-        minHeight: 118,
+        minHeight: 104,
     },
     toggleRowContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
         flexWrap: "wrap",
         gap: 8,
-        paddingVertical: 4,
+        paddingVertical: 2,
     },
     toggleItem: {
         flexDirection: "row",
@@ -1367,7 +1393,7 @@ const styles = StyleSheet.create({
         color: "#888",
     },
     toolSaveActions: {
-        gap: 12,
+        gap: 10,
     },
     saveButton: {
         flexDirection: "row",
