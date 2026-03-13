@@ -32,23 +32,20 @@ import type { TemplateId, FontId, FilterId } from "@/types";
 import i18n from "@/lib/i18n";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
 
-const FILTER_OPTIONS: Array<{ id: FilterId; label: string; color: string; opacity: number }> = [
-    { id: "filter_none", label: "None", color: "transparent", opacity: 0 },
-    { id: "filter_milk", label: "Milk", color: "#FFF3E8", opacity: 0.24 },
-    { id: "filter_blossom", label: "Bloom", color: "#FFDCE6", opacity: 0.2 },
-    { id: "filter_nap", label: "Nap", color: "#F2E4D7", opacity: 0.22 },
-    { id: "filter_sparkle", label: "Sparkle", color: "#FFF8D6", opacity: 0.16 },
+const FILTER_OPTIONS: Array<{ id: FilterId; labelKey: string; color: string; opacity: number }> = [
+    { id: "filter_none", labelKey: "filters.filter_none", color: "transparent", opacity: 0 },
+    { id: "filter_milk", labelKey: "filters.filter_milk", color: "#FFF3E8", opacity: 0.24 },
+    { id: "filter_blossom", labelKey: "filters.filter_blossom", color: "#FFDCE6", opacity: 0.2 },
+    { id: "filter_nap", labelKey: "filters.filter_nap", color: "#F2E4D7", opacity: 0.22 },
+    { id: "filter_sparkle", labelKey: "filters.filter_sparkle", color: "#FFF8D6", opacity: 0.16 },
 ];
 
 function getFilterOption(filterId?: FilterId) {
     return FILTER_OPTIONS.find((option) => option.id === filterId) ?? FILTER_OPTIONS[0];
 }
-const PREVIEW_EXPANDED_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.36, 230), 320);
-const PREVIEW_COMPACT_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.24, 170), 220);
-const FOOTER_BASE_HEIGHT = 148;
 
 export default function EditorScreen() {
     const state = useAppState();
@@ -119,7 +116,7 @@ export default function EditorScreen() {
                     ]}
                 >
                     <Ionicons name="download-outline" size={16} color="#FFF" />
-                    <Text style={styles.headerSaveText}>Save</Text>
+                    <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
                 </TouchableOpacity>
             ),
         });
@@ -704,7 +701,7 @@ export default function EditorScreen() {
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>驛｢譎・ｽｼ譁絶襖驛｢譎｢・ｽ・ｫ驛｢・ｧ繝ｻ・ｿ驛｢譎｢・ｽ・ｼ</Text>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.filterTitle")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                             {FILTER_OPTIONS.map((option) => {
                                 const isActive = (editorOptions as any).filterId === option.id;
@@ -718,7 +715,7 @@ export default function EditorScreen() {
                                         onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { filterId: option.id } })}
                                     >
                                         <View style={[styles.filterDot, { backgroundColor: option.id === "filter_none" ? "#E7E7E7" : option.color }]} />
-                                        <Text style={[styles.filterLabel, isActive && { color: theme.accent }]}>{option.label}</Text>
+                                        <Text style={[styles.filterLabel, isActive && { color: theme.accent }]}>{i18n.t(option.labelKey)}</Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -883,10 +880,14 @@ const styles = StyleSheet.create({
     headerSaveButton: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 4,
-        paddingHorizontal: 12,
+        minHeight: 36,
+        paddingHorizontal: 14,
         paddingVertical: 8,
-        borderRadius: 18,
+        borderRadius: 999,
+        borderWidth: 0,
+        overflow: "hidden",
         marginRight: 8,
     },
     headerSaveText: {

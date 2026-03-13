@@ -29,10 +29,12 @@
     },
     "editor": {
         "backButton": "Back",
+        "headerSaveButton": "Save",
         "saveTargetTitle": "Save to",
         "saveTargetHint": "Will be saved to all selected libraries",
         "templateTitle": "Template",
         "fontTitle": "Font",
+        "filterTitle": "Filter",
         "dateColorTitle": "Date Color",
         "textVisibilityTitle": "Printed Text",
         "dateLabel": "Date",
@@ -114,7 +116,8 @@
         "error": "Error",
         "back": "Back",
         "edit": "Edit",
-        "detail": "Detail"
+        "detail": "Detail",
+        "cancel": "Cancel"
     },
     "templates": {
         "tpl_noframe_full": "No Frame",
@@ -126,6 +129,13 @@
         "font_soft": "Soft",
         "font_stylish": "Stylish",
         "font_cute": "Cute"
+    },
+    "filters": {
+        "filter_none": "None",
+        "filter_milk": "Milk",
+        "filter_blossom": "Blossom",
+        "filter_nap": "Nap",
+        "filter_sparkle": "Sparkle"
     },
     "detail": {
         "headerTitle": "Details",
@@ -155,5 +165,24 @@
         "peach": "Peach",
         "lemon": "Lemon",
         "neutral": "Neutral"
+    },
+    "palette": {
+        "white": "White",
+        "black": "Black",
+        "gray": "Gray",
+        "red": "Red",
+        "blue": "Blue",
+        "green": "Green",
+        "orange": "Orange",
+        "pink": "Pink",
+        "purple": "Purple",
+        "yellow": "Yellow"
+    },
+    "photoLibrary": {
+        "permissionTitle": "Photo access required",
+        "permissionMessage": "Allow photo access in Settings to save images to your iPhone photo library.",
+        "openSettings": "Open Settings",
+        "saveFailedTitle": "Save failed",
+        "saveFailedMessage": "Could not save the image to your photo library."
     }
 }

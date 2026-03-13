@@ -1,8 +1,5 @@
-// ============================================================
-// BabyDaySnap - テンプレート定義
-// ============================================================
 import i18n from "@/lib/i18n";
-import type { TemplateConfig, ColorOption, TemplateId, FontOption, FontId } from "@/types";
+import type { ColorOption, FontId, FontOption, TemplateConfig, TemplateId } from "@/types";
 
 export const TEMPLATES: TemplateConfig[] = [
     {
@@ -32,20 +29,20 @@ export const TEMPLATES: TemplateConfig[] = [
 ];
 
 export const COLOR_PALETTE: ColorOption[] = [
-    { hex: "#FFFFFF", label: "白" },
-    { hex: "#000000", label: "黒" },
-    { hex: "#9E9E9E", label: "グレー" },
-    { hex: "#F44336", label: "赤" },
-    { hex: "#2196F3", label: "青" },
-    { hex: "#4CAF50", label: "緑" },
-    { hex: "#FF9800", label: "オレンジ" },
-    { hex: "#E91E63", label: "ピンク" },
-    { hex: "#9C27B0", label: "紫" },
-    { hex: "#FFEB3B", label: "黄" },
+    { hex: "#FFFFFF", get label() { return i18n.t("palette.white"); } },
+    { hex: "#000000", get label() { return i18n.t("palette.black"); } },
+    { hex: "#9E9E9E", get label() { return i18n.t("palette.gray"); } },
+    { hex: "#F44336", get label() { return i18n.t("palette.red"); } },
+    { hex: "#2196F3", get label() { return i18n.t("palette.blue"); } },
+    { hex: "#4CAF50", get label() { return i18n.t("palette.green"); } },
+    { hex: "#FF9800", get label() { return i18n.t("palette.orange"); } },
+    { hex: "#E91E63", get label() { return i18n.t("palette.pink"); } },
+    { hex: "#9C27B0", get label() { return i18n.t("palette.purple"); } },
+    { hex: "#FFEB3B", get label() { return i18n.t("palette.yellow"); } },
 ];
 
 export function getTemplateConfig(id: TemplateId): TemplateConfig {
-    return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+    return TEMPLATES.find((template) => template.id === id) ?? TEMPLATES[0];
 }
 
 export const FONT_OPTIONS: FontOption[] = [
@@ -72,5 +69,5 @@ export const FONT_OPTIONS: FontOption[] = [
 ];
 
 export function getFontConfig(id: FontId): FontOption {
-    return FONT_OPTIONS.find((f) => f.id === id) ?? FONT_OPTIONS[0];
+    return FONT_OPTIONS.find((font) => font.id === id) ?? FONT_OPTIONS[0];
 }

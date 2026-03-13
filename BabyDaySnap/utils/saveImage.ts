@@ -4,6 +4,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { Alert, Linking } from "react-native";
+import i18n from "@/lib/i18n";
 import type { AppLibraryItem, EditorOptions, ComputedInfo, PhotoSource } from "@/types";
 
 /** 驛｢譎｢・ｽ・ｩ驛｢・ｧ繝ｻ・､驛｢譎・§・主ｸｷ・ｹ譎｢・ｽ・ｪ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｬ驛｢・ｧ繝ｻ・ｯ驛｢譎冗樟・取㏍・ｹ・ｧ髮区ｧｫ蠕宣辧蠅灘惧繝ｻ・ｼ髢ｧ・ｲ隨乗ｪ趣ｽｸ・ｺ闔会ｽ｣繝ｻ讙趣ｽｸ・ｺ繝ｻ・ｰ髣厄ｽｴ隲帛現繝ｻ郢晢ｽｻ郢晢ｽｻ*/
@@ -91,11 +92,11 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
 
         if (status !== "granted") {
             Alert.alert(
-                "Photo access required",
-                "Allow photo access in Settings to save images to your iPhone photo library.",
+                i18n.t("photoLibrary.permissionTitle"),
+                i18n.t("photoLibrary.permissionMessage"),
                 [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Open Settings", onPress: () => Linking.openSettings() },
+                    { text: i18n.t("common.cancel"), style: "cancel" },
+                    { text: i18n.t("photoLibrary.openSettings"), onPress: () => Linking.openSettings() },
                 ],
             );
             return false;
@@ -104,7 +105,7 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
         await MediaLibrary.createAssetAsync(uri);
         return true;
     } catch {
-        Alert.alert("Save failed", "Could not save the image to your photo library.");
+        Alert.alert(i18n.t("photoLibrary.saveFailedTitle"), i18n.t("photoLibrary.saveFailedMessage"));
         return false;
     }
 }
