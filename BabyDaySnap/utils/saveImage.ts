@@ -1,12 +1,12 @@
 // ============================================================
-// BabyDaySnap - 騾包ｽｻ陷剃ｸ茨ｽｿ譎擾ｽｭ蛟･ﾎ倡ｹ晢ｽｼ郢昴・縺・ｹ晢ｽｪ郢昴・縺・
+// BabyDaySnap - 鬨ｾ蛹・ｽｽ・ｻ髯ｷ蜑・ｽｸ闌ｨ・ｽ・ｿ隴取得・ｽ・ｭ陋滂ｽ･・主｡・ｹ譎｢・ｽ・ｼ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｪ驛｢譏ｴ繝ｻ邵ｺ繝ｻ
 // ============================================================
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { Alert, Linking } from "react-native";
 import type { AppLibraryItem, EditorOptions, ComputedInfo, PhotoSource } from "@/types";
 
-/** 郢晢ｽｩ郢ｧ・､郢晄じﾎ帷ｹ晢ｽｪ郢昴・縺・ｹ晢ｽｬ郢ｧ・ｯ郢晏現ﾎ懃ｹｧ雋槫徐陟墓圜・ｼ閧ｲ笏檎ｸｺ莉｣・檎ｸｺ・ｰ闖ｴ諛医・繝ｻ繝ｻ*/
+/** 驛｢譎｢・ｽ・ｩ驛｢・ｧ繝ｻ・､驛｢譎・§・主ｸｷ・ｹ譎｢・ｽ・ｪ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｬ驛｢・ｧ繝ｻ・ｯ驛｢譎冗樟・取㏍・ｹ・ｧ髮区ｧｫ蠕宣辧蠅灘惧繝ｻ・ｼ髢ｧ・ｲ隨乗ｪ趣ｽｸ・ｺ闔会ｽ｣繝ｻ讙趣ｽｸ・ｺ繝ｻ・ｰ髣厄ｽｴ隲帛現繝ｻ郢晢ｽｻ郢晢ｽｻ*/
 async function getLibraryDirPath(): Promise<string> {
     const dirPath = `${FileSystem.documentDirectory}library/`;
     const info = await FileSystem.getInfoAsync(dirPath);
@@ -17,9 +17,9 @@ async function getLibraryDirPath(): Promise<string> {
 }
 
 /**
- * 郢ｧ・｢郢晏干ﾎ懆怙繝ｻﾎ帷ｹｧ・､郢晄じﾎ帷ｹ晢ｽｪ邵ｺ・ｫ闖ｫ譎擾ｽｭ繝ｻ
- * renderedUri (闕ｳﾂ隴弱ｅ繝ｵ郢ｧ・｡郢ｧ・､郢晢ｽｫ) 郢ｧ繝ｻlibrary 郢昴・縺・ｹ晢ｽｬ郢ｧ・ｯ郢晏現ﾎ懃ｸｺ・ｫ郢ｧ・ｳ郢晄鱒繝ｻ邵ｺ蜉ｱﾂ繝ｻ
- * AppLibraryItem 郢ｧ螳夲ｽｿ譁絶・
+ * 驛｢・ｧ繝ｻ・｢驛｢譎丞ｹｲ・取㊥諤咏ｹ晢ｽｻ・主ｸｷ・ｹ・ｧ繝ｻ・､驛｢譎・§・主ｸｷ・ｹ譎｢・ｽ・ｪ驍ｵ・ｺ繝ｻ・ｫ髣厄ｽｫ隴取得・ｽ・ｭ郢晢ｽｻ
+ * renderedUri (髣包ｽｳ・つ髫ｴ蠑ｱ・・ｹ晢ｽｵ驛｢・ｧ繝ｻ・｡驛｢・ｧ繝ｻ・､驛｢譎｢・ｽ・ｫ) 驛｢・ｧ郢晢ｽｻlibrary 驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｬ驛｢・ｧ繝ｻ・ｯ驛｢譎冗樟・取㏍・ｸ・ｺ繝ｻ・ｫ驛｢・ｧ繝ｻ・ｳ驛｢譎・ｱ堤ｹ晢ｽｻ驍ｵ・ｺ陷会ｽｱ・つ郢晢ｽｻ
+ * AppLibraryItem 驛｢・ｧ陞ｳ螟ｲ・ｽ・ｿ隴∫ｵｶ繝ｻ
  */
 export async function saveToAppLibrary(
     renderedUri: string,
@@ -36,16 +36,16 @@ export async function saveToAppLibrary(
     const destUri = `${dirPath}${id}.jpg`;
     const originalDestUri = `${dirPath}${id}_original.jpg`;
 
-    // 郢ｧ・ｳ郢晄鱒繝ｻ
+    // 驛｢・ｧ繝ｻ・ｳ驛｢譎・ｱ堤ｹ晢ｽｻ
     await FileSystem.copyAsync({
         from: renderedUri,
         to: destUri
     });
 
-    // 陷蜥ｲ・ｷ・ｨ鬮ｮ繝ｻ蜃ｾ繝ｻ繝ｻxistingId邵ｺ蠕娯旺郢ｧ蜈ｷ・ｼ蟲ｨ繝ｻ邵ｲ竏壺・邵ｺ・ｧ邵ｺ・ｫ originalDestUri 邵ｺ・ｫ陷ｴ貊捺た邵ｺ蠕｡・ｿ譎擾ｽｭ蛟･・・ｹｧ蠕娯ｻ邵ｺ繝ｻ・玖ｿ･・ｶ隲ｷ荵昶・邵ｺ・ｮ邵ｺ・ｧ
-    // 闕ｳ鬆大ｶ檎ｸｺ髦ｪ縺慕ｹ晄鱒繝ｻ陷・ｽｦ騾・・繝ｻ陞ｳ謔溘・邵ｺ・ｫ郢ｧ・ｹ郢ｧ・ｭ郢昴・繝ｻ邵ｺ蜉ｱ窶ｻ陷ｴ貊捺た郢ｧ雋橸ｽｮ蛹ｻ・・
+    // 髯ｷﾂ陷･・ｲ繝ｻ・ｷ繝ｻ・ｨ鬯ｮ・ｮ郢晢ｽｻ陷・ｽｾ郢晢ｽｻ郢晢ｽｻxistingId驍ｵ・ｺ陟募ｨｯ譌ｺ驛｢・ｧ陷茨ｽｷ繝ｻ・ｼ陝ｲ・ｨ郢晢ｽｻ驍ｵ・ｲ遶丞｣ｺ繝ｻ驍ｵ・ｺ繝ｻ・ｧ驍ｵ・ｺ繝ｻ・ｫ originalDestUri 驍ｵ・ｺ繝ｻ・ｫ髯ｷ・ｴ雋頑瑳縺滄し・ｺ陟包ｽ｡繝ｻ・ｿ隴取得・ｽ・ｭ陋滂ｽ･繝ｻ繝ｻ・ｹ・ｧ陟募ｨｯﾂ・ｻ驍ｵ・ｺ郢晢ｽｻ繝ｻ邇厄ｽｿ・･繝ｻ・ｶ髫ｲ・ｷ闕ｵ譏ｶ繝ｻ驍ｵ・ｺ繝ｻ・ｮ驍ｵ・ｺ繝ｻ・ｧ
+    // 髣包ｽｳ鬯・､ｧ・ｶ讙趣ｽｸ・ｺ鬮ｦ・ｪ邵ｺ諷包ｽｹ譎・ｱ堤ｹ晢ｽｻ髯ｷ繝ｻ・ｽ・ｦ鬨ｾ繝ｻ繝ｻ郢晢ｽｻ髯橸ｽｳ隰疲ｺ倥・驍ｵ・ｺ繝ｻ・ｫ驛｢・ｧ繝ｻ・ｹ驛｢・ｧ繝ｻ・ｭ驛｢譏ｴ繝ｻ郢晢ｽｻ驍ｵ・ｺ陷会ｽｱ遯ｶ・ｻ髯ｷ・ｴ雋頑瑳縺滄Δ・ｧ髮区ｩｸ・ｽ・ｮ陋ｹ・ｻ繝ｻ繝ｻ
     if (!existingId) {
-        // 隴・ｽｰ髫穂ｸ茨ｽｽ諛医・隴弱ｅ繝ｻ邵ｺ・ｿ陷医・蛻､陷剃ｸ奇ｽ定将譎擾ｽｭ蛟･笘・ｹｧ繝ｻ
+        // 髫ｴ繝ｻ・ｽ・ｰ鬮ｫ遨ゑｽｸ闌ｨ・ｽ・ｽ隲帛現繝ｻ髫ｴ蠑ｱ・・ｹ晢ｽｻ驍ｵ・ｺ繝ｻ・ｿ髯ｷ蛹ｻ繝ｻ陋ｻ・､髯ｷ蜑・ｽｸ螂・ｽｽ螳壼ｰ・ｭ取得・ｽ・ｭ陋滂ｽ･隨倥・・ｹ・ｧ郢晢ｽｻ
         const info = await FileSystem.getInfoAsync(photoSource.uri);
         if (info.exists) {
             await FileSystem.copyAsync({
@@ -82,8 +82,8 @@ export async function saveToAppLibrary(
 }
 
 /**
- * iPhone 陷蜥乗ｄ郢晢ｽｩ郢ｧ・､郢晄じﾎ帷ｹ晢ｽｪ邵ｺ・ｫ闖ｫ譎擾ｽｭ繝ｻ
- * 隶難ｽｩ鬮ｯ闊娯ｲ邵ｺ・ｪ邵ｺ莉｣・檎ｸｺ・ｰ郢晢ｽｪ郢ｧ・ｯ郢ｧ・ｨ郢ｧ・ｹ郢晏現ﾂ繧域侠陷ｷ・ｦ邵ｺ霈費ｽ檎ｸｺ貅ｷ・ｰ・ｴ陷ｷ蛹ｻ繝ｻ髫ｪ・ｭ陞ｳ螟ょ愛鬮ｱ・｢邵ｺ・ｸ髫ｱ莨懶ｽｰ蠑ｱﾂ繝ｻ
+ * iPhone 髯ｷﾂ陷･荵暦ｽ・Δ譎｢・ｽ・ｩ驛｢・ｧ繝ｻ・､驛｢譎・§・主ｸｷ・ｹ譎｢・ｽ・ｪ驍ｵ・ｺ繝ｻ・ｫ髣厄ｽｫ隴取得・ｽ・ｭ郢晢ｽｻ
+ * 髫ｶ髮｣・ｽ・ｩ鬯ｮ・ｯ髣雁ｨｯﾂ・ｲ驍ｵ・ｺ繝ｻ・ｪ驍ｵ・ｺ闔会ｽ｣繝ｻ讙趣ｽｸ・ｺ繝ｻ・ｰ驛｢譎｢・ｽ・ｪ驛｢・ｧ繝ｻ・ｯ驛｢・ｧ繝ｻ・ｨ驛｢・ｧ繝ｻ・ｹ驛｢譎冗樟・つ郢ｧ蝓滉ｾ髯ｷ・ｷ繝ｻ・ｦ驍ｵ・ｺ髴郁ｲｻ・ｽ讙趣ｽｸ・ｺ雋・ｽｷ繝ｻ・ｰ繝ｻ・ｴ髯ｷ・ｷ陋ｹ・ｻ郢晢ｽｻ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ陞溘ｇ諢幃ｬｮ・ｱ繝ｻ・｢驍ｵ・ｺ繝ｻ・ｸ鬮ｫ・ｱ闔ｨ諛ｶ・ｽ・ｰ陟托ｽｱ・つ郢晢ｽｻ
  */
 export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
     try {
@@ -91,11 +91,11 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
 
         if (status !== "granted") {
             Alert.alert(
-                "陷蜥乗ｄ邵ｺ・ｸ邵ｺ・ｮ郢ｧ・｢郢ｧ・ｯ郢ｧ・ｻ郢ｧ・ｹ邵ｺ謔滂ｽｿ繝ｻ・ｦ竏壹堤ｸｺ繝ｻ,
-                "陷蜥乗ｄ郢ｧ蜑・ｽｿ譎擾ｽｭ蛟･笘・ｹｧ荵昶螺郢ｧ竏壺・郢ｧ・｢郢ｧ・ｯ郢ｧ・ｻ郢ｧ・ｹ郢ｧ螳夲ｽｨ・ｱ陷ｿ・ｯ邵ｺ蜉ｱ窶ｻ邵ｺ荳岩味邵ｺ霈費ｼ樒ｸｲ繧奇ｽｨ・ｭ陞ｳ螢ｹ縺・ｹ晏干ﾎ懃ｸｺ荵晢ｽ蛾坎・ｱ陷ｿ・ｯ邵ｺ・ｧ邵ｺ髦ｪ竏ｪ邵ｺ蜷ｶﾂ繝ｻ,
+                "Photo access required",
+                "Allow photo access in Settings to save images to your iPhone photo library.",
                 [
-                    { text: "郢ｧ・ｭ郢晢ｽ｣郢晢ｽｳ郢ｧ・ｻ郢晢ｽｫ", style: "cancel" },
-                    { text: "髫ｪ・ｭ陞ｳ螢ｹ・帝ｫ｢荵晢ｿ･", onPress: () => Linking.openSettings() },
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Open Settings", onPress: () => Linking.openSettings() },
                 ],
             );
             return false;
@@ -104,7 +104,7 @@ export async function saveToPhotoLibrary(uri: string): Promise<boolean> {
         await MediaLibrary.createAssetAsync(uri);
         return true;
     } catch {
-        Alert.alert("郢ｧ・ｨ郢晢ｽｩ郢晢ｽｼ", "陷蜥乗ｄ邵ｺ・ｮ闖ｫ譎擾ｽｭ蛟･竊楢棔・ｱ隰ｨ蜉ｱ・邵ｺ・ｾ邵ｺ蜉ｱ笳・ｸｲ繝ｻ);
+        Alert.alert("Save failed", "Could not save the image to your photo library.");
         return false;
     }
 }
