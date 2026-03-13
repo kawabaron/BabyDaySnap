@@ -502,9 +502,10 @@ export default function EditorScreen() {
     const toolBarHeight = 90;
     const editorPanelHeight = keyboardVisible ? 228 : 188;
     const editorDockHeight = toolBarHeight + editorPanelHeight;
+    const tabBarOffset = Math.max(tabBarHeight - insets.bottom, 0);
     const previewStageMaxHeight = Math.max(
         220,
-        SCREEN_HEIGHT - insets.top - 60 - tabBarHeight - editorDockHeight - 28,
+        SCREEN_HEIGHT - insets.top - 60 - tabBarOffset - editorDockHeight - 28,
     );
     const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
@@ -814,7 +815,7 @@ export default function EditorScreen() {
                         styles.previewStage,
                         {
                             paddingTop: 12,
-                            paddingBottom: editorDockHeight + tabBarHeight + 12,
+                            paddingBottom: editorDockHeight + tabBarOffset + 12,
                         },
                     ]}
                 >
@@ -907,7 +908,7 @@ export default function EditorScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.toolDock, { bottom: tabBarHeight }]}>
+                <View style={[styles.toolDock, { bottom: tabBarOffset }]}>
                     <Animated.View
                         key={`panel-${activeTool}`}
                         style={[
