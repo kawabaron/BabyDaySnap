@@ -65,45 +65,51 @@ export default function LibraryDetailScreen() {
     };
 
     const handleReedit = (item: AppLibraryItem) => {
-        // 陷医・蛻､陷剃ｸ翫・陟包ｽｩ陷医・        dispatch({
+        dispatch({
             type: "SET_PHOTO",
             payload: {
-                // originalFileUri邵ｺ譴ｧ・ｶ蛹ｻ竏ｴ邵ｺ貅假ｽ企坡・ｭ郢ｧ竏壺・邵ｺ荳岩・郢ｧ荵昶・騾ｵ貅倪夢騾具ｽｽ邵ｺ・ｫ邵ｺ・ｪ郢ｧ荵昴・邵ｺ・ｧ fallback 陷・ｽｦ騾・・・定怦・･郢ｧ蠕鯉ｽ・                uri: item.originalFileUri || item.renderedFileUri,
+                uri: item.originalFileUri || item.renderedFileUri,
                 previewUri: item.originalFileUri || item.renderedFileUri,
                 width: (item as any).originalWidth ?? item.width,
                 height: (item as any).originalHeight ?? item.height,
                 source: item.source,
             },
         });
-        // 髫ｪ閧ｲ・ｮ遉ｼ・ｵ蜈域｣｡邵ｺ・ｮ陟包ｽｩ陷医・        dispatch({
+
+        dispatch({
             type: "SET_COMPUTED",
             payload: {
                 shotDateISO: item.shotDateISO,
                 ageDays: item.ageDays,
             },
         });
-        // 郢ｧ・ｨ郢昴・縺・ｹｧ・ｿ髫ｪ・ｭ陞ｳ螢ｹ繝ｻ陟包ｽｩ陷医・・ｼ逎ｯ邃・惷・ｻ郢晁・繝ｻ郢ｧ・ｸ郢晢ｽｧ郢晢ｽｳ闔蜻磯共邵ｺ・ｮ邵ｺ貅假ｽ∫ｹ晁ｼ斐°郢晢ｽｼ郢晢ｽｫ郢晁・繝｣郢ｧ・ｯ邵ｺ繧・ｽ翫・繝ｻ        dispatch({
+
+        dispatch({
             type: "SET_EDITOR_OPTIONS",
             payload: {
                 templateId: item.templateId,
                 dateColorHex: item.dateColorHex,
                 commentText: item.commentText,
                 fontId: (item as any).fontId || "font_standard",
+                filterId: (item as any).filterId || "filter_none",
                 showDate: (item as any).showDate ?? true,
                 showName: (item as any).showName ?? true,
                 showAge: (item as any).showAge ?? true,
+                ageFormat: (item as any).ageFormat || "days",
             },
         });
+
         dispatch({
             type: "SET_EDITING_LIBRARY_ID",
             payload: item.id,
         });
-        // 闖ｫ譎擾ｽｭ莨懊・郢ｧ雋橸ｽｾ・ｩ陷医・        if (item.babyIds && item.babyIds.length > 0) {
+
+        if (item.babyIds && item.babyIds.length > 0) {
             dispatch({ type: "SET_TARGET_BABY_IDS", payload: item.babyIds });
         }
+
         router.replace("/(tabs)/camera/editor");
     };
-
     const handleDelete = (item: AppLibraryItem) => {
         Alert.alert(i18n.t("detail.deleteConfirmTitle"), i18n.t("detail.deleteConfirmMsg"), [
             { text: i18n.t("detail.cancel"), style: "cancel" },
@@ -136,7 +142,7 @@ export default function LibraryDetailScreen() {
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* 騾包ｽｻ陷剃ｸ橸ｽ､・ｧ髯ｦ・ｨ驕会ｽｺ */}
+                    {/* 鬨ｾ蛹・ｽｽ・ｻ髯ｷ蜑・ｽｸ讖ｸ・ｽ・､繝ｻ・ｧ鬮ｯ・ｦ繝ｻ・ｨ鬩穂ｼ夲ｽｽ・ｺ */}
                     <TouchableOpacity
                         activeOpacity={0.9}
                         onPress={() => router.push({ pathname: "/(tabs)/library/viewer", params: { uri: item.renderedFileUri } })}
@@ -152,9 +158,9 @@ export default function LibraryDetailScreen() {
                         />
                     </TouchableOpacity>
 
-                    {/* 郢晢ｽ｡郢ｧ・ｿ隲繝ｻ・ｰ・ｱ */}
+                    {/* 驛｢譎｢・ｽ・｡驛｢・ｧ繝ｻ・ｿ髫ｲ・ｰ郢晢ｽｻ繝ｻ・ｰ繝ｻ・ｱ */}
                     <View style={styles.metaContainer}>
-                        {/* 隰・陞ｻ讒ｭ笘・ｹｧ邇厄ｽｵ・､邵ｺ・｡郢ｧ繝ｻ・・*/}
+                        {/* 髫ｰ繝ｻﾂ髯橸ｽｻ隶抵ｽｭ隨倥・・ｹ・ｧ驍・私・ｽ・ｵ繝ｻ・､驍ｵ・ｺ繝ｻ・｡驛｢・ｧ郢晢ｽｻ繝ｻ繝ｻ*/}
                         {item.babyIds && item.babyIds.length > 0 && (
                             <View style={styles.metaRow}>
                                 <Text style={styles.metaLabel}>{i18n.t("detail.babyLabel")}</Text>
@@ -238,7 +244,7 @@ export default function LibraryDetailScreen() {
                         ) : null}
                     </View>
 
-                    {/* 郢ｧ・｢郢ｧ・ｯ郢ｧ・ｷ郢晢ｽｧ郢晢ｽｳ郢晄㈱縺｡郢晢ｽｳ */}
+                    {/* 驛｢・ｧ繝ｻ・｢驛｢・ｧ繝ｻ・ｯ驛｢・ｧ繝ｻ・ｷ驛｢譎｢・ｽ・ｧ驛｢譎｢・ｽ・ｳ驛｢譎・鯵邵ｺ・｡驛｢譎｢・ｽ・ｳ */}
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity style={[styles.reeditButton, { backgroundColor: itemTheme.accent, shadowColor: itemTheme.shadow }]} onPress={() => handleReedit(item)}>
                             <Ionicons name="color-wand-outline" size={20} color="#FFF" />
