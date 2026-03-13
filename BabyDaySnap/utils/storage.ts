@@ -1,5 +1,5 @@
 // ============================================================
-// BabyDaySnap - AsyncStorage ユーティリティ
+// BabyDaySnap - AsyncStorage 郢晢ｽｦ郢晢ｽｼ郢昴・縺・ｹ晢ｽｪ郢昴・縺・
 // ============================================================
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { UserSettings, AppLibraryItem, BabyProfile } from "@/types";
@@ -10,7 +10,7 @@ const KEYS = {
     BABIES: "@babydaysnap/babies",
 } as const;
 
-// --- デフォルト値 ---
+// --- 郢昴・繝ｵ郢ｧ・ｩ郢晢ｽｫ郢昜ｺ･ﾂ・､ ---
 export const DEFAULT_SETTINGS: UserSettings = {
     hasOnboarded: false,
     birthDateISO: null,
@@ -57,8 +57,8 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
         const raw = await AsyncStorage.getItem(KEYS.LIBRARY);
         if (raw) {
             const items: AppLibraryItem[] = JSON.parse(raw);
-            // マイグレーション: babyIds が無い既存アイテムには空配列を付与
-            // (実際のIDの付与は AppContext 側でbabiesロード後に行う)
+            // 郢晄ｧｭ縺・ｹｧ・ｰ郢晢ｽｬ郢晢ｽｼ郢ｧ・ｷ郢晢ｽｧ郢晢ｽｳ: babyIds 邵ｺ讙寂伯邵ｺ繝ｻ驥瑚氛蛟･縺・ｹｧ・､郢昴・ﾎ堤ｸｺ・ｫ邵ｺ・ｯ驕ｨ・ｺ鬩滓ｦ翫・郢ｧ蜑・ｽｻ蛟・ｽｸ繝ｻ
+            // (陞ｳ貊・怙邵ｺ・ｮID邵ｺ・ｮ闔牙・ｽｸ蠑ｱ繝ｻ AppContext 陋幢ｽｴ邵ｺ・ｧbabies郢晢ｽｭ郢晢ｽｼ郢晉甥・ｾ蠕娯・髯ｦ蠕娯鴬)
             return items.map((item) => ({
                 ...item,
                 babyIds: item.babyIds || [],

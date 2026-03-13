@@ -1,5 +1,5 @@
 // ============================================================
-// BabyDaySnap - グローバル状態管理（Context + useReducer）
+// BabyDaySnap - 郢ｧ・ｰ郢晢ｽｭ郢晢ｽｼ郢晁・ﾎ晁ｿ･・ｶ隲ｷ迢暦ｽｮ・｡騾・・・ｼ繝ｻontext + useReducer繝ｻ繝ｻ
 // ============================================================
 import React, { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from "react";
 import type { AppState, AppAction, EditorOptions, BabyProfile } from "@/types";
@@ -7,7 +7,7 @@ import { loadSettings, saveSettings, loadLibrary, saveLibrary, loadBabies, saveB
 import { getTemplateConfig } from "@/utils/templates";
 import * as FileSystem from "expo-file-system/legacy";
 
-// --- 初期状態 ---
+// --- 陋ｻ譎・ｄ霑･・ｶ隲ｷ繝ｻ---
 const initialEditorOptions: EditorOptions = {
     templateId: "tpl_noframe_full",
     dateColorHex: "#FFFFFF",
@@ -37,7 +37,7 @@ const initialState: AppState = {
 // --- Reducer ---
 function appReducer(state: AppState, action: AppAction): AppState {
     switch (action.type) {
-        // 設定
+        // 髫ｪ・ｭ陞ｳ繝ｻ
         case "LOAD_SETTINGS":
             return {
                 ...state,
@@ -90,7 +90,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 },
             };
 
-        // 赤ちゃん管理
+        // 隘搾ｽ､邵ｺ・｡郢ｧ繝ｻ・馴ｂ・｡騾・・
         case "LOAD_BABIES":
             return {
                 ...state,
@@ -130,7 +130,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 targetBabyIds: action.payload,
             };
 
-        // 編集
+        // 驍ｱ・ｨ鬮ｮ繝ｻ
         case "SET_PHOTO":
             return { ...state, currentPhoto: action.payload };
         case "SET_COMPUTED":
@@ -145,11 +145,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "SET_EDITING_LIBRARY_ID":
             return { ...state, editingLibraryId: action.payload };
         case "RESET_EDITOR": {
-            // エディタをリセットする際、現在保持している一時写真をキャッシュから削除してストレージ/メモリ漏れを防ぐ
+            // 郢ｧ・ｨ郢昴・縺・ｹｧ・ｿ郢ｧ蛛ｵﾎ懃ｹｧ・ｻ郢昴・繝ｨ邵ｺ蜷ｶ・矩ｫｫ蟶卍竏ｫ讓溯舉・ｨ闖ｫ譎・亜邵ｺ蜉ｱ窶ｻ邵ｺ繝ｻ・玖叉ﾂ隴弱ｇ繝ｻ騾ｵ貅假ｽ堤ｹｧ・ｭ郢晢ｽ｣郢昴・縺咏ｹ晢ｽ･邵ｺ荵晢ｽ芽恆莨∝求邵ｺ蜉ｱ窶ｻ郢ｧ・ｹ郢晏現ﾎ樒ｹ晢ｽｼ郢ｧ・ｸ/郢晢ｽ｡郢晢ｽ｢郢晢ｽｪ雋堺ｸ奇ｽ檎ｹｧ蟶昜ｺ溽ｸｺ繝ｻ
             if (state.currentPhoto) {
                 const { uri, previewUri } = state.currentPhoto;
-                // Documents/library/ 内にあるファイル（保存済み原本・レンダリング済み画像）は絶対に消さない
-                // カメラやインポート由来のキャッシュファイルのみ削除する
+                // Documents/library/ 陷繝ｻ竊鍋ｸｺ繧・ｽ狗ｹ晁ｼ斐＜郢ｧ・､郢晢ｽｫ繝ｻ莠包ｽｿ譎擾ｽｭ菫ｶ・ｸ蛹ｻ竏ｩ陷ｴ貊捺た郢晢ｽｻ郢晢ｽｬ郢晢ｽｳ郢敖郢晢ｽｪ郢晢ｽｳ郢ｧ・ｰ雋ょ現竏ｩ騾包ｽｻ陷呈得・ｼ蟲ｨ繝ｻ驍ｨ・ｶ陝・ｽｾ邵ｺ・ｫ雎ｸ蛹ｻ・・ｸｺ・ｪ邵ｺ繝ｻ
+                // 郢ｧ・ｫ郢晢ｽ｡郢晢ｽｩ郢ｧ繝ｻ縺・ｹ晢ｽｳ郢晄亢繝ｻ郢晁ご鄂ｰ隴夲ｽ･邵ｺ・ｮ郢ｧ・ｭ郢晢ｽ｣郢昴・縺咏ｹ晢ｽ･郢晁ｼ斐＜郢ｧ・､郢晢ｽｫ邵ｺ・ｮ邵ｺ・ｿ陷台ｼ∝求邵ｺ蜷ｶ・・
                 const isLibraryFile = (path: string) => path.includes('/Documents/library/');
                 if (uri && !isLibraryFile(uri)) {
                     try { FileSystem.deleteAsync(uri, { idempotent: true }); } catch (_) { }
@@ -180,7 +180,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
             };
         }
 
-        // ライブラリ
+        // 郢晢ｽｩ郢ｧ・､郢晄じﾎ帷ｹ晢ｽｪ
         case "LIBRARY_LOAD":
             return { ...state, library: action.payload };
         case "LIBRARY_ADD":
@@ -198,7 +198,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 library: state.library.filter((item) => item.id !== action.payload),
             };
 
-        // ローディング
+        // 郢晢ｽｭ郢晢ｽｼ郢昴・縺・ｹ晢ｽｳ郢ｧ・ｰ
         case "SET_LOADING":
             return { ...state, loading: action.payload };
         case "SET_ERROR":
@@ -217,7 +217,7 @@ const AppDispatchContext = createContext<React.Dispatch<AppAction>>(() => { });
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
-    // 起動時にデータロード
+    // 隘搾ｽｷ陷榊｢灘・邵ｺ・ｫ郢昴・繝ｻ郢ｧ・ｿ郢晢ｽｭ郢晢ｽｼ郢昴・
     useEffect(() => {
         (async () => {
             try {
@@ -228,12 +228,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ]);
                 dispatch({ type: "LOAD_SETTINGS", payload: settings });
 
-                // マイグレーション: babies が空で既存の babyName/birthDateISO がある場合
+                // 郢晄ｧｭ縺・ｹｧ・ｰ郢晢ｽｬ郢晢ｽｼ郢ｧ・ｷ郢晢ｽｧ郢晢ｽｳ: babies 邵ｺ讙趣ｽｩ・ｺ邵ｺ・ｧ隴鯉ｽ｢陝・･繝ｻ babyName/birthDateISO 邵ｺ蠕娯旺郢ｧ蜿･・ｰ・ｴ陷ｷ繝ｻ
                 let resolvedBabies = babies;
                 if (babies.length === 0 && settings.birthDateISO) {
                     const migratedBaby: BabyProfile = {
                         id: Date.now().toString(36) + Math.random().toString(36).substring(2),
-                        name: settings.babyName || "赤ちゃん",
+                        name: settings.babyName || "隘搾ｽ､邵ｺ・｡郢ｧ繝ｻ・・,
                         birthDateISO: settings.birthDateISO,
                         themeColorHex: "#FFB5C2",
                         createdAtMs: Date.now(),
@@ -241,7 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     };
                     resolvedBabies = [migratedBaby];
 
-                    // 既存ライブラリアイテムに babyId を付与
+                    // 隴鯉ｽ｢陝・･ﾎ帷ｹｧ・､郢晄じﾎ帷ｹ晢ｽｪ郢ｧ・｢郢ｧ・､郢昴・ﾎ堤ｸｺ・ｫ babyId 郢ｧ蜑・ｽｻ蛟・ｽｸ繝ｻ
                     const migratedLibrary = library.map((item) => ({
                         ...item,
                         babyIds: item.babyIds.length === 0 ? [migratedBaby.id] : item.babyIds,
@@ -259,21 +259,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })();
     }, []);
 
-    // settings が変更されたら自動保存
+    // settings 邵ｺ謔滂ｽ､逕ｻ蟲ｩ邵ｺ霈費ｽ檎ｸｺ貅假ｽ蛾明・ｪ陷咲ｩゑｽｿ譎擾ｽｭ繝ｻ
     useEffect(() => {
         if (!state.loading) {
             saveSettings(state.settings);
         }
     }, [state.settings, state.loading]);
 
-    // library が変更されたら自動保存
+    // library 邵ｺ謔滂ｽ､逕ｻ蟲ｩ邵ｺ霈費ｽ檎ｸｺ貅假ｽ蛾明・ｪ陷咲ｩゑｽｿ譎擾ｽｭ繝ｻ
     useEffect(() => {
         if (!state.loading) {
             saveLibrary(state.library);
         }
     }, [state.library, state.loading]);
 
-    // babies が変更されたら自動保存
+    // babies 邵ｺ謔滂ｽ､逕ｻ蟲ｩ邵ｺ霈費ｽ檎ｸｺ貅假ｽ蛾明・ｪ陷咲ｩゑｽｿ譎擾ｽｭ繝ｻ
     useEffect(() => {
         if (!state.loading) {
             saveBabies(state.babies);
@@ -298,7 +298,7 @@ export function useAppDispatch(): React.Dispatch<AppAction> {
     return useContext(AppDispatchContext);
 }
 
-/** 現在アクティブな赤ちゃんのプロフィールを返す */
+/** 霑ｴ・ｾ陜ｨ・ｨ郢ｧ・｢郢ｧ・ｯ郢昴・縺・ｹ晄じ竊題･搾ｽ､邵ｺ・｡郢ｧ繝ｻ・鍋ｸｺ・ｮ郢晏干ﾎ溽ｹ晁ｼ斐≦郢晢ｽｼ郢晢ｽｫ郢ｧ螳夲ｽｿ譁絶・ */
 export function useActiveBaby(): BabyProfile | null {
     const { babies, activeBabyId } = useAppState();
     return useMemo(

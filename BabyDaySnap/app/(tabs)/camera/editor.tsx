@@ -1,465 +1,490 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    TextInput,
-    ScrollView,
-    StyleSheet,
-    Alert,
-    ActivityIndicator,
-    Image,
-    Dimensions,
-    Switch,
-    KeyboardAvoidingView,
-    Keyboard,
-    Platform,
-    type LayoutChangeEvent,
-} from "react-native";
-import { useRouter, useNavigation } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
-import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
-import { renderCompositeImage } from "@/utils/renderImage";
-import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
-import { calcAgeDays, calcAgeMonthsAndDays } from "@/utils/date";
-import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId } from "@/types";
-import i18n from "@/lib/i18n";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    TextInput,
+    ScrollView,
+    StyleSheet,
+    Alert,
+    ActivityIndicator,
+    Image,
+    Dimensions,
+    Switch,
+    KeyboardAvoidingView,
+    Keyboard,
+    Platform,
+    type LayoutChangeEvent,
+} from "react-native";
+import { useRouter, useNavigation } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
+import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
+import { renderCompositeImage } from "@/utils/renderImage";
+import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
+import { calcAgeDays, calcAgeMonthsAndDays } from "@/utils/date";
+import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
+import type { TemplateId, FontId, FilterId } from "@/types";
+import i18n from "@/lib/i18n";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
-const PREVIEW_EXPANDED_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.36, 230), 320);
-const PREVIEW_COMPACT_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.24, 170), 220);
-const FOOTER_BASE_HEIGHT = 148;
 
-export default function EditorScreen() {
-    const state = useAppState();
-    const dispatch = useAppDispatch();
-    const router = useRouter();
-    useActiveBaby();
+const FILTER_OPTIONS: Array<{ id: FilterId; label: string; color: string; opacity: number }> = [
+    { id: "filter_none", label: "None", color: "transparent", opacity: 0 },
+    { id: "filter_milk", label: "Milk", color: "#FFF3E8", opacity: 0.24 },
+    { id: "filter_blossom", label: "Bloom", color: "#FFDCE6", opacity: 0.2 },
+    { id: "filter_nap", label: "Nap", color: "#F2E4D7", opacity: 0.22 },
+    { id: "filter_sparkle", label: "Sparkle", color: "#FFF8D6", opacity: 0.16 },
+];
 
-    const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
-    const [saving, setSaving] = useState(false);
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const [commentFocused, setCommentFocused] = useState(false);
-    const [commentSectionY, setCommentSectionY] = useState(0);
-    const navigation = useNavigation();
-    const insets = useSafeAreaInsets();
-    const formScrollRef = useRef<ScrollView>(null);
-
-    // 繝・・繝槭き繝ｩ繝ｼ: 隍・焚驕ｸ謚樊凾縺ｯ繝九Η繝ｼ繝医Λ繝ｫ縲・莠ｺ驕ｸ謚樊凾縺ｯ縺昴・繧ｫ繝ｩ繝ｼ
-    const theme = useMemo(() => {
-        if (targetBabyIds.length === 1) {
-            const baby = babies.find((b) => b.id === targetBabyIds[0]);
-            return baby ? getThemePreset(baby.themeColorHex) : NEUTRAL_THEME;
-        }
-        return NEUTRAL_THEME;
-    }, [targetBabyIds, babies]);
-
-    // 菫晏ｭ伜・縺ｧ驕ｸ謚槭＆繧後※縺・ｋ襍､縺｡繧・ｓ縺ｮ蜷榊燕・郁｡ｨ遉ｺ逕ｨ・・
-    const activeBabyForEditor = useMemo(() => {
-        if (targetBabyIds.length === 1) {
-            return babies.find((b) => b.id === targetBabyIds[0]) ?? null;
-        }
-        return null;
-    }, [targetBabyIds, babies]);
-
-    // 謌ｻ繧九・繧ｿ繝ｳ縺ｮ繧ｫ繧ｹ繧ｿ繝槭う繧ｺ (蜀咲ｷｨ髮・凾縺ｯ繝ｩ繧､繝悶Λ繝ｪ隧ｳ邏ｰ縺ｸ謌ｻ繧・
-    useEffect(() => {
-        navigation.setOptions({
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => {
-                        const libId = editingLibraryId;
-                        dispatch({ type: "RESET_EDITOR" });
-                        if (libId) {
-                            router.navigate(`/(tabs)/library/${libId}`);
-                            setTimeout(() => {
-                                (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
-                            }, 100);
-                        } else {
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.replace("/(tabs)/camera");
-                            }
-                        }
-                    }}
-                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
-                >
-                    <Ionicons name="chevron-back" size={28} color="#333" />
-                    <Text style={{ fontSize: 17, color: "#333" }}>{i18n.t("editor.backButton")}</Text>
-                </TouchableOpacity>
-            ),
-        });
-    }, [navigation, editingLibraryId, dispatch, router]);
-
-    // RN逕ｨ繝励Ξ繝薙Η繝ｼ繝輔か繝ｳ繝郁ｪｭ縺ｿ霎ｼ縺ｿ
-    const [rnFontsLoaded] = useFonts({
-        font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
-        font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
-        font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
-        font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
-    });
-
-    useEffect(() => {
-        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-        const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-        const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
-
-        return () => {
-            showSub.remove();
-            hideSub.remove();
-        };
-    }, []);
-
-    // 譛邨ゆｿ晏ｭ俶凾縺ｫ縺ｮ縺ｿSkia蜷域・繧貞ｮ溯｡・
-    // manipulateAsync縺ｧ蜈医↓螳牙・縺ｫ繝ｪ繧ｵ繧､繧ｺ縺励※縺九ｉSkia縺ｫ貂｡縺呻ｼ医Γ繝｢繝ｪ辷・匱髦ｲ豁｢・・・URI蠖｢蠑丞ｯｾ蠢懶ｼ・
-    const runFinalRender = async () => {
-        if (!currentPhoto || !computed) throw new Error("Missing data");
-
-        if (!currentPhoto || !computed) throw new Error("Missing data");
-
-        // 蜈・判蜒上ｒOS繝阪う繝・ぅ繝悶〒螳牙・縺ｫ繝ｪ繧ｵ繧､繧ｺ・・kia縺ｸ縺ｮ蜈･蜉帙し繧､繧ｺ繧貞宛髯撰ｼ・
-        const MAX_RENDER = 2000;  // 2000px = 邏・34荳・判邏・・kia繝｡繝｢繝ｪ邏・4MB縺ｫ謚大宛・・
-        let renderUri = currentPhoto.uri;
-        let renderW = currentPhoto.width;
-        let renderH = currentPhoto.height;
-
-        if (renderW > MAX_RENDER || renderH > MAX_RENDER) {
-            const scale = MAX_RENDER / Math.max(renderW, renderH);
-            renderW = Math.round(renderW * scale);
-            renderH = Math.round(renderH * scale);
-            const resized = await manipulateAsync(
-                currentPhoto.uri,
-                [{ resize: { width: renderW, height: renderH } }],
-                { compress: 1.0, format: SaveFormat.JPEG }
-            );
-            renderUri = resized.uri;
-        }
-
-        try {
-            const result = await renderCompositeImage({
-                imageUri: renderUri,
-                imageWidth: renderW,
-                imageHeight: renderH,
-                editorOptions,
-                computed,
-                fontId: editorOptions.fontId,
-                dateTextLine1,
-                isMultiBaby,
-            });
-
-            return result;
-        } finally {
-            // 荳譎ゅΜ繧ｵ繧､繧ｺ繝輔ぃ繧､繝ｫ繧貞炎髯､
-            if (renderUri !== currentPhoto.uri) {
-                try { await FileSystem.deleteAsync(renderUri, { idempotent: true }); } catch (_) { }
-            }
-        }
-    };
-
-    // 繝・Φ繝励Ξ繝ｼ繝亥､画峩
-    const handleTemplateChange = (id: TemplateId) => {
-        const tpl = getTemplateConfig(id);
-        dispatch({
-            type: "SET_EDITOR_OPTIONS",
-            payload: {
-                templateId: id,
-                dateColorHex: tpl.defaultDateColorHex,
-            },
-        });
-    };
-
-    // 繝輔か繝ｳ繝亥､画峩
-    const handleFontChange = (id: FontId) => {
-        dispatch({
-            type: "SET_EDITOR_OPTIONS",
-            payload: { fontId: id },
-        });
-    };
-
-    // 濶ｲ螟画峩
-    const handleColorChange = (hex: string) => {
-        dispatch({
-            type: "SET_EDITOR_OPTIONS",
-            payload: { dateColorHex: hex },
-        });
-    };
-
-    // 繧ｳ繝｡繝ｳ繝亥､画峩
-    const handleCommentChange = (text: string) => {
-        // 謾ｹ陦檎ｦ∵ｭ｢
-        const singleLine = text.replace(/\n/g, "");
-        dispatch({
-            type: "SET_EDITOR_OPTIONS",
-            payload: { commentText: singleLine },
-        });
-    };
-
-    // 菫晏ｭ伜・縺ｮ襍､縺｡繧・ｓ繧偵ヨ繧ｰ繝ｫ
-    const scrollCommentIntoView = useCallback(() => {
-        setTimeout(() => {
-            formScrollRef.current?.scrollTo({
-                y: Math.max(commentSectionY - 12, 0),
-                animated: true,
-            });
-        }, 60);
-    }, [commentSectionY]);
-
-    useEffect(() => {
-        if (commentFocused) {
-            scrollCommentIntoView();
-        }
-    }, [commentFocused, keyboardVisible, scrollCommentIntoView]);
-
-    const handleCommentSectionLayout = useCallback((event: LayoutChangeEvent) => {
-        setCommentSectionY(event.nativeEvent.layout.y);
-    }, []);
-
-    const toggleTargetBaby = (babyId: string) => {
-        const current = targetBabyIds;
-        if (current.includes(babyId)) {
-            // 譛菴・莠ｺ縺ｯ驕ｸ謚槫ｿ・・
-            if (current.length <= 1) return;
-            dispatch({ type: "SET_TARGET_BABY_IDS", payload: current.filter((id) => id !== babyId) });
-        } else {
-            dispatch({ type: "SET_TARGET_BABY_IDS", payload: [...current, babyId] });
-        }
-    };
-
-    // 繧｢繝励Μ蜀・ｿ晏ｭ・
-    const handleSaveToApp = async () => {
-        if (!currentPhoto || !computed) return;
-        if (targetBabyIds.length === 0) {
-            Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
-            return;
-        }
-        setSaving(true);
-        try {
-            const finalUri = await runFinalRender();
-            // renderImage.ts 縺ｮ MAX_OUTPUT_DIMENSION 縺ｨ蜷医ｏ縺帙ｋ
-            const maxSide = Math.max(currentPhoto.width, currentPhoto.height);
-            const scale = maxSide > 2000 ? 2000 / maxSide : 1;
-            const imageW = Math.round(currentPhoto.width * scale);
-            const imageH = Math.round(currentPhoto.height * scale);
-
-            const item = await saveToAppLibrary(
-                finalUri,
-                currentPhoto,
-                computed,
-                editorOptions,
-                imageW,
-                imageH,
-                targetBabyIds,
-                editingLibraryId,
-            );
-
-            // 荳譎ゅヵ繧｡繧､繝ｫ縺ｮ縺ｿ蜑企勁・医Γ繝｢繝ｪ闢・ｩ埼亟豁｢・・
-            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
-
-            // previewUri 縺御ｸ譎ゅヵ繧｡繧､繝ｫ・・ache繝・ぅ繝ｬ繧ｯ繝医Μ・峨・蝣ｴ蜷医・縺ｿ蜑企勁縺吶ｋ
-            // 窶ｻ繝ｩ繧､繝悶Λ繝ｪ縺ｮ蜴滓悽繝輔ぃ繧､繝ｫ (documentDirectory) 繧呈欠縺励※縺・ｋ蝣ｴ蜷医・蜑企勁縺励※縺ｯ縺・￠縺ｪ縺・
-            if (
-                currentPhoto.previewUri &&
-                currentPhoto.previewUri !== currentPhoto.uri &&
-                currentPhoto.previewUri.includes('ImagePicker') // Expo Camera/ImagePicker縺ｮ繧ｭ繝｣繝・す繝･繝輔ぃ繧､繝ｫ縺ｮ迚ｹ蠕ｴ
-            ) {
-                try { await FileSystem.deleteAsync(currentPhoto.previewUri, { idempotent: true }); } catch (_) { }
-            }
-
-            if (editingLibraryId) {
-                dispatch({ type: "LIBRARY_UPDATE", payload: item });
-            } else {
-                dispatch({ type: "LIBRARY_ADD", payload: item });
-            }
-            dispatch({
-                type: "SET_LAST_EDITOR_PREFS",
-                payload: {
-                    lastTemplateId: editorOptions.templateId,
-                    lastDateColorHex: editorOptions.dateColorHex,
-                    lastFontId: editorOptions.fontId,
-                },
-            });
-            Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
-                {
-                    text: "OK",
-                    onPress: () => {
-                        dispatch({ type: "RESET_EDITOR" });
-
-                        router.navigate("/(tabs)/library");
-
-                        setTimeout(() => {
-                            (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
-                        }, 100);
-                    },
-                },
-            ]);
-        } catch {
-            Alert.alert(i18n.t("common.error"), i18n.t("editor.saveFailed"));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // iPhone蜀咏悄菫晏ｭ・
-    const handleSaveToPhotos = async () => {
-        if (!currentPhoto || !computed) return;
-        setSaving(true);
-        try {
-            const finalUri = await runFinalRender();
-            const success = await saveToPhotoLibrary(finalUri);
-            // 荳譎ゅヵ繧｡繧､繝ｫ蜑企勁・医Γ繝｢繝ｪ闢・ｩ埼亟豁｢・・
-            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
-            if (success) {
-                Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"));
-            }
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const editorIsFocused = useIsFocused();
-
-    // 陦ｨ遉ｺ逕ｨ縺ｮ襍､縺｡繧・ｓ蜷・
-    const displayBabyName = activeBabyForEditor?.name || settings.babyName;
-
-    // 蜊ｰ蟄励ユ繧ｭ繧ｹ繝医・逕滓・
-    const dateTextLine1 = useMemo(() => {
-        if (!computed) return "";
-        let text = "";
-        if (targetBabyIds.length <= 1) {
-            const parts = [];
-
-            // 蟇ｾ雎｡縺ｨ縺ｪ繧・莠ｺ縺ｮ襍､縺｡繧・ｓ繧堤音螳・
-            let targetBabyId = undefined;
-            if (targetBabyIds.length === 1) {
-                targetBabyId = targetBabyIds[0];
-            } else if (activeBabyForEditor) {
-                targetBabyId = activeBabyForEditor.id;
-            }
-
-            const b = babies.find(x => x.id === targetBabyId);
-            const targetAgeDays = b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
-
-            // "n繝ｶ譛・譌･"蠖｢蠑上・險育ｮ・
-            const targetAgeMonthsAndDays = b ? calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "") : null;
-
-            // 縲檎樟蝨ｨ譌･莉倥′隱慕函譌･繧医ｊ繧ょ燕縺ｮ蝣ｴ蜷医∝・逵溘↓譌･莉倥・蜊ｰ蟄励＠縺ｪ縺・阪・蟇ｾ蠢・-> 譌･謨ｰ縺ｯ繧ｰ繝ｬ繝ｼ繧｢繧ｦ繝医＠縺ｦ蜃ｺ縺輔↑縺・∵律莉倥・蜃ｺ縺・
-            const isBeforeBirth = targetAgeDays !== undefined && targetAgeDays < 0;
-
-            if (editorOptions.showDate) parts.push(computed.shotDateISO);
-            if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
-            if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) {
-                if (editorOptions.ageFormat === "years_months" && targetAgeMonthsAndDays) {
-                    const { years, months } = targetAgeMonthsAndDays;
-                    if (years === 0) {
-                        if (months === 0) {
-                            parts.push(i18n.t("editor.ageTextDays", { days: targetAgeMonthsAndDays.days }));
-                        } else {
-                            parts.push(i18n.t("editor.ageTextMonths", { months }));
-                        }
-                    } else {
-                        if (months === 0) {
-                            parts.push(i18n.t("editor.ageTextYears", { years }));
-                        } else {
-                            parts.push(i18n.t("editor.ageTextYearsMonths", { years, months }));
-                        }
-                    }
-                } else if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
-                    const { months, days } = targetAgeMonthsAndDays;
-                    const totalMonths = targetAgeMonthsAndDays.years * 12 + months;
-                    if (totalMonths === 0) {
-                        parts.push(i18n.t("editor.ageTextDays", { days }));
-                    } else if (days === 0) {
-                        parts.push(i18n.t("editor.ageTextMonths", { months: totalMonths }));
-                    } else {
-                        parts.push(i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days }));
-                    }
-                } else {
-                    parts.push(i18n.t("editor.ageTextDays", { days: targetAgeDays }));
-                }
-            }
-            text = parts.filter(Boolean).join("  ");
-        } else {
-            // 隍・焚莠ｺ驕ｸ謚樊凾
-            const parts = [];
-            if (editorOptions.showDate) parts.push(computed.shotDateISO);
-
-            const babyParts = targetBabyIds.map(id => {
-                const b = babies.find(x => x.id === id);
-                if (!b) return "";
-                let bStr = "";
-                if (editorOptions.showName) bStr += b.name;
-
-                const targetAgeMonthsAndDays = calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "");
-                const ageDays = targetAgeMonthsAndDays.totalDays;
-                const isBeforeBirth = ageDays < 0;
-
-                if (editorOptions.showAge && !isBeforeBirth) {
-                    if (editorOptions.ageFormat === "years_months") {
-                        const { years, months } = targetAgeMonthsAndDays;
-                        if (years === 0) {
-                            if (months === 0) {
-                                bStr += `(${i18n.t("editor.ageTextDays", { days: targetAgeMonthsAndDays.days })})`;
-                            } else {
-                                bStr += `(${i18n.t("editor.ageTextMonths", { months })})`;
-                            }
-                        } else {
-                            if (months === 0) {
-                                bStr += `(${i18n.t("editor.ageTextYears", { years })})`;
-                            } else {
-                                bStr += `(${i18n.t("editor.ageTextYearsMonths", { years, months })})`;
-                            }
-                        }
-                    } else if (editorOptions.ageFormat === "months_days") {
-                        const { years, months, days } = targetAgeMonthsAndDays;
-                        const totalMonths = years * 12 + months;
-                        if (totalMonths === 0) {
-                            bStr += `(${i18n.t("editor.ageTextDays", { days })})`;
-                        } else if (days === 0) {
-                            bStr += `(${i18n.t("editor.ageTextMonths", { months: totalMonths })})`;
-                        } else {
-                            bStr += `(${i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days })})`;
-                        }
-                    } else {
-                        bStr += `(${i18n.t("editor.ageTextDays", { days: ageDays })})`;
-                    }
-                }
-                return bStr;
-            }).filter(Boolean);
-
-            if (babyParts.length > 0) {
-                // 隍・焚莠ｺ縺ｮ蝣ｴ蜷医・繧ｹ繝壹・繧ｹ1縺､縺ｧ蛹ｺ蛻・ｋ
-                parts.push(babyParts.join(" "));
-            }
-            text = parts.filter(Boolean).join("  ");
-        }
-        return text;
-    }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
-
-    // 菫晏ｭ伜・縺悟・蜩｡・医∪縺溘・蜊倡峡・芽ｪ慕函譌･蜑阪°縺ｩ縺・°蛻､螳夲ｼ域律謨ｰ縺ｮ繧ｹ繧､繝・メ繧壇isabled縺ｫ縺吶ｋ縺溘ａ・・
-    const allSelectedBeforeBirth = useMemo(() => {
-        if (!computed || targetBabyIds.length === 0) return false;
-        return targetBabyIds.every(id => {
-            const b = babies.find(x => x.id === id);
-            if (!b) return false;
-            return calcAgeDays(b.birthDateISO, computed.shotDateISO || "") < 0;
-        });
-    }, [targetBabyIds, babies, computed]);
-
-    // 繝輔か繝ｼ繧ｫ繧ｹ縺悟､悶ｌ縺溷ｴ蜷医・繝｡繝｢繝ｪ遽邏・・縺溘ａ霆ｽ驥上・繝ｬ繝ｼ繧ｹ繝帙Ν繝繝ｼ繧定｡ｨ遉ｺ
-    if (!editorIsFocused) {
-        return <View style={[styles.container, { backgroundColor: theme.background }]} />;
-    }
-
+function getFilterOption(filterId?: FilterId) {
+    return FILTER_OPTIONS.find((option) => option.id === filterId) ?? FILTER_OPTIONS[0];
+}
+const PREVIEW_EXPANDED_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.36, 230), 320);
+const PREVIEW_COMPACT_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.24, 170), 220);
+const FOOTER_BASE_HEIGHT = 148;
+
+export default function EditorScreen() {
+    const state = useAppState();
+    const dispatch = useAppDispatch();
+    const router = useRouter();
+    useActiveBaby();
+
+    const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
+    const [saving, setSaving] = useState(false);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [commentFocused, setCommentFocused] = useState(false);
+    const [commentSectionY, setCommentSectionY] = useState(0);
+    const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const formScrollRef = useRef<ScrollView>(null);
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ: 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､髫ｰ・ｦ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ遶擾ｽｵ繝ｻ・ｺ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｴ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ
+    const theme = useMemo(() => {
+        if (targetBabyIds.length === 1) {
+            const baby = babies.find((b) => b.id === targetBabyIds[0]);
+            return baby ? getThemePreset(baby.themeColorHex) : NEUTRAL_THEME;
+        }
+        return NEUTRAL_THEME;
+    }, [targetBabyIds, babies]);
+
+    // 鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｮ・｣髮具ｽｻ繝ｻ・ｽ繝ｻ・ｨ鬮ｫ・ｲ陝ｶ・ｷ繝ｻ・ｿ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ雋・ｽｷ關灘ｸ吶・繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｯ郢晢ｽｻ邵ｺ・､・つ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ髦ｪ繝ｻ驕倪・繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・･鬮ｫ・ｰ繝ｻ・ｳ郢晢ｽｻ繝ｻ・ｾ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｪ繝ｻ・ｰ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｫ繝ｻ・ｶ髫ｴ蟷｢・ｽ・ｱ郢晢ｽｻ繝ｻ・｡髫ｰ螟ｲ・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｩ髯晢ｽｶ陷ｷ・ｶ郢晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｩ鬩包ｽｨ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｼ髯樊ｻゑｽｽ・ｲ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    const activeBabyForEditor = useMemo(() => {
+        if (targetBabyIds.length === 1) {
+            return babies.find((b) => b.id === targetBabyIds[0]) ?? null;
+        }
+        return null;
+    }, [targetBabyIds, babies]);
+
+    // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・｣陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｵ鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ (鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ繝ｻ繧托ｽｽ・ｧ驛｢譎｢・ｽ・ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｯ繝ｻ・ｩ鬮｢・ｧ繝ｻ・ｴ髯溷供蟷ｲ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    useEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => (
+                <TouchableOpacity
+                    onPress={() => {
+                        const libId = editingLibraryId;
+                        dispatch({ type: "RESET_EDITOR" });
+                        if (libId) {
+                            router.navigate(`/(tabs)/library/${libId}`);
+                            setTimeout(() => {
+                                (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
+                            }, 100);
+                        } else {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace("/(tabs)/camera");
+                            }
+                        }
+                    }}
+                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
+                >
+                    <Ionicons name="chevron-back" size={28} color="#333" />
+                    <Text style={{ fontSize: 17, color: "#333" }}>{i18n.t("editor.backButton")}</Text>
+                </TouchableOpacity>
+            ),
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={handleSaveToApp}
+                    disabled={saving || !currentPhoto || !computed}
+                    style={[
+                        styles.headerSaveButton,
+                        { backgroundColor: saving || !currentPhoto || !computed ? "#F2C6D0" : theme.accent },
+                    ]}
+                >
+                    <Ionicons name="download-outline" size={16} color="#FFF" />
+                    <Text style={styles.headerSaveText}>Save</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation, editingLibraryId, dispatch, router, handleSaveToApp, saving, currentPhoto, computed, theme.accent]);
+
+    // RN鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ陝・ｈ繝ｻ郢晢ｽｻ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｭ驛｢譎｢・ｽ・ｻ髯橸ｽｳ髣鯉ｽｨ繝ｻ・ｽ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ蜴・ｽｽ・ｧ繝ｻ・ｭ繝ｻ譛ｱ雎ｪ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｴ鬯ｮ・ｮ隲幢ｽｶ繝ｻ・ｽ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ
+    const [rnFontsLoaded] = useFonts({
+        font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
+        font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
+        font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
+        font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
+    });
+
+    useEffect(() => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+        const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+        const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
+    // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ譎｢・｣・ｰ郢晢ｽｻ繝ｻ・｢郢晢ｽｻ邵ｺ・､・つ鬯ｯ・ｯ繝ｻ・ｩ髫ｰ・ｳ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｨ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｮ・｣陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬯ｮ・ｯ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿSkia鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ隲幄ご陲也ｹ晢ｽｻ繝ｻ・ｺ髯区ｻゑｽｽ・･驛｢譎｢・ｽ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｮ髯具ｽｹ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｩ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｯ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    // manipulateAsync鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮｣雋ｻ・｣・ｰ郢晢ｽｻ繝ｻ・･鬮ｴ謇假ｽｽ・ｴ郢晢ｽｻ繝ｻ・ｾ鬯ｩ蛹・ｽｽ・ｶ鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・･郢晢ｽｻ繝ｻ・｢鬮ｫ・ｶ隴ｴ・ｧ郢ｩ・･郢晢ｽｻ繝ｻ・ｿ髯橸ｽ｢繝ｻ・ｼ鬨ｾ蠅難ｽｺ・ｽ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ髣費ｽｨ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｱ鬯ｩ蛹・ｽｽ・ｯ郢晢ｽｻ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・｣陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｵ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬮ｯ・ｷ陞｢・ｹ郢晢ｽｻia鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｮ髣包ｽｵ隴趣ｽ｢繝ｻ・ｽ闔会ｽ｣郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ髫ｴ蟷｢・ｽ・ｱ鬮ｮ雜｣・ｽ・ｪ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｮ繝ｻ・ｴ鬮ｮ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｷ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｯ・ｮ繝ｻ・ｮ髯滓汚・ｽ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻURI鬯ｯ・ｮ繝ｻ・ｯ髮九・・ｽ・ｷ鬩募ｪ繝ｻ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｮ繝ｻ・ｯ髮九・・ｽ・ｷ髯溷ｮ茨ｽｿ・ｫ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｸ鬮ｫ・ｶ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｮ繝ｻ・ｯ髮狗ｿｫ・代・・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｢鬯ｮ・ｫ繝ｻ・ｲ髯晢ｽｷ繝ｻ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    const runFinalRender = async () => {
+        if (!currentPhoto || !computed) throw new Error("Missing data");
+
+        if (!currentPhoto || !computed) throw new Error("Missing data");
+
+        // 鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ蜈ｷ・ｽ・ｹ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ闔会ｽ｣郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｯ讒ｭ・・ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ鬮｣蛹・ｽｽ・ｳ郢晢ｽｻ繝ｻ・ｹS鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ蜴・ｽｽ・ｨ髮具ｽｻ繝ｻ・ｽ繝ｻ・ｺ驛｢・ｧ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ繝ｻ繧托ｽｽ・ｧ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｲ鬮ｯ讖ｸ・ｽ・ｳ髯橸ｽ｢繝ｻ・ｽ郢晢ｽｻ繝ｻ・･髫ｲ蟶吶・繝ｻ・ｽ繝ｻ・ｿ髯橸ｽ｢繝ｻ・ｼ鬨ｾ蠅難ｽｺ・ｽ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻkia鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・｣鬲・ｼ夲ｽｽ・ｽ繝ｻ・ｨ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｴ螟ｧ・｣・ｼ鬩墓㈱繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｯ・ｷ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｮ髯具ｽｹ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｧ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬮ｯ譎｢・ｽ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｮ・ｫ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｦ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+        const MAX_RENDER = 2000;  // 2000px = 鬯ｯ・ｯ繝ｻ・ｩ髯懶ｽ｣繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｸ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ34鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｯ繝ｻ・ｩ鬮｢・ｧ繝ｻ・ｴ髯溷供蟷ｲ郢晢ｽｻ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻkia鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｩ髯懶ｽ｣繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｸ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ4MB鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｳ鬮ｯ譎｢・ｽ・ｶ髯ｷ・ｷ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+        let renderUri = currentPhoto.uri;
+        let renderW = currentPhoto.width;
+        let renderH = currentPhoto.height;
+
+        if (renderW > MAX_RENDER || renderH > MAX_RENDER) {
+            const scale = MAX_RENDER / Math.max(renderW, renderH);
+            renderW = Math.round(renderW * scale);
+            renderH = Math.round(renderH * scale);
+            const resized = await manipulateAsync(
+                currentPhoto.uri,
+                [{ resize: { width: renderW, height: renderH } }],
+                { compress: 1.0, format: SaveFormat.JPEG }
+            );
+            renderUri = resized.uri;
+        }
+
+        try {
+            const result = await renderCompositeImage({
+                imageUri: renderUri,
+                imageWidth: renderW,
+                imageHeight: renderH,
+                editorOptions,
+                computed,
+                fontId: editorOptions.fontId,
+                dateTextLine1,
+                isMultiBaby,
+            });
+
+            return result;
+        } finally {
+            // 鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ髯ｷ・ｿ隰費ｽｶ雋ょ､ゑｽｹ譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｵ髢ｻ・ｸ郢晢ｽｻ繝ｻ・ｼ髫ｲ讖ｸ・ｽ・ｺ繝ｻ蜿夜ｱ堤ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｮ髯具ｽｹ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ髫ｴ蟷｢・ｽ・ｱ郢晢ｽｻ繝ｻ・ｬ郢晢ｽｻ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､
+            if (renderUri !== currentPhoto.uri) {
+                try { await FileSystem.deleteAsync(renderUri, { idempotent: true }); } catch (_) { }
+            }
+        }
+    };
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ鬮ｮ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
+    const handleTemplateChange = (id: TemplateId) => {
+        const tpl = getTemplateConfig(id);
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: {
+                templateId: id,
+                dateColorHex: tpl.defaultDateColorHex,
+            },
+        });
+    };
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
+    const handleFontChange = (id: FontId) => {
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { fontId: id },
+        });
+    };
+
+    // 鬯ｮ・ｮ髮懶ｽ｣繝ｻ・ｽ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｯ・ｮ繝ｻ・ｯ髫ｶ轣假ｽ･繝ｻ・ｽ・ｽ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｽ鬮ｯ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
+    const handleColorChange = (hex: string) => {
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { dateColorHex: hex },
+        });
+    };
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
+    const handleCommentChange = (text: string) => {
+        // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬯ｮ・ｫ繝ｻ・ｶ髯ｷ・ｻ繝ｻ・ｵ郢晢ｽｻ繝ｻ・ｶ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬯ｩ蛹・ｽｽ・ｶ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢
+        const singleLine = text.replace(/\n/g, "");
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { commentText: singleLine },
+        });
+    };
+
+    // 鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｮ・｣髮具ｽｻ繝ｻ・ｽ繝ｻ・ｨ鬮ｫ・ｲ陝ｶ・ｷ繝ｻ・ｿ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｫ髣厄ｽｫ繝ｻ・ｶ鬮ｫ・ｱ髦ｮ蜷ｶ繝ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｪ繝ｻ・ｰ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ陷ｿ・･繝ｻ・ｹ繝ｻ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ
+    const scrollCommentIntoView = useCallback(() => {
+        setTimeout(() => {
+            formScrollRef.current?.scrollTo({
+                y: Math.max(commentSectionY - 12, 0),
+                animated: true,
+            });
+        }, 60);
+    }, [commentSectionY]);
+
+    useEffect(() => {
+        if (commentFocused) {
+            scrollCommentIntoView();
+        }
+    }, [commentFocused, keyboardVisible, scrollCommentIntoView]);
+
+    const handleCommentSectionLayout = useCallback((event: LayoutChangeEvent) => {
+        setCommentSectionY(event.nativeEvent.layout.y);
+    }, []);
+
+    const toggleTargetBaby = (babyId: string) => {
+        const current = targetBabyIds;
+        if (current.includes(babyId)) {
+            // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ譎｢・｣・ｰ郢晢ｽｻ繝ｻ・｢郢晢ｽｻ邵ｺ・､・つ鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            if (current.length <= 1) return;
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: current.filter((id) => id !== babyId) });
+        } else {
+            dispatch({ type: "SET_TARGET_BABY_IDS", payload: [...current, babyId] });
+        }
+    };
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ隰費ｽｶ陷・ｰ鬮ｫ・ｲ繝ｻ・､髯ｷ・･隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    async function handleSaveToApp() {
+        if (!currentPhoto || !computed) return;
+        if (targetBabyIds.length === 0) {
+            Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
+            return;
+        }
+        setSaving(true);
+        try {
+            const finalUri = await runFinalRender();
+            // renderImage.ts 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ MAX_OUTPUT_DIMENSION 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｯ・ｷ・つ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｶ鬮ｯ・ｷ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+            const maxSide = Math.max(currentPhoto.width, currentPhoto.height);
+            const scale = maxSide > 2000 ? 2000 / maxSide : 1;
+            const imageW = Math.round(currentPhoto.width * scale);
+            const imageH = Math.round(currentPhoto.height * scale);
+
+            const item = await saveToAppLibrary(
+                finalUri,
+                currentPhoto,
+                computed,
+                editorOptions,
+                imageW,
+                imageH,
+                targetBabyIds,
+                editingLibraryId,
+            );
+
+            // 鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ髫ｴ蟷｢・ｽ・ｱ鬮ｮ雜｣・ｽ・ｪ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｮ・ｯ隲橸ｽｺ陞ｻ・ｮ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・｣髮具ｽｻ繝ｻ・｣繝ｻ・ｰ鬮ｮ荵昴・繝ｻ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
+
+            // previewUri 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ雋・ｽｷ隴ｯ竏壹・繝ｻ・ｽ郢晢ｽｻ繝ｻ・｡鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻache鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｬ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髯ｷ・ｿ隰費ｽｶ鬲・ｽｵ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ髫ｲ蟷｢・ｽ・ｶ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｣鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闕ｵ譎｢・ｼ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+            // 鬯ｯ・ｩ陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ繝ｻ繧托ｽｽ・ｧ驛｢譎｢・ｽ・ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｮ・ｮ驕擾ｽｩ繝ｻ・ｰ鬩｢蟠趣ｽ｢螟懊＠繝ｻ・ｺ髮狗ｿｫ繝ｻ驕呈汚・ｽ・ｭ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｵ髢ｻ・ｸ郢晢ｽｻ繝ｻ・ｼ髫ｲ讖ｸ・ｽ・ｺ繝ｻ蜿夜ｱ堤ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ (documentDirectory) 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｻ鬮ｯ諛育袖繝ｻ・ｻ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｬ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ髣費ｽｨ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｱ鬯ｩ蛹・ｽｽ・ｯ郢晢ｽｻ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ髦ｪ繝ｻ隰梧ｺｯ・ｬ蜊・ｽ､・ｼ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闕ｵ譎｢・ｼ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ髣費ｽｨ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｱ鬯ｩ蛹・ｽｽ・ｯ郢晢ｽｻ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            if (
+                currentPhoto.previewUri &&
+                currentPhoto.previewUri !== currentPhoto.uri &&
+                currentPhoto.previewUri.includes('ImagePicker') // Expo Camera/ImagePicker鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｣鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｵ髢ｻ・ｸ郢晢ｽｻ繝ｻ・ｼ髫ｲ讖ｸ・ｽ・ｺ繝ｻ蜿夜ｱ堤ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｴ髯樊ｻゑｽｽ・ｧ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｮ繝ｻ・ｯ髮九・・ｽ・ｷ髫ｴ・ｯ遶丞｣ｹ繝ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ
+            ) {
+                try { await FileSystem.deleteAsync(currentPhoto.previewUri, { idempotent: true }); } catch (_) { }
+            }
+
+            if (editingLibraryId) {
+                dispatch({ type: "LIBRARY_UPDATE", payload: item });
+            } else {
+                dispatch({ type: "LIBRARY_ADD", payload: item });
+            }
+            dispatch({
+                type: "SET_LAST_EDITOR_PREFS",
+                payload: {
+                    lastTemplateId: editorOptions.templateId,
+                    lastDateColorHex: editorOptions.dateColorHex,
+                    lastFontId: editorOptions.fontId,
+                },
+            });
+            Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
+                {
+                    text: "OK",
+                    onPress: () => {
+                        dispatch({ type: "RESET_EDITOR" });
+
+                        router.navigate("/(tabs)/library");
+
+                        setTimeout(() => {
+                            (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
+                        }, 100);
+                    },
+                },
+            ]);
+        } catch {
+            Alert.alert(i18n.t("common.error"), i18n.t("editor.saveFailed"));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // iPhone鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｵ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ鬮ｯ繧托ｽｽ・ｭ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    const handleSaveToPhotos = async () => {
+        if (!currentPhoto || !computed) return;
+        setSaving(true);
+        try {
+            const finalUri = await runFinalRender();
+            const success = await saveToPhotoLibrary(finalUri);
+            // 鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ髫ｴ蟷｢・ｽ・ｱ鬮ｮ雜｣・ｽ・ｪ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｮ・ｯ隲橸ｽｺ陞ｻ・ｮ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・｣髮具ｽｻ繝ｻ・｣繝ｻ・ｰ鬮ｮ荵昴・繝ｻ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
+            if (success) {
+                Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"));
+            }
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const editorIsFocused = useIsFocused();
+
+    // 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｩ鬩包ｽｨ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｼ髯樊ｻゑｽｽ・ｲ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｫ髣厄ｽｫ繝ｻ・ｶ鬮ｫ・ｱ髦ｮ蜷ｶ繝ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｶ鬲・ｼ夲ｽｽ・ｽ繝ｻ・｢鬮ｫ・ｲ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    const displayBabyName = activeBabyForEditor?.name || settings.babyName;
+
+    // 鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ讒ｭ・・ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｮ繝ｻ・ｯ髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ鬮ｯ譎｢・ｽ・ｷ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｻ繝ｻ遒托ｽｭ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ貅倥・陞ｻ・ｮ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｦ繝ｻ・ｮ髯ｷ・ｷ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ
+    const dateTextLine1 = useMemo(() => {
+        if (!computed) return "";
+        let text = "";
+        if (targetBabyIds.length <= 1) {
+            const parts = [];
+
+            // 鬯ｯ・ｮ繝ｻ・ｯ髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｮ鬯ｮ・ｮ隲幢ｽｶ繝ｻ・ｽ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｫ髣厄ｽｫ繝ｻ・ｶ鬮ｫ・ｱ髦ｮ蜷ｶ繝ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｪ繝ｻ・ｰ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隲幢ｽｶ繝ｻ・ｽ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｮ繝ｻ・ｯ髫ｶ蜴・ｽｽ・ｸ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            let targetBabyId = undefined;
+            if (targetBabyIds.length === 1) {
+                targetBabyId = targetBabyIds[0];
+            } else if (activeBabyForEditor) {
+                targetBabyId = activeBabyForEditor.id;
+            }
+
+            const b = babies.find(x => x.id === targetBabyId);
+            const targetAgeDays = b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
+
+            // "n鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ譎｢・ｽ・ｶ髯ｷ・ｷ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･"鬯ｯ・ｮ繝ｻ・ｯ髮九・・ｽ・ｷ鬩募ｪ繝ｻ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｮ繝ｻ・ｯ髮九・・ｽ・ｷ髯溷ｮ茨ｽｿ・ｫ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｸ鬯ｩ諤憺●繝ｻ・ｽ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｮ繝ｻ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            const targetAgeMonthsAndDays = b ? calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "") : null;
+
+            // 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｮ・ｫ繝ｻ・ｶ髯ｷ・ｷ隴惹ｸ橸ｽｾ蜊・ｽｹ譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬮ｮ荵昴・繝ｻ・ｽ繝ｻ・ｯ鬯ｮ・｣鬮ｮ繝ｻ・ｽ・ｳ繝ｻ・ｨ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・｣鬨ｾ・ｧ繝ｻ・ｮ鬨ｾ蛹・ｽｽ・･郢晢ｽｻ邵ｺ・､・つ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｩ蛹・ｽｽ・ｯ郢晢ｽｻ繝ｻ・ｶ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ髢ｧ・ｴ繝ｻ・ｺ陋滂ｽ･郢晢ｽｻ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｯ陋滂ｽｩ繝ｻ・ｲ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩包ｽｶ闕ｳ讖ｸ・ｽ・､髣企ｯ会ｽｼ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ髫ｲ蟷｢・ｽ・ｶ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｣鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｩ蛹・ｽｽ・ｶ髣包ｽｵ陟搾ｽｺ繝ｻ・ｺ繝ｻ・｢鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｵ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ繝ｻ縺､ﾂ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・｣鬨ｾ・ｧ繝ｻ・ｮ鬨ｾ蛹・ｽｽ・･郢晢ｽｻ邵ｺ・､・つ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ讒ｭ・・ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｮ繝ｻ・ｯ髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ鬮ｯ譎｢・ｽ・ｷ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｦ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｮ繝ｻ・ｯ髮狗ｿｫ・代・・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ-> 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｬ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ・ｽ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｮ繝ｻ・ｴ髯懈瑳・ｺ・ｷ驛｢・ｭ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｩ蛹・ｽｽ・ｶ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｮ・ｯ雋願侭繝ｻ髣費｣ｰ驕擾ｽｩ陷ｷ蜥ｲ・ｹ・ｧ鬮ｮ繝ｻ・ｽ・ｱ髣雁ｾ後・郢晢ｽｻ繝ｻ・･鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+            const isBeforeBirth = targetAgeDays !== undefined && targetAgeDays < 0;
+
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+            if (editorOptions.showName && displayBabyName) parts.push(displayBabyName);
+            if (editorOptions.showAge && targetAgeDays !== undefined && !isBeforeBirth) {
+                if (editorOptions.ageFormat === "years_months" && targetAgeMonthsAndDays) {
+                    const { years, months } = targetAgeMonthsAndDays;
+                    if (years === 0) {
+                        if (months === 0) {
+                            parts.push(i18n.t("editor.ageTextDays", { days: targetAgeMonthsAndDays.days }));
+                        } else {
+                            parts.push(i18n.t("editor.ageTextMonths", { months }));
+                        }
+                    } else {
+                        if (months === 0) {
+                            parts.push(i18n.t("editor.ageTextYears", { years }));
+                        } else {
+                            parts.push(i18n.t("editor.ageTextYearsMonths", { years, months }));
+                        }
+                    }
+                } else if (editorOptions.ageFormat === "months_days" && targetAgeMonthsAndDays) {
+                    const { months, days } = targetAgeMonthsAndDays;
+                    const totalMonths = targetAgeMonthsAndDays.years * 12 + months;
+                    if (totalMonths === 0) {
+                        parts.push(i18n.t("editor.ageTextDays", { days }));
+                    } else if (days === 0) {
+                        parts.push(i18n.t("editor.ageTextMonths", { months: totalMonths }));
+                    } else {
+                        parts.push(i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days }));
+                    }
+                } else {
+                    parts.push(i18n.t("editor.ageTextDays", { days: targetAgeDays }));
+                }
+            }
+            text = parts.filter(Boolean).join("  ");
+        } else {
+            // 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・ｻ髣包ｽｵ隴擾ｽｴ郢晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ
+            const parts = [];
+            if (editorOptions.showDate) parts.push(computed.shotDateISO);
+
+            const babyParts = targetBabyIds.map(id => {
+                const b = babies.find(x => x.id === id);
+                if (!b) return "";
+                let bStr = "";
+                if (editorOptions.showName) bStr += b.name;
+
+                const targetAgeMonthsAndDays = calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "");
+                const ageDays = targetAgeMonthsAndDays.totalDays;
+                const isBeforeBirth = ageDays < 0;
+
+                if (editorOptions.showAge && !isBeforeBirth) {
+                    if (editorOptions.ageFormat === "years_months") {
+                        const { years, months } = targetAgeMonthsAndDays;
+                        if (years === 0) {
+                            if (months === 0) {
+                                bStr += `(${i18n.t("editor.ageTextDays", { days: targetAgeMonthsAndDays.days })})`;
+                            } else {
+                                bStr += `(${i18n.t("editor.ageTextMonths", { months })})`;
+                            }
+                        } else {
+                            if (months === 0) {
+                                bStr += `(${i18n.t("editor.ageTextYears", { years })})`;
+                            } else {
+                                bStr += `(${i18n.t("editor.ageTextYearsMonths", { years, months })})`;
+                            }
+                        }
+                    } else if (editorOptions.ageFormat === "months_days") {
+                        const { years, months, days } = targetAgeMonthsAndDays;
+                        const totalMonths = years * 12 + months;
+                        if (totalMonths === 0) {
+                            bStr += `(${i18n.t("editor.ageTextDays", { days })})`;
+                        } else if (days === 0) {
+                            bStr += `(${i18n.t("editor.ageTextMonths", { months: totalMonths })})`;
+                        } else {
+                            bStr += `(${i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days })})`;
+                        }
+                    } else {
+                        bStr += `(${i18n.t("editor.ageTextDays", { days: ageDays })})`;
+                    }
+                }
+                return bStr;
+            }).filter(Boolean);
+
+            if (babyParts.length > 0) {
+                // 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・ｻ髣包ｽｵ隴擾ｽｴ郢晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ髫ｲ蟷｢・ｽ・ｶ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｣鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ髢・ｾ蜉ｱ繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ1鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｯ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｮ繝ｻ・ｯ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+                parts.push(babyParts.join(" "));
+            }
+            text = parts.filter(Boolean).join("  ");
+        }
+        return text;
+    }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
+
+    // 鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｮ・｣髮具ｽｻ繝ｻ・ｽ繝ｻ・ｨ鬮ｫ・ｲ陝ｶ・ｷ繝ｻ・ｿ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｰ鬨ｾ謳ｾ・ｽ・ｲ郢晢ｽｻ繝ｻ・ｺ髯区ｻゑｽｽ・･驛｢譎｢・ｽ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蛹・ｽｽ・ｶ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ繝ｻ縺､ﾂ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬯ｯ・ｮ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ繝ｻ縺､ﾂ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ髢ｧ・ｴ繝ｻ・ｺ陋滂ｽ･郢晢ｽｻ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬯ｲ繝ｻ繝ｻ繝ｻ・ｽ繝ｻ・ｹ鬮｣雋ｻ・｣・ｰ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｾ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｮ繝ｻ・ｯ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｮ繝ｻ・ｯ髫ｶ蜴・ｽｽ・ｸ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｮ・ｯ隶灘･・ｽｽ・ｻ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・ｯ隲幄ご陲也ｹ晢ｽｻ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬯ｩ髦ｪ繝ｻ驕倪・繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｬ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・｢鬩幢ｽ｢繝ｻ・ｻ鬮ｯ・ｦ陟輔・led鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｴ謇假ｽｽ・｢髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ驕ｶ荵暦ｽｧ・ｭ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ鬩包ｽｶ闕ｳ讖ｸ・ｽ・｣繝ｻ・ｹ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
+    const allSelectedBeforeBirth = useMemo(() => {
+        if (!computed || targetBabyIds.length === 0) return false;
+        return targetBabyIds.every(id => {
+            const b = babies.find(x => x.id === id);
+            if (!b) return false;
+            return calcAgeDays(b.birthDateISO, computed.shotDateISO || "") < 0;
+        });
+    }, [targetBabyIds, babies, computed]);
+
+    // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｰ鬨ｾ謳ｾ・ｽ・ｲ郢晢ｽｻ繝ｻ・ｻ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｮ・ｫ繝ｻ・ｰ鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｶ陷ｻ・ｵ繝ｻ・ｶ繝ｻ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｩ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｯ繝ｻ・ｩ髯懶ｽ｣繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｸ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ驕ｶ荵暦ｽｧ・ｭ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｲ繝ｻ・､鬮ｴ蝓滄ｱ堤ｹ晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｮ・｣陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｳ鬯ｩ諤憺●繝ｻ・ｽ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｬ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ髢・ｾ蜉ｱ繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｯ・ｷ繝ｻ・ｴ郢晢ｽｻ繝ｻ・･鬮ｫ・ｴ隲・ｹ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｰ繝ｻ・ｨ鬯ｲ謇假ｽｽ・ｴ繝ｻ縺､ﾂ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｳ鬮ｯ讓奇ｽｻ繧托ｽｽ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｩ鬩包ｽｨ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｼ髯樊ｻゑｽｽ・ｲ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ
+    if (!editorIsFocused) {
+        return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+    }
+
     if (!currentPhoto || !computed || !rnFontsLoaded) {
         return (
             <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -470,14 +495,10 @@ export default function EditorScreen() {
     }
 
     const tpl = getTemplateConfig(editorOptions.templateId);
+    const previewWidth = PREVIEW_WIDTH;
     const previewAspect = currentPhoto.width / currentPhoto.height;
-    const naturalPreviewHeight = PREVIEW_WIDTH / previewAspect;
-    const previewShellHeight = keyboardVisible ? PREVIEW_COMPACT_HEIGHT : PREVIEW_EXPANDED_HEIGHT;
-    const previewScale = Math.min(1, previewShellHeight / naturalPreviewHeight);
-    const previewWidth = PREVIEW_WIDTH * previewScale;
-    const previewHeight = naturalPreviewHeight * previewScale;
-    const footerPaddingBottom = Math.max(insets.bottom, 12);
-    const footerSpacerHeight = FOOTER_BASE_HEIGHT + footerPaddingBottom;
+    const previewHeight = previewWidth / previewAspect;
+    const activeFilter = getFilterOption((editorOptions as any).filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
     const isMultiBaby = targetBabyIds.length > 1;
@@ -509,341 +530,325 @@ export default function EditorScreen() {
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
             >
-                <View style={styles.content}>
-                    <View style={styles.fixedPreviewArea}>
-                        <View style={[styles.previewStage, { height: previewShellHeight, backgroundColor: theme.light, borderColor: theme.accent }]}>
-                            <View
-                                style={[
-                                    styles.previewContainer,
-                                    {
-                                        width: previewWidth,
-                                        height: previewHeight,
-                                        backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
-                                    },
-                                ]}
-                            >
-                                <View
-                                    style={{
-                                        position: "absolute",
-                                        left: previewPhotoX,
-                                        top: previewPhotoY,
-                                        width: previewPhotoW,
-                                        height: previewPhotoH,
-                                        overflow: "hidden",
-                                    }}
-                                >
-                                    <Image
-                                        source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
-                                        style={{ width: "100%", height: "100%" }}
-                                        resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
-                                    />
-                                </View>
-
-                                <View
-                                    style={{
-                                        position: "absolute",
-                                        right: margin,
-                                        ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
-                                        alignItems: "flex-end",
-                                    }}
-                                >
-                                    {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
-                                        <Text
-                                            style={{
-                                                fontFamily: editorOptions.fontId,
-                                                fontSize: previewDateFontSize,
-                                                color: editorOptions.dateColorHex,
-                                                fontWeight: "bold",
-                                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                                textShadowOffset: { width: 1, height: 1 },
-                                                textShadowRadius: 1,
-                                                width: previewMaxWidth,
-                                                textAlign: "right",
-                                            }}
-                                            numberOfLines={1}
-                                            adjustsFontSizeToFit
-                                        >
-                                            {dateTextLine1}
-                                        </Text>
-                                    )}
-                                    {editorOptions.commentText ? (
-                                        <Text
-                                            style={{
-                                                fontFamily: editorOptions.fontId,
-                                                fontSize: previewCommentFontSize,
-                                                color: editorOptions.dateColorHex,
-                                                fontWeight: "bold",
-                                                marginTop: gap,
-                                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                                textShadowOffset: { width: 1, height: 1 },
-                                                textShadowRadius: 1,
-                                                width: previewMaxWidth,
-                                                textAlign: "right",
-                                            }}
-                                            numberOfLines={1}
-                                            adjustsFontSizeToFit
-                                        >
-                                            {editorOptions.commentText}
-                                        </Text>
-                                    ) : null}
-                                </View>
-
-                                {saving && (
-                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
-                                        <ActivityIndicator size="large" color={theme.accent} />
-                                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-
-                    <ScrollView
-                        ref={formScrollRef}
-                        style={styles.formScroll}
-                        contentContainerStyle={[styles.scrollContent, { paddingBottom: footerSpacerHeight }]}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                <ScrollView
+                    ref={formScrollRef}
+                    style={[styles.container, { backgroundColor: theme.background }]}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                >
+                    <View
+                        style={[
+                            styles.previewContainer,
+                            {
+                                height: previewHeight,
+                                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
+                            },
+                        ]}
                     >
-                        {babies.length > 0 && (
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
-                                <View style={styles.targetRow}>
-                                    {babies.map((baby) => {
-                                        const isSelected = targetBabyIds.includes(baby.id);
-                                        const babyTheme = getThemePreset(baby.themeColorHex);
-                                        return (
-                                            <TouchableOpacity
-                                                key={baby.id}
-                                                style={[
-                                                    styles.targetChip,
-                                                    isSelected
-                                                        ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
-                                                        : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
-                                                ]}
-                                                onPress={() => toggleTargetBaby(baby.id)}
-                                                activeOpacity={0.7}
-                                            >
-                                                <View
-                                                    style={[
-                                                        styles.targetDot,
-                                                        { backgroundColor: isSelected ? "#FFF" : babyTheme.accent },
-                                                    ]}
-                                                />
-                                                <Text
-                                                    style={[
-                                                        styles.targetText,
-                                                        { color: isSelected ? "#FFF" : "#555" },
-                                                    ]}
-                                                >
-                                                    {baby.name}
-                                                </Text>
-                                                {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-                                {targetBabyIds.length > 1 && <Text style={styles.targetHint}>{i18n.t("editor.saveTargetHint")}</Text>}
+                        <View
+                            style={{
+                                position: "absolute",
+                                left: previewPhotoX,
+                                top: previewPhotoY,
+                                width: previewPhotoW,
+                                height: previewPhotoH,
+                                overflow: "hidden",
+                            }}
+                        >
+                            <Image
+                                source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
+                                style={{ width: "100%", height: "100%" }}
+                                resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
+                            />
+                            {activeFilter.opacity > 0 && (
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
+                            )}
+                        </View>
+
+                        <View
+                            style={{
+                                position: "absolute",
+                                right: margin,
+                                ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
+                                alignItems: "flex-end",
+                            }}
+                        >
+                            {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
+                                <Text
+                                    style={{
+                                        fontFamily: editorOptions.fontId,
+                                        fontSize: previewDateFontSize,
+                                        color: editorOptions.dateColorHex,
+                                        fontWeight: "bold",
+                                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                        textShadowOffset: { width: 1, height: 1 },
+                                        textShadowRadius: 1,
+                                        width: previewMaxWidth,
+                                        textAlign: "right",
+                                    }}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                >
+                                    {dateTextLine1}
+                                </Text>
+                            )}
+                            {editorOptions.commentText ? (
+                                <Text
+                                    style={{
+                                        fontFamily: editorOptions.fontId,
+                                        fontSize: previewCommentFontSize,
+                                        color: editorOptions.dateColorHex,
+                                        fontWeight: "bold",
+                                        marginTop: gap,
+                                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                        textShadowOffset: { width: 1, height: 1 },
+                                        textShadowRadius: 1,
+                                        width: previewMaxWidth,
+                                        textAlign: "right",
+                                    }}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                >
+                                    {editorOptions.commentText}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        {saving && (
+                            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
+                                <ActivityIndicator size="large" color={theme.accent} />
+                                <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
                             </View>
                         )}
+                    </View>
 
+                    {babies.length > 0 && (
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
-                            <View style={styles.templateRow}>
-                                {TEMPLATES.map((t) => (
-                                    <TouchableOpacity
-                                        key={t.id}
-                                        style={[
-                                            styles.templateOption,
-                                            editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
-                                        ]}
-                                        onPress={() => handleTemplateChange(t.id)}
-                                    >
-                                        <View style={styles.templatePreviewBox}>
-                                            {t.hasFrame ? (
-                                                <View style={styles.templateFrame}>
-                                                    <View style={styles.templateInner} />
-                                                </View>
-                                            ) : (
-                                                <View style={styles.templateNoFrame} />
-                                            )}
-                                        </View>
-                                        <Text
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
+                            <View style={styles.targetRow}>
+                                {babies.map((baby) => {
+                                    const isSelected = targetBabyIds.includes(baby.id);
+                                    const babyTheme = getThemePreset(baby.themeColorHex);
+                                    return (
+                                        <TouchableOpacity
+                                            key={baby.id}
                                             style={[
-                                                styles.templateLabel,
-                                                editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }],
+                                                styles.targetChip,
+                                                isSelected
+                                                    ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
+                                                    : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
                                             ]}
+                                            onPress={() => toggleTargetBaby(baby.id)}
+                                            activeOpacity={0.7}
                                         >
-                                            {t.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
+                                            <View style={[styles.targetDot, { backgroundColor: isSelected ? "#FFF" : babyTheme.accent }]} />
+                                            <Text style={[styles.targetText, { color: isSelected ? "#FFF" : "#555" }]}>{baby.name}</Text>
+                                            {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
+                            {targetBabyIds.length > 1 && <Text style={styles.targetHint}>{i18n.t("editor.saveTargetHint")}</Text>}
                         </View>
+                    )}
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
-                            <View style={styles.fontRow}>
-                                {FONT_OPTIONS.map((f) => (
-                                    <TouchableOpacity
-                                        key={f.id}
-                                        style={[
-                                            styles.fontBadge,
-                                            editorOptions.fontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
-                                        ]}
-                                        onPress={() => handleFontChange(f.id)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.fontBadgeText,
-                                                { fontFamily: f.id },
-                                                editorOptions.fontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }],
-                                            ]}
-                                        >
-                                            {f.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorRow}>
-                                {COLOR_PALETTE.map((c) => (
-                                    <TouchableOpacity
-                                        key={c.hex}
-                                        style={[
-                                            styles.colorCircle,
-                                            { backgroundColor: c.hex },
-                                            c.hex === "#FFFFFF" && styles.colorCircleWhite,
-                                            editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
-                                        ]}
-                                        onPress={() => handleColorChange(c.hex)}
-                                    >
-                                        {editorOptions.dateColorHex === c.hex && (
-                                            <Ionicons
-                                                name="checkmark"
-                                                size={18}
-                                                color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
-                                            />
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
+                        <View style={styles.templateRow}>
+                            {TEMPLATES.map((t) => (
+                                <TouchableOpacity
+                                    key={t.id}
+                                    style={[
+                                        styles.templateOption,
+                                        editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                    ]}
+                                    onPress={() => handleTemplateChange(t.id)}
+                                >
+                                    <View style={styles.templatePreviewBox}>
+                                        {t.hasFrame ? (
+                                            <View style={styles.templateFrame}>
+                                                <View style={styles.templateInner} />
+                                            </View>
+                                        ) : (
+                                            <View style={styles.templateNoFrame} />
                                         )}
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
-                            <View style={styles.toggleRowContainer}>
-                                <View style={styles.toggleItem}>
-                                    <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
-                                    <Switch
-                                        value={editorOptions.showDate}
-                                        onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
-                                        trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                                        style={styles.switchSmall}
-                                    />
-                                </View>
-                                <View style={styles.toggleItem}>
-                                    <Text style={styles.toggleLabel}>{i18n.t("editor.nameLabel")}</Text>
-                                    <Switch
-                                        value={editorOptions.showName}
-                                        onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
-                                        trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                                        style={styles.switchSmall}
-                                        disabled={!displayBabyName}
-                                    />
-                                </View>
-                                <View style={{ width: "100%" }}>
-                                    <View style={[styles.toggleItem, { width: 130 }]}>
-                                        <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
-                                        <Switch
-                                            value={editorOptions.showAge}
-                                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
-                                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                                            style={styles.switchSmall}
-                                            disabled={allSelectedBeforeBirth}
-                                        />
                                     </View>
-                                    {editorOptions.showAge && !allSelectedBeforeBirth && (
-                                        <View style={styles.formatSegmentContainer}>
-                                            <TouchableOpacity
-                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]}
-                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}
-                                            >
-                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
-                                            </TouchableOpacity>
-                                            <View style={styles.formatSegmentDivider} />
-                                            <TouchableOpacity
-                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]}
-                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
-                                            >
-                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
-                                            </TouchableOpacity>
-                                            <View style={styles.formatSegmentDivider} />
-                                            <TouchableOpacity
-                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]}
-                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}
-                                            >
-                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        </View>
-
-                        <View style={styles.section} onLayout={handleCommentSectionLayout}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
-                            <TextInput
-                                style={[styles.commentInput, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
-                                value={editorOptions.commentText}
-                                onChangeText={handleCommentChange}
-                                onFocus={() => {
-                                    setCommentFocused(true);
-                                    scrollCommentIntoView();
-                                }}
-                                onBlur={() => setCommentFocused(false)}
-                                placeholder={i18n.t("editor.commentPlaceholder")}
-                                placeholderTextColor="#BDBDBD"
-                                maxLength={50}
-                                returnKeyType="done"
-                                blurOnSubmit
-                                selectionColor={theme.accent}
-                            />
-                        </View>
-                    </ScrollView>
-
-                    <View style={[styles.footerContainer, { paddingBottom: footerPaddingBottom, backgroundColor: theme.background }]}>
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                                onPress={handleSaveToApp}
-                                disabled={saving}
-                            >
-                                {saving ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <>
-                                        <Ionicons name="download-outline" size={20} color="#FFF" />
-                                        <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.photoButton, { borderColor: theme.accent }]}
-                                onPress={handleSaveToPhotos}
-                                disabled={saving}
-                            >
-                                <Ionicons name="image-outline" size={20} color={theme.accent} />
-                                <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
-                            </TouchableOpacity>
+                                    <Text style={[styles.templateLabel, editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }]]}>
+                                        {t.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </View>
-                </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
+                        <View style={styles.fontRow}>
+                            {FONT_OPTIONS.map((f) => (
+                                <TouchableOpacity
+                                    key={f.id}
+                                    style={[
+                                        styles.fontBadge,
+                                        editorOptions.fontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                    ]}
+                                    onPress={() => handleFontChange(f.id)}
+                                >
+                                    <Text style={[styles.fontBadgeText, { fontFamily: f.id }, editorOptions.fontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }]]}>
+                                        {f.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>驛｢譎・ｽｼ譁絶襖驛｢譎｢・ｽ・ｫ驛｢・ｧ繝ｻ・ｿ驛｢譎｢・ｽ・ｼ</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                            {FILTER_OPTIONS.map((option) => {
+                                const isActive = (editorOptions as any).filterId === option.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.id}
+                                        style={[
+                                            styles.filterChip,
+                                            isActive && [styles.filterChipActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                        ]}
+                                        onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { filterId: option.id } })}
+                                    >
+                                        <View style={[styles.filterDot, { backgroundColor: option.id === "filter_none" ? "#E7E7E7" : option.color }]} />
+                                        <Text style={[styles.filterLabel, isActive && { color: theme.accent }]}>{option.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorRow}>
+                            {COLOR_PALETTE.map((c) => (
+                                <TouchableOpacity
+                                    key={c.hex}
+                                    style={[
+                                        styles.colorCircle,
+                                        { backgroundColor: c.hex },
+                                        c.hex === "#FFFFFF" && styles.colorCircleWhite,
+                                        editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
+                                    ]}
+                                    onPress={() => handleColorChange(c.hex)}
+                                >
+                                    {editorOptions.dateColorHex === c.hex && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={18}
+                                            color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
+                                        />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
+                        <View style={styles.toggleRowContainer}>
+                            <View style={styles.toggleItem}>
+                                <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
+                                <Switch
+                                    value={editorOptions.showDate}
+                                    onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
+                                    trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                    style={styles.switchSmall}
+                                />
+                            </View>
+                            <View style={styles.toggleItem}>
+                                <Text style={styles.toggleLabel}>{i18n.t("editor.nameLabel")}</Text>
+                                <Switch
+                                    value={editorOptions.showName}
+                                    onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
+                                    trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                    style={styles.switchSmall}
+                                    disabled={!displayBabyName}
+                                />
+                            </View>
+                            <View style={{ width: "100%" }}>
+                                <View style={[styles.toggleItem, { width: 130 }]}>
+                                    <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
+                                    <Switch
+                                        value={editorOptions.showAge}
+                                        onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
+                                        trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                        style={styles.switchSmall}
+                                        disabled={allSelectedBeforeBirth}
+                                    />
+                                </View>
+                                {editorOptions.showAge && !allSelectedBeforeBirth && (
+                                    <View style={styles.formatSegmentContainer}>
+                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}>
+                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
+                                        </TouchableOpacity>
+                                        <View style={styles.formatSegmentDivider} />
+                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}>
+                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
+                                        </TouchableOpacity>
+                                        <View style={styles.formatSegmentDivider} />
+                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}>
+                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.section} onLayout={handleCommentSectionLayout}>
+                        <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
+                        <TextInput
+                            style={[styles.commentInput, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
+                            value={editorOptions.commentText}
+                            onChangeText={handleCommentChange}
+                            onFocus={() => {
+                                setCommentFocused(true);
+                                scrollCommentIntoView();
+                            }}
+                            onBlur={() => setCommentFocused(false)}
+                            placeholder={i18n.t("editor.commentPlaceholder")}
+                            placeholderTextColor="#BDBDBD"
+                            maxLength={50}
+                            returnKeyType="done"
+                            blurOnSubmit
+                            selectionColor={theme.accent}
+                        />
+                    </View>
+
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                            onPress={handleSaveToApp}
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <>
+                                    <Ionicons name="download-outline" size={20} color="#FFF" />
+                                    <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.photoButton, { borderColor: theme.accent }]}
+                            onPress={handleSaveToPhotos}
+                            disabled={saving}
+                        >
+                            <Ionicons name="image-outline" size={20} color={theme.accent} />
+                            <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -854,35 +859,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#FFF",
     },
-    content: {
-        flex: 1,
-    },
-    fixedPreviewArea: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 8,
-    },
-    previewStage: {
-        borderRadius: 24,
-        borderWidth: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 3,
-    },
-    formScroll: {
-        flex: 1,
-    },
     scrollContent: {
         paddingHorizontal: 16,
-        paddingTop: 4,
+        paddingTop: 12,
     },
     previewContainer: {
+        width: PREVIEW_WIDTH,
         backgroundColor: "#F5F5F5",
-        borderRadius: 18,
+        borderRadius: 12,
         overflow: "hidden",
         justifyContent: "center",
         alignItems: "center",
@@ -895,6 +879,20 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: "#333",
         marginBottom: 10,
+    },
+    headerSaveButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 18,
+        marginRight: 8,
+    },
+    headerSaveText: {
+        color: "#FFF",
+        fontSize: 13,
+        fontWeight: "700",
     },
     targetRow: {
         flexDirection: "row",
@@ -1005,6 +1003,38 @@ const styles = StyleSheet.create({
     fontBadgeTextActive: {
         color: "#FF8FA3",
     },
+    filterRow: {
+        flexDirection: "row",
+        gap: 8,
+        paddingVertical: 4,
+    },
+    filterChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: "transparent",
+        backgroundColor: "#F5F5F5",
+    },
+    filterChipActive: {
+        borderColor: "#FF8FA3",
+        backgroundColor: "#FFF5F7",
+    },
+    filterDot: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 1,
+        borderColor: "rgba(0,0,0,0.06)",
+    },
+    filterLabel: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#555",
+    },
     colorRow: {
         flexDirection: "row",
         gap: 10,
@@ -1092,13 +1122,8 @@ const styles = StyleSheet.create({
         color: "#888",
     },
     buttonContainer: {
+        marginTop: 24,
         gap: 12,
-    },
-    footerContainer: {
-        borderTopWidth: 1,
-        borderTopColor: "#F1E6EA",
-        paddingHorizontal: 16,
-        paddingTop: 14,
     },
     saveButton: {
         flexDirection: "row",
