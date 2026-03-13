@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
     View,
     Text,
@@ -11,6 +11,10 @@ import {
     Image,
     Dimensions,
     Switch,
+    KeyboardAvoidingView,
+    Keyboard,
+    Platform,
+    type LayoutChangeEvent,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -26,21 +30,30 @@ import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId } from "@/types";
 import i18n from "@/lib/i18n";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
+const PREVIEW_EXPANDED_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.36, 230), 320);
+const PREVIEW_COMPACT_HEIGHT = Math.min(Math.max(SCREEN_HEIGHT * 0.24, 170), 220);
+const FOOTER_BASE_HEIGHT = 148;
 
 export default function EditorScreen() {
     const state = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const activeBaby = useActiveBaby();
+    useActiveBaby();
 
-    const { currentPhoto, computed, editorOptions, settings, renderedUri, editingLibraryId, babies, targetBabyIds, activeBabyId } = state;
+    const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
     const [saving, setSaving] = useState(false);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [commentFocused, setCommentFocused] = useState(false);
+    const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const formScrollRef = useRef<ScrollView>(null);
 
-    // テーマカラー: 複数選択時はニュートラル、1人選択時はそのカラー
+    // 繝・・繝槭き繝ｩ繝ｼ: 隍・焚驕ｸ謚樊凾縺ｯ繝九Η繝ｼ繝医Λ繝ｫ縲・莠ｺ驕ｸ謚樊凾縺ｯ縺昴・繧ｫ繝ｩ繝ｼ
     const theme = useMemo(() => {
         if (targetBabyIds.length === 1) {
             const baby = babies.find((b) => b.id === targetBabyIds[0]);
@@ -49,7 +62,7 @@ export default function EditorScreen() {
         return NEUTRAL_THEME;
     }, [targetBabyIds, babies]);
 
-    // 保存先で選択されている赤ちゃんの名前（表示用）
+    // 菫晏ｭ伜・縺ｧ驕ｸ謚槭＆繧後※縺・ｋ襍､縺｡繧・ｓ縺ｮ蜷榊燕・郁｡ｨ遉ｺ逕ｨ・・
     const activeBabyForEditor = useMemo(() => {
         if (targetBabyIds.length === 1) {
             return babies.find((b) => b.id === targetBabyIds[0]) ?? null;
@@ -57,7 +70,7 @@ export default function EditorScreen() {
         return null;
     }, [targetBabyIds, babies]);
 
-    // 戻るボタンのカスタマイズ (再編集時はライブラリ詳細へ戻る)
+    // 謌ｻ繧九・繧ｿ繝ｳ縺ｮ繧ｫ繧ｹ繧ｿ繝槭う繧ｺ (蜀咲ｷｨ髮・凾縺ｯ繝ｩ繧､繝悶Λ繝ｪ隧ｳ邏ｰ縺ｸ謌ｻ繧・
     useEffect(() => {
         navigation.setOptions({
             headerLeft: () => (
@@ -87,7 +100,7 @@ export default function EditorScreen() {
         });
     }, [navigation, editingLibraryId, dispatch, router]);
 
-    // RN用プレビューフォント読み込み
+    // RN逕ｨ繝励Ξ繝薙Η繝ｼ繝輔か繝ｳ繝郁ｪｭ縺ｿ霎ｼ縺ｿ
     const [rnFontsLoaded] = useFonts({
         font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
         font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
@@ -95,15 +108,27 @@ export default function EditorScreen() {
         font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
     });
 
-    // 最終保存時にのみSkia合成を実行
-    // manipulateAsyncで先に安全にリサイズしてからSkiaに渡す（メモリ爆発防止＆全URI形式対応）
+    useEffect(() => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+        const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+        const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
+    // 譛邨ゆｿ晏ｭ俶凾縺ｫ縺ｮ縺ｿSkia蜷域・繧貞ｮ溯｡・
+    // manipulateAsync縺ｧ蜈医↓螳牙・縺ｫ繝ｪ繧ｵ繧､繧ｺ縺励※縺九ｉSkia縺ｫ貂｡縺呻ｼ医Γ繝｢繝ｪ辷・匱髦ｲ豁｢・・・URI蠖｢蠑丞ｯｾ蠢懶ｼ・
     const runFinalRender = async () => {
         if (!currentPhoto || !computed) throw new Error("Missing data");
 
         if (!currentPhoto || !computed) throw new Error("Missing data");
 
-        // 元画像をOSネイティブで安全にリサイズ（Skiaへの入力サイズを制限）
-        const MAX_RENDER = 2000;  // 2000px = 約534万画素（Skiaメモリ約34MBに抑制）
+        // 蜈・判蜒上ｒOS繝阪う繝・ぅ繝悶〒螳牙・縺ｫ繝ｪ繧ｵ繧､繧ｺ・・kia縺ｸ縺ｮ蜈･蜉帙し繧､繧ｺ繧貞宛髯撰ｼ・
+        const MAX_RENDER = 2000;  // 2000px = 邏・34荳・判邏・・kia繝｡繝｢繝ｪ邏・4MB縺ｫ謚大宛・・
         let renderUri = currentPhoto.uri;
         let renderW = currentPhoto.width;
         let renderH = currentPhoto.height;
@@ -134,14 +159,14 @@ export default function EditorScreen() {
 
             return result;
         } finally {
-            // 一時リサイズファイルを削除
+            // 荳譎ゅΜ繧ｵ繧､繧ｺ繝輔ぃ繧､繝ｫ繧貞炎髯､
             if (renderUri !== currentPhoto.uri) {
                 try { await FileSystem.deleteAsync(renderUri, { idempotent: true }); } catch (_) { }
             }
         }
     };
 
-    // テンプレート変更
+    // 繝・Φ繝励Ξ繝ｼ繝亥､画峩
     const handleTemplateChange = (id: TemplateId) => {
         const tpl = getTemplateConfig(id);
         dispatch({
@@ -153,7 +178,7 @@ export default function EditorScreen() {
         });
     };
 
-    // フォント変更
+    // 繝輔か繝ｳ繝亥､画峩
     const handleFontChange = (id: FontId) => {
         dispatch({
             type: "SET_EDITOR_OPTIONS",
@@ -161,7 +186,7 @@ export default function EditorScreen() {
         });
     };
 
-    // 色変更
+    // 濶ｲ螟画峩
     const handleColorChange = (hex: string) => {
         dispatch({
             type: "SET_EDITOR_OPTIONS",
@@ -169,9 +194,9 @@ export default function EditorScreen() {
         });
     };
 
-    // コメント変更
+    // 繧ｳ繝｡繝ｳ繝亥､画峩
     const handleCommentChange = (text: string) => {
-        // 改行禁止
+        // 謾ｹ陦檎ｦ∵ｭ｢
         const singleLine = text.replace(/\n/g, "");
         dispatch({
             type: "SET_EDITOR_OPTIONS",
@@ -179,11 +204,30 @@ export default function EditorScreen() {
         });
     };
 
-    // 保存先の赤ちゃんをトグル
+    // 菫晏ｭ伜・縺ｮ襍､縺｡繧・ｓ繧偵ヨ繧ｰ繝ｫ
+    const scrollCommentIntoView = useCallback(() => {
+        setTimeout(() => {
+            formScrollRef.current?.scrollTo({
+                y: Math.max(commentSectionY - 12, 0),
+                animated: true,
+            });
+        }, 60);
+    }, [commentSectionY]);
+
+    useEffect(() => {
+        if (commentFocused) {
+            scrollCommentIntoView();
+        }
+    }, [commentFocused, keyboardVisible, scrollCommentIntoView]);
+
+    const handleCommentSectionLayout = useCallback((event: LayoutChangeEvent) => {
+        setCommentSectionY(event.nativeEvent.layout.y);
+    }, []);
+
     const toggleTargetBaby = (babyId: string) => {
         const current = targetBabyIds;
         if (current.includes(babyId)) {
-            // 最低1人は選択必須
+            // 譛菴・莠ｺ縺ｯ驕ｸ謚槫ｿ・・
             if (current.length <= 1) return;
             dispatch({ type: "SET_TARGET_BABY_IDS", payload: current.filter((id) => id !== babyId) });
         } else {
@@ -191,7 +235,7 @@ export default function EditorScreen() {
         }
     };
 
-    // アプリ内保存
+    // 繧｢繝励Μ蜀・ｿ晏ｭ・
     const handleSaveToApp = async () => {
         if (!currentPhoto || !computed) return;
         if (targetBabyIds.length === 0) {
@@ -201,7 +245,7 @@ export default function EditorScreen() {
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
-            // renderImage.ts の MAX_OUTPUT_DIMENSION と合わせる
+            // renderImage.ts 縺ｮ MAX_OUTPUT_DIMENSION 縺ｨ蜷医ｏ縺帙ｋ
             const maxSide = Math.max(currentPhoto.width, currentPhoto.height);
             const scale = maxSide > 2000 ? 2000 / maxSide : 1;
             const imageW = Math.round(currentPhoto.width * scale);
@@ -218,15 +262,15 @@ export default function EditorScreen() {
                 editingLibraryId,
             );
 
-            // 一時ファイルのみ削除（メモリ蓄積防止）
+            // 荳譎ゅヵ繧｡繧､繝ｫ縺ｮ縺ｿ蜑企勁・医Γ繝｢繝ｪ闢・ｩ埼亟豁｢・・
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
 
-            // previewUri が一時ファイル（cacheディレクトリ）の場合のみ削除する
-            // ※ライブラリの原本ファイル (documentDirectory) を指している場合は削除してはいけない
+            // previewUri 縺御ｸ譎ゅヵ繧｡繧､繝ｫ・・ache繝・ぅ繝ｬ繧ｯ繝医Μ・峨・蝣ｴ蜷医・縺ｿ蜑企勁縺吶ｋ
+            // 窶ｻ繝ｩ繧､繝悶Λ繝ｪ縺ｮ蜴滓悽繝輔ぃ繧､繝ｫ (documentDirectory) 繧呈欠縺励※縺・ｋ蝣ｴ蜷医・蜑企勁縺励※縺ｯ縺・￠縺ｪ縺・
             if (
                 currentPhoto.previewUri &&
                 currentPhoto.previewUri !== currentPhoto.uri &&
-                currentPhoto.previewUri.includes('ImagePicker') // Expo Camera/ImagePickerのキャッシュファイルの特徴
+                currentPhoto.previewUri.includes('ImagePicker') // Expo Camera/ImagePicker縺ｮ繧ｭ繝｣繝・す繝･繝輔ぃ繧､繝ｫ縺ｮ迚ｹ蠕ｴ
             ) {
                 try { await FileSystem.deleteAsync(currentPhoto.previewUri, { idempotent: true }); } catch (_) { }
             }
@@ -265,14 +309,14 @@ export default function EditorScreen() {
         }
     };
 
-    // iPhone写真保存
+    // iPhone蜀咏悄菫晏ｭ・
     const handleSaveToPhotos = async () => {
         if (!currentPhoto || !computed) return;
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
             const success = await saveToPhotoLibrary(finalUri);
-            // 一時ファイル削除（メモリ蓄積防止）
+            // 荳譎ゅヵ繧｡繧､繝ｫ蜑企勁・医Γ繝｢繝ｪ闢・ｩ埼亟豁｢・・
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
             if (success) {
                 Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"));
@@ -284,17 +328,17 @@ export default function EditorScreen() {
 
     const editorIsFocused = useIsFocused();
 
-    // 表示用の赤ちゃん名
+    // 陦ｨ遉ｺ逕ｨ縺ｮ襍､縺｡繧・ｓ蜷・
     const displayBabyName = activeBabyForEditor?.name || settings.babyName;
 
-    // 印字テキストの生成
+    // 蜊ｰ蟄励ユ繧ｭ繧ｹ繝医・逕滓・
     const dateTextLine1 = useMemo(() => {
         if (!computed) return "";
         let text = "";
         if (targetBabyIds.length <= 1) {
             const parts = [];
 
-            // 対象となる1人の赤ちゃんを特定
+            // 蟇ｾ雎｡縺ｨ縺ｪ繧・莠ｺ縺ｮ襍､縺｡繧・ｓ繧堤音螳・
             let targetBabyId = undefined;
             if (targetBabyIds.length === 1) {
                 targetBabyId = targetBabyIds[0];
@@ -305,10 +349,10 @@ export default function EditorScreen() {
             const b = babies.find(x => x.id === targetBabyId);
             const targetAgeDays = b ? calcAgeDays(b.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
 
-            // "nヶ月n日"形式の計算
+            // "n繝ｶ譛・譌･"蠖｢蠑上・險育ｮ・
             const targetAgeMonthsAndDays = b ? calcAgeMonthsAndDays(b.birthDateISO, computed.shotDateISO || "") : null;
 
-            // 「現在日付が誕生日よりも前の場合、写真に日付は印字しない」の対応 -> 日数はグレーアウトして出さない、日付は出す
+            // 縲檎樟蝨ｨ譌･莉倥′隱慕函譌･繧医ｊ繧ょ燕縺ｮ蝣ｴ蜷医∝・逵溘↓譌･莉倥・蜊ｰ蟄励＠縺ｪ縺・阪・蟇ｾ蠢・-> 譌･謨ｰ縺ｯ繧ｰ繝ｬ繝ｼ繧｢繧ｦ繝医＠縺ｦ蜃ｺ縺輔↑縺・∵律莉倥・蜃ｺ縺・
             const isBeforeBirth = targetAgeDays !== undefined && targetAgeDays < 0;
 
             if (editorOptions.showDate) parts.push(computed.shotDateISO);
@@ -345,7 +389,7 @@ export default function EditorScreen() {
             }
             text = parts.filter(Boolean).join("  ");
         } else {
-            // 複数人選択時
+            // 隍・焚莠ｺ驕ｸ謚樊凾
             const parts = [];
             if (editorOptions.showDate) parts.push(computed.shotDateISO);
 
@@ -393,7 +437,7 @@ export default function EditorScreen() {
             }).filter(Boolean);
 
             if (babyParts.length > 0) {
-                // 複数人の場合はスペース1つで区切る
+                // 隍・焚莠ｺ縺ｮ蝣ｴ蜷医・繧ｹ繝壹・繧ｹ1縺､縺ｧ蛹ｺ蛻・ｋ
                 parts.push(babyParts.join(" "));
             }
             text = parts.filter(Boolean).join("  ");
@@ -401,7 +445,7 @@ export default function EditorScreen() {
         return text;
     }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
 
-    // 保存先が全員（または単独）誕生日前かどうか判定（日数のスイッチをdisabledにするため）
+    // 菫晏ｭ伜・縺悟・蜩｡・医∪縺溘・蜊倡峡・芽ｪ慕函譌･蜑阪°縺ｩ縺・°蛻､螳夲ｼ域律謨ｰ縺ｮ繧ｹ繧､繝・メ繧壇isabled縺ｫ縺吶ｋ縺溘ａ・・
     const allSelectedBeforeBirth = useMemo(() => {
         if (!computed || targetBabyIds.length === 0) return false;
         return targetBabyIds.every(id => {
@@ -411,7 +455,7 @@ export default function EditorScreen() {
         });
     }, [targetBabyIds, babies, computed]);
 
-    // フォーカスが外れた場合はメモリ節約のため軽量プレースホルダーを表示
+    // 繝輔か繝ｼ繧ｫ繧ｹ縺悟､悶ｌ縺溷ｴ蜷医・繝｡繝｢繝ｪ遽邏・・縺溘ａ霆ｽ驥上・繝ｬ繝ｼ繧ｹ繝帙Ν繝繝ｼ繧定｡ｨ遉ｺ
     if (!editorIsFocused) {
         return <View style={[styles.container, { backgroundColor: theme.background }]} />;
     }
@@ -425,25 +469,28 @@ export default function EditorScreen() {
         );
     }
 
-    // プレビュー画像のアスペクト比と配置レイアウト計算
     const tpl = getTemplateConfig(editorOptions.templateId);
     const previewAspect = currentPhoto.width / currentPhoto.height;
-    const previewHeight = PREVIEW_WIDTH / previewAspect;
+    const naturalPreviewHeight = PREVIEW_WIDTH / previewAspect;
+    const previewShellHeight = keyboardVisible ? PREVIEW_COMPACT_HEIGHT : PREVIEW_EXPANDED_HEIGHT;
+    const previewScale = Math.min(1, previewShellHeight / naturalPreviewHeight);
+    const previewWidth = PREVIEW_WIDTH * previewScale;
+    const previewHeight = naturalPreviewHeight * previewScale;
+    const footerPaddingBottom = Math.max(insets.bottom, 12);
+    const footerSpacerHeight = FOOTER_BASE_HEIGHT + footerPaddingBottom;
 
-    // UIレイアウト計算 (renderImage.ts の定数に合わせる)
-    const shortSide = Math.min(PREVIEW_WIDTH, previewHeight);
+    const shortSide = Math.min(previewWidth, previewHeight);
     const isMultiBaby = targetBabyIds.length > 1;
     const dateFontSize = shortSide * 0.04 * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * 0.038;
-    // フチありの場合は右の余白を増やす。insetが0.06なので0.06にすると写真の右端と揃う
     const margin = shortSide * (tpl.hasFrame ? 0.06 : 0.04);
     const gap = shortSide * 0.015;
     const inset = shortSide * 0.06;
     const bottomInset = shortSide * 0.18;
 
     const previewPhotoW = tpl.hasFrame
-        ? PREVIEW_WIDTH - inset * 2
-        : PREVIEW_WIDTH;
+        ? previewWidth - inset * 2
+        : previewWidth;
 
     const previewPhotoH = tpl.hasFrame
         ? previewHeight - inset - bottomInset
@@ -451,349 +498,354 @@ export default function EditorScreen() {
 
     const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
-
-    // --- 自動サイズ調整ロジック (Preview用) ---
-    // Skia側のロジック (renderImage.ts) と極力合わせる
-    const hasComment = (editorOptions.commentText || "").trim().length > 0;
-    const hasDateText = (dateTextLine1 || "").length > 0;
-    const previewMaxWidth = PREVIEW_WIDTH - margin * 2;
-
-    // 日本語フォント等の幅計算は正確には難しいが、
-    // adjustsFontSizeToFit が効くので、ここでは「最大サイズ」を指定し、
-    // adjustsFontSizeToFit で収める方針にする。
-    // ただし、fontSize を固定にしておかないと位置計算がズレるため、
-    // ここではベースのサイズを定義し、コンポーネント側で調整する。
+    const previewMaxWidth = previewWidth - margin * 2;
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: theme.background }]}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* プレビュー UI (純粋なReact Nativeコンポーネントで高速にモック表示) */}
-            <View style={[styles.previewContainer, {
-                height: previewHeight,
-                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
-            }]}>
-                {/* Photo Layer */}
-                <View style={{
-                    position: "absolute",
-                    left: previewPhotoX,
-                    top: previewPhotoY,
-                    width: previewPhotoW,
-                    height: previewPhotoH,
-                    overflow: "hidden",
-                }}>
-                    <Image
-                        source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
-                    />
-                </View>
-
-                {/* Text Layer */}
-                <View style={{
-                    position: "absolute",
-                    right: margin,
-                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
-                    alignItems: "flex-end",
-                }}>
-                    {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
-                        <Text
-                            style={{
-                                fontFamily: editorOptions.fontId,
-                                fontSize: previewDateFontSize,
-                                color: editorOptions.dateColorHex,
-                                fontWeight: "bold",
-                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                textShadowOffset: { width: 1, height: 1 },
-                                textShadowRadius: 1,
-                                width: previewMaxWidth,
-                                textAlign: "right",
-                            }}
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                        >
-                            {dateTextLine1}
-                        </Text>
-                    )}
-                    {editorOptions.commentText ? (
-                        <Text
-                            style={{
-                                fontFamily: editorOptions.fontId,
-                                fontSize: previewCommentFontSize,
-                                color: editorOptions.dateColorHex,
-                                fontWeight: "bold",
-                                marginTop: gap,
-                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                textShadowOffset: { width: 1, height: 1 },
-                                textShadowRadius: 1,
-                                width: previewMaxWidth,
-                                textAlign: "right",
-                            }}
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                        >
-                            {editorOptions.commentText}
-                        </Text>
-                    ) : null}
-                </View>
-
-                {/* Loading overlay for final save */}
-                {saving && (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
-                        <ActivityIndicator size="large" color={theme.accent} />
-                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
-                    </View>
-                )}
-            </View>
-
-            {/* 保存先（赤ちゃん選択） */}
-            {babies.length > 0 && (
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
-                    <View style={styles.targetRow}>
-                        {babies.map((baby) => {
-                            const isSelected = targetBabyIds.includes(baby.id);
-                            const babyTheme = getThemePreset(baby.themeColorHex);
-                            return (
-                                <TouchableOpacity
-                                    key={baby.id}
-                                    style={[
-                                        styles.targetChip,
-                                        isSelected
-                                            ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
-                                            : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
-                                    ]}
-                                    onPress={() => toggleTargetBaby(baby.id)}
-                                    activeOpacity={0.7}
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["left", "right", "bottom"]}>
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+            >
+                <View style={styles.content}>
+                    <View style={styles.fixedPreviewArea}>
+                        <View style={[styles.previewStage, { height: previewShellHeight, backgroundColor: theme.light, borderColor: theme.accent }]}>
+                            <View
+                                style={[
+                                    styles.previewContainer,
+                                    {
+                                        width: previewWidth,
+                                        height: previewHeight,
+                                        backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
+                                    },
+                                ]}
+                            >
+                                <View
+                                    style={{
+                                        position: "absolute",
+                                        left: previewPhotoX,
+                                        top: previewPhotoY,
+                                        width: previewPhotoW,
+                                        height: previewPhotoH,
+                                        overflow: "hidden",
+                                    }}
                                 >
-                                    <View style={[
-                                        styles.targetDot,
-                                        { backgroundColor: isSelected ? "#FFF" : babyTheme.accent },
-                                    ]} />
-                                    <Text style={[
-                                        styles.targetText,
-                                        { color: isSelected ? "#FFF" : "#555" },
-                                    ]}>
-                                        {baby.name}
-                                    </Text>
-                                    {isSelected && (
-                                        <Ionicons name="checkmark" size={16} color="#FFF" />
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                    {targetBabyIds.length > 1 && (
-                        <Text style={styles.targetHint}>
-                            {i18n.t("editor.saveTargetHint")}
-                        </Text>
-                    )}
-                </View>
-            )}
+                                    <Image
+                                        source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
+                                        style={{ width: "100%", height: "100%" }}
+                                        resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
+                                    />
+                                </View>
 
-            {/* テンプレート選択 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
-                <View style={styles.templateRow}>
-                    {TEMPLATES.map((t) => (
-                        <TouchableOpacity
-                            key={t.id}
-                            style={[
-                                styles.templateOption,
-                                editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
-                            ]}
-                            onPress={() => handleTemplateChange(t.id)}
-                        >
-                            <View style={styles.templatePreviewBox}>
-                                {t.hasFrame ? (
-                                    <View style={styles.templateFrame}>
-                                        <View style={styles.templateInner} />
+                                <View
+                                    style={{
+                                        position: "absolute",
+                                        right: margin,
+                                        ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
+                                        alignItems: "flex-end",
+                                    }}
+                                >
+                                    {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
+                                        <Text
+                                            style={{
+                                                fontFamily: editorOptions.fontId,
+                                                fontSize: previewDateFontSize,
+                                                color: editorOptions.dateColorHex,
+                                                fontWeight: "bold",
+                                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                                textShadowOffset: { width: 1, height: 1 },
+                                                textShadowRadius: 1,
+                                                width: previewMaxWidth,
+                                                textAlign: "right",
+                                            }}
+                                            numberOfLines={1}
+                                            adjustsFontSizeToFit
+                                        >
+                                            {dateTextLine1}
+                                        </Text>
+                                    )}
+                                    {editorOptions.commentText ? (
+                                        <Text
+                                            style={{
+                                                fontFamily: editorOptions.fontId,
+                                                fontSize: previewCommentFontSize,
+                                                color: editorOptions.dateColorHex,
+                                                fontWeight: "bold",
+                                                marginTop: gap,
+                                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                                textShadowOffset: { width: 1, height: 1 },
+                                                textShadowRadius: 1,
+                                                width: previewMaxWidth,
+                                                textAlign: "right",
+                                            }}
+                                            numberOfLines={1}
+                                            adjustsFontSizeToFit
+                                        >
+                                            {editorOptions.commentText}
+                                        </Text>
+                                    ) : null}
+                                </View>
+
+                                {saving && (
+                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
+                                        <ActivityIndicator size="large" color={theme.accent} />
+                                        <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
                                     </View>
-                                ) : (
-                                    <View style={styles.templateNoFrame} />
                                 )}
                             </View>
-                            <Text
-                                style={[
-                                    styles.templateLabel,
-                                    editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }],
-                                ]}
-                            >
-                                {t.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-
-            {/* フォント選択 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
-                <View style={styles.fontRow}>
-                    {FONT_OPTIONS.map((f) => (
-                        <TouchableOpacity
-                            key={f.id}
-                            style={[
-                                styles.fontBadge,
-                                editorOptions.fontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
-                            ]}
-                            onPress={() => handleFontChange(f.id)}
-                        >
-                            <Text
-                                style={[
-                                    styles.fontBadgeText,
-                                    { fontFamily: f.id },
-                                    editorOptions.fontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }],
-                                ]}
-                            >
-                                {f.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-
-            {/* 日付色選択 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.colorRow}
-                >
-                    {COLOR_PALETTE.map((c) => (
-                        <TouchableOpacity
-                            key={c.hex}
-                            style={[
-                                styles.colorCircle,
-                                { backgroundColor: c.hex },
-                                c.hex === "#FFFFFF" && styles.colorCircleWhite,
-                                editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
-                            ]}
-                            onPress={() => handleColorChange(c.hex)}
-                        >
-                            {editorOptions.dateColorHex === c.hex && (
-                                <Ionicons
-                                    name="checkmark"
-                                    size={18}
-                                    color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
-                                />
-                            )}
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-
-            {/* 表示項目切り替え */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
-                <View style={styles.toggleRowContainer}>
-                    <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
-                        <Switch
-                            value={editorOptions.showDate}
-                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
-                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                            style={styles.switchSmall}
-                        />
-                    </View>
-                    <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>{i18n.t("editor.nameLabel")}</Text>
-                        <Switch
-                            value={editorOptions.showName}
-                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
-                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                            style={styles.switchSmall}
-                            disabled={!displayBabyName}
-                        />
-                    </View>
-                    <View style={{ width: "100%" }}>
-                        <View style={[styles.toggleItem, { width: 130 }]}>
-                            <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
-                            <Switch
-                                value={editorOptions.showAge}
-                                onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
-                                trackColor={{ false: "#E0E0E0", true: theme.accent }}
-                                style={styles.switchSmall}
-                                disabled={allSelectedBeforeBirth}
-                            />
                         </View>
-                        {editorOptions.showAge && !allSelectedBeforeBirth && (
-                            <View style={styles.formatSegmentContainer}>
-                                <TouchableOpacity
-                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]}
-                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}
-                                >
-                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
-                                </TouchableOpacity>
-                                <View style={styles.formatSegmentDivider} />
-                                <TouchableOpacity
-                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]}
-                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
-                                >
-                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
-                                </TouchableOpacity>
-                                <View style={styles.formatSegmentDivider} />
-                                <TouchableOpacity
-                                    style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]}
-                                    onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}
-                                >
-                                    <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
-                                </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        ref={formScrollRef}
+                        style={styles.formScroll}
+                        contentContainerStyle={[styles.scrollContent, { paddingBottom: footerSpacerHeight }]}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                    >
+                        {babies.length > 0 && (
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
+                                <View style={styles.targetRow}>
+                                    {babies.map((baby) => {
+                                        const isSelected = targetBabyIds.includes(baby.id);
+                                        const babyTheme = getThemePreset(baby.themeColorHex);
+                                        return (
+                                            <TouchableOpacity
+                                                key={baby.id}
+                                                style={[
+                                                    styles.targetChip,
+                                                    isSelected
+                                                        ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
+                                                        : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
+                                                ]}
+                                                onPress={() => toggleTargetBaby(baby.id)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View
+                                                    style={[
+                                                        styles.targetDot,
+                                                        { backgroundColor: isSelected ? "#FFF" : babyTheme.accent },
+                                                    ]}
+                                                />
+                                                <Text
+                                                    style={[
+                                                        styles.targetText,
+                                                        { color: isSelected ? "#FFF" : "#555" },
+                                                    ]}
+                                                >
+                                                    {baby.name}
+                                                </Text>
+                                                {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                                {targetBabyIds.length > 1 && <Text style={styles.targetHint}>{i18n.t("editor.saveTargetHint")}</Text>}
                             </View>
                         )}
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
+                            <View style={styles.templateRow}>
+                                {TEMPLATES.map((t) => (
+                                    <TouchableOpacity
+                                        key={t.id}
+                                        style={[
+                                            styles.templateOption,
+                                            editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                        ]}
+                                        onPress={() => handleTemplateChange(t.id)}
+                                    >
+                                        <View style={styles.templatePreviewBox}>
+                                            {t.hasFrame ? (
+                                                <View style={styles.templateFrame}>
+                                                    <View style={styles.templateInner} />
+                                                </View>
+                                            ) : (
+                                                <View style={styles.templateNoFrame} />
+                                            )}
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.templateLabel,
+                                                editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }],
+                                            ]}
+                                        >
+                                            {t.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
+                            <View style={styles.fontRow}>
+                                {FONT_OPTIONS.map((f) => (
+                                    <TouchableOpacity
+                                        key={f.id}
+                                        style={[
+                                            styles.fontBadge,
+                                            editorOptions.fontId === f.id && [styles.fontBadgeActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                        ]}
+                                        onPress={() => handleFontChange(f.id)}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.fontBadgeText,
+                                                { fontFamily: f.id },
+                                                editorOptions.fontId === f.id && [styles.fontBadgeTextActive, { color: theme.accent }],
+                                            ]}
+                                        >
+                                            {f.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorRow}>
+                                {COLOR_PALETTE.map((c) => (
+                                    <TouchableOpacity
+                                        key={c.hex}
+                                        style={[
+                                            styles.colorCircle,
+                                            { backgroundColor: c.hex },
+                                            c.hex === "#FFFFFF" && styles.colorCircleWhite,
+                                            editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
+                                        ]}
+                                        onPress={() => handleColorChange(c.hex)}
+                                    >
+                                        {editorOptions.dateColorHex === c.hex && (
+                                            <Ionicons
+                                                name="checkmark"
+                                                size={18}
+                                                color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
+                                            />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
+                            <View style={styles.toggleRowContainer}>
+                                <View style={styles.toggleItem}>
+                                    <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
+                                    <Switch
+                                        value={editorOptions.showDate}
+                                        onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showDate: val } })}
+                                        trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                        style={styles.switchSmall}
+                                    />
+                                </View>
+                                <View style={styles.toggleItem}>
+                                    <Text style={styles.toggleLabel}>{i18n.t("editor.nameLabel")}</Text>
+                                    <Switch
+                                        value={editorOptions.showName}
+                                        onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showName: val } })}
+                                        trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                        style={styles.switchSmall}
+                                        disabled={!displayBabyName}
+                                    />
+                                </View>
+                                <View style={{ width: "100%" }}>
+                                    <View style={[styles.toggleItem, { width: 130 }]}>
+                                        <Text style={[styles.toggleLabel, allSelectedBeforeBirth && { color: "#CCC" }]}>{i18n.t("editor.ageLabel")}</Text>
+                                        <Switch
+                                            value={editorOptions.showAge}
+                                            onValueChange={(val) => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { showAge: val } })}
+                                            trackColor={{ false: "#E0E0E0", true: theme.accent }}
+                                            style={styles.switchSmall}
+                                            disabled={allSelectedBeforeBirth}
+                                        />
+                                    </View>
+                                    {editorOptions.showAge && !allSelectedBeforeBirth && (
+                                        <View style={styles.formatSegmentContainer}>
+                                            <TouchableOpacity
+                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]}
+                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}
+                                            >
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.formatSegmentDivider} />
+                                            <TouchableOpacity
+                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]}
+                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}
+                                            >
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.formatSegmentDivider} />
+                                            <TouchableOpacity
+                                                style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]}
+                                                onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}
+                                            >
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                        </View>
+
+                        <View style={styles.section} onLayout={handleCommentSectionLayout}>
+                            <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
+                            <TextInput
+                                style={[styles.commentInput, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
+                                value={editorOptions.commentText}
+                                onChangeText={handleCommentChange}
+                                onFocus={() => {
+                                    setCommentFocused(true);
+                                    scrollCommentIntoView();
+                                }}
+                                onBlur={() => setCommentFocused(false)}
+                                placeholder={i18n.t("editor.commentPlaceholder")}
+                                placeholderTextColor="#BDBDBD"
+                                maxLength={50}
+                                returnKeyType="done"
+                                blurOnSubmit
+                                selectionColor={theme.accent}
+                            />
+                        </View>
+                    </ScrollView>
+
+                    <View style={[styles.footerContainer, { paddingBottom: footerPaddingBottom, backgroundColor: theme.background }]}>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                                onPress={handleSaveToApp}
+                                disabled={saving}
+                            >
+                                {saving ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="download-outline" size={20} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.photoButton, { borderColor: theme.accent }]}
+                                onPress={handleSaveToPhotos}
+                                disabled={saving}
+                            >
+                                <Ionicons name="image-outline" size={20} color={theme.accent} />
+                                <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
-
-            {/* コメント入力 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
-                <TextInput
-                    style={styles.commentInput}
-                    value={editorOptions.commentText}
-                    onChangeText={handleCommentChange}
-                    placeholder={i18n.t("editor.commentPlaceholder")}
-                    placeholderTextColor="#BDBDBD"
-                    maxLength={50}
-                    returnKeyType="done"
-                    blurOnSubmit
-                />
-            </View>
-
-            {/* 保存ボタン */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                    onPress={handleSaveToApp}
-                    disabled={saving}
-                >
-                    {saving ? (
-                        <ActivityIndicator color="#FFF" />
-                    ) : (
-                        <>
-                            <Ionicons name="download-outline" size={20} color="#FFF" />
-                            <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.photoButton, { borderColor: theme.accent }]}
-                    onPress={handleSaveToPhotos}
-                    disabled={saving}
-                >
-                    <Ionicons name="image-outline" size={20} color={theme.accent} />
-                    <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={{ height: 40 }} />
-        </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -802,14 +854,35 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#FFF",
     },
-    scrollContent: {
+    content: {
+        flex: 1,
+    },
+    fixedPreviewArea: {
         paddingHorizontal: 16,
         paddingTop: 12,
+        paddingBottom: 8,
+    },
+    previewStage: {
+        borderRadius: 24,
+        borderWidth: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 3,
+    },
+    formScroll: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 4,
     },
     previewContainer: {
-        width: PREVIEW_WIDTH,
         backgroundColor: "#F5F5F5",
-        borderRadius: 12,
+        borderRadius: 18,
         overflow: "hidden",
         justifyContent: "center",
         alignItems: "center",
@@ -823,7 +896,6 @@ const styles = StyleSheet.create({
         color: "#333",
         marginBottom: 10,
     },
-    // --- 保存先チップ ---
     targetRow: {
         flexDirection: "row",
         flexWrap: "wrap",
@@ -853,7 +925,6 @@ const styles = StyleSheet.create({
         marginTop: 6,
         paddingLeft: 4,
     },
-    // --- テンプレート ---
     templateRow: {
         flexDirection: "row",
         gap: 12,
@@ -909,7 +980,6 @@ const styles = StyleSheet.create({
         color: "#FF8FA3",
         fontWeight: "700",
     },
-    // --- フォント ---
     fontRow: {
         flexDirection: "row",
         flexWrap: "wrap",
@@ -935,7 +1005,6 @@ const styles = StyleSheet.create({
     fontBadgeTextActive: {
         color: "#FF8FA3",
     },
-    // --- 日付色 ---
     colorRow: {
         flexDirection: "row",
         gap: 10,
@@ -956,7 +1025,6 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "#FF8FA3",
     },
-    // --- コメント ---
     commentInput: {
         borderWidth: 1,
         borderColor: "#E0E0E0",
@@ -967,7 +1035,6 @@ const styles = StyleSheet.create({
         color: "#333",
         backgroundColor: "#FAFAFA",
     },
-    // --- トグル ---
     toggleRowContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
@@ -1024,10 +1091,14 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#888",
     },
-    // --- ボタン ---
     buttonContainer: {
-        marginTop: 24,
         gap: 12,
+    },
+    footerContainer: {
+        borderTopWidth: 1,
+        borderTopColor: "#F1E6EA",
+        paddingHorizontal: 16,
+        paddingTop: 14,
     },
     saveButton: {
         flexDirection: "row",
