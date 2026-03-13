@@ -15,6 +15,7 @@ import {
     Keyboard,
     Platform,
     Animated,
+    PanResponder,
     type LayoutChangeEvent,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
@@ -68,6 +69,7 @@ export default function EditorScreen() {
     const insets = useSafeAreaInsets();
     const formScrollRef = useRef<ScrollView>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
+    const panelDragStart = useRef(1);
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ: 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､髫ｰ・ｦ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ遶擾ｽｵ繝ｻ・ｺ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｴ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ
     const theme = useMemo(() => {
@@ -505,7 +507,8 @@ export default function EditorScreen() {
     const previewAspect = currentPhoto.width / currentPhoto.height;
     const naturalPreviewHeight = previewWidth / previewAspect;
     const toolBarHeight = 90;
-    const panelExpandedHeight = panelExpanded ? (keyboardVisible ? 228 : 188) : 0;
+    const panelMaxHeight = keyboardVisible ? 228 : 188;
+    const panelExpandedHeight = panelExpanded ? panelMaxHeight : 0;
     const editorDockHeight = toolBarHeight + panelExpandedHeight + 20;
     const previewStageMaxHeight = Math.max(
         220,
@@ -536,6 +539,7 @@ export default function EditorScreen() {
     const previewMaxWidth = previewWidth - margin * 2;
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
+    const previewResizeMode = panelExpanded || editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
     const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
         { id: "template", icon: "copy-outline", label: i18n.t("editor.toolsTemplate") },
@@ -545,6 +549,41 @@ export default function EditorScreen() {
         { id: "comment", icon: "chatbox-ellipses-outline", label: i18n.t("editor.toolsComment") },
         { id: "save", icon: "download-outline", label: i18n.t("editor.toolsSave") },
     ];
+
+    const animatePanelTo = useCallback((nextExpanded: boolean) => {
+        setPanelExpanded(nextExpanded);
+        Animated.timing(toolPanelAnimation, {
+            toValue: nextExpanded ? 1 : 0,
+            duration: 180,
+            useNativeDriver: false,
+        }).start();
+    }, [toolPanelAnimation]);
+
+    const panelPanResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 2,
+        onPanResponderGrant: () => {
+            toolPanelAnimation.stopAnimation((value) => {
+                panelDragStart.current = typeof value === "number" ? value : panelExpanded ? 1 : 0;
+            });
+        },
+        onPanResponderMove: (_, gestureState) => {
+            const dragRange = Math.max(panelMaxHeight, 1);
+            const nextValue = Math.max(0, Math.min(1, panelDragStart.current - gestureState.dy / dragRange));
+            toolPanelAnimation.setValue(nextValue);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            toolPanelAnimation.stopAnimation((value) => {
+                const currentValue = typeof value === "number" ? value : panelExpanded ? 1 : 0;
+                const wasDrag = Math.abs(gestureState.dy) > 6;
+                const nextExpanded = wasDrag ? currentValue > 0.5 : !panelExpanded;
+                animatePanelTo(nextExpanded);
+            });
+        },
+        onPanResponderTerminate: () => {
+            animatePanelTo(panelExpanded);
+        },
+    }), [animatePanelTo, panelExpanded, panelMaxHeight, toolPanelAnimation]);
 
     const renderActiveToolPanel = () => {
         switch (activeTool) {
@@ -846,7 +885,7 @@ export default function EditorScreen() {
                                 <Image
                                     source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
                                     style={{ width: "100%", height: "100%" }}
-                                    resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
+                                    resizeMode={previewResizeMode}
                                 />
                                 {activeFilter.opacity > 0 && (
                                     <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
@@ -914,35 +953,35 @@ export default function EditorScreen() {
 
                 <View style={styles.toolDock}>
                     <View style={styles.panelSheet}>
-                        <TouchableOpacity
+                        <View
                             style={styles.toolHandleButton}
-                            onPress={() => setPanelExpanded((current) => !current)}
-                            activeOpacity={0.8}
+                            {...panelPanResponder.panHandlers}
                         >
                             <View style={styles.toolHandle} />
-                        </TouchableOpacity>
-                        {panelExpanded ? (
-                            <Animated.View
-                                key={`panel-${activeTool}`}
-                                style={[
-                                    styles.panelBody,
-                                    {
-                                        minHeight: panelExpandedHeight,
-                                        opacity: toolPanelAnimation,
-                                        transform: [
-                                            {
-                                                translateY: toolPanelAnimation.interpolate({
-                                                    inputRange: [0, 1],
-                                                    outputRange: [24, 0],
-                                                }),
-                                            },
-                                        ],
-                                    },
-                                ]}
-                            >
-                                <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
-                            </Animated.View>
-                        ) : null}
+                        </View>
+                        <Animated.View
+                            key={`panel-${activeTool}`}
+                            style={[
+                                styles.panelBody,
+                                {
+                                    height: toolPanelAnimation.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0, panelMaxHeight],
+                                    }),
+                                    opacity: toolPanelAnimation,
+                                    transform: [
+                                        {
+                                            translateY: toolPanelAnimation.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [24, 0],
+                                            }),
+                                        },
+                                    ],
+                                },
+                            ]}
+                        >
+                            <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
+                        </Animated.View>
                     </View>
                     <View style={styles.toolBar}>
                         <ScrollView
