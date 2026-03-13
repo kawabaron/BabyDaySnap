@@ -14,7 +14,8 @@ import {
     KeyboardAvoidingView,
     Keyboard,
     Platform,
-    type LayoutChangeEvent,
+    Animated,
+    type LayoutChangeEvent,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -35,7 +36,6 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
-const PREVIEW_COLLAPSE_THRESHOLD = 72;
 
 const FILTER_OPTIONS: Array<{ id: FilterId; labelKey: string; color: string; opacity: number }> = [
     { id: "filter_none", labelKey: "filters.filter_none", color: "transparent", opacity: 0 },
@@ -47,7 +47,9 @@ const FILTER_OPTIONS: Array<{ id: FilterId; labelKey: string; color: string; opa
 
 function getFilterOption(filterId?: FilterId) {
     return FILTER_OPTIONS.find((option) => option.id === filterId) ?? FILTER_OPTIONS[0];
-}
+}
+
+type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment" | "save";
 
 export default function EditorScreen() {
     const state = useAppState();
@@ -59,11 +61,12 @@ export default function EditorScreen() {
     const [saving, setSaving] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [commentFocused, setCommentFocused] = useState(false);
-    const [previewCollapsed, setPreviewCollapsed] = useState(false);
-    const [commentSectionY, setCommentSectionY] = useState(0);
+    const [activeTool, setActiveTool] = useState<EditorToolId>("template");
+    const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
-    const formScrollRef = useRef<ScrollView>(null);
+    const formScrollRef = useRef<ScrollView>(null);
+    const toolPanelAnimation = useRef(new Animated.Value(1)).current;
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ: 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､髫ｰ・ｦ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ遶擾ｽｵ繝ｻ・ｺ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｴ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ
     const theme = useMemo(() => {
@@ -229,7 +232,23 @@ export default function EditorScreen() {
         setCommentSectionY(event.nativeEvent.layout.y);
     }, []);
 
-    const toggleTargetBaby = (babyId: string) => {
+    useEffect(() => {
+
+        toolPanelAnimation.setValue(0);
+
+        Animated.timing(toolPanelAnimation, {
+
+            toValue: 1,
+
+            duration: 220,
+
+            useNativeDriver: true,
+
+        }).start();
+
+    }, [activeTool, toolPanelAnimation]);
+
+    const toggleTargetBaby = (babyId: string) => {
         const current = targetBabyIds;
         if (current.includes(babyId)) {
             // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ譎｢・｣・ｰ郢晢ｽｻ繝ｻ・｢郢晢ｽｻ邵ｺ・､・つ鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
@@ -478,9 +497,9 @@ export default function EditorScreen() {
     const previewWidth = PREVIEW_WIDTH;
     const previewAspect = currentPhoto.width / currentPhoto.height;
     const naturalPreviewHeight = previewWidth / previewAspect;
-    const expandedPreviewHeight = Math.min(naturalPreviewHeight, SCREEN_HEIGHT * 0.46);
-    const compactPreviewHeight = Math.min(160, Math.max(132, SCREEN_HEIGHT * 0.24));
-    const previewHeight = keyboardVisible || previewCollapsed ? compactPreviewHeight : expandedPreviewHeight;
+    const editorPanelHeight = keyboardVisible ? 320 : 286;
+    const previewStageMaxHeight = Math.max(220, SCREEN_HEIGHT - insets.top - insets.bottom - 60 - editorPanelHeight - 36);
+    const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
@@ -505,171 +524,52 @@ export default function EditorScreen() {
     const previewMaxWidth = previewWidth - margin * 2;
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
+    const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
+        { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
+        { id: "template", icon: "copy-outline", label: i18n.t("editor.toolsTemplate") },
+        { id: "font", icon: "text-outline", label: i18n.t("editor.toolsFont") },
+        { id: "filter", icon: "color-filter-outline", label: i18n.t("editor.toolsFilter") },
+        { id: "text", icon: "color-palette-outline", label: i18n.t("editor.toolsText") },
+        { id: "comment", icon: "chatbox-ellipses-outline", label: i18n.t("editor.toolsComment") },
+        { id: "save", icon: "download-outline", label: i18n.t("editor.toolsSave") },
+    ];
 
-    return (
-        <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
-            <AppHeader
-                title={i18n.t("common.edit")}
-                onBackPress={handleBackPress}
-                rightSlot={(
-                    <TouchableOpacity
-                        style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                        onPress={handleSaveToApp}
-                        disabled={saving}
-                        activeOpacity={0.85}
-                    >
-                        {saving ? (
-                            <ActivityIndicator color="#FFF" size="small" />
-                        ) : (
-                            <>
-                                <Ionicons name="download-outline" size={16} color="#FFF" />
-                                <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                )}
-            />
-            <KeyboardAvoidingView
-                style={[styles.container, { backgroundColor: theme.background }]}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={0}
-            >
-                <View style={styles.previewSection}>
-                    <View
-                        style={[
-                            styles.previewContainer,
-                            {
-                                height: previewHeight,
-                                backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
-                            },
-                        ]}
-                    >
-                        <View
-                            style={{
-                                position: "absolute",
-                                left: previewPhotoX,
-                                top: previewPhotoY,
-                                width: previewPhotoW,
-                                height: previewPhotoH,
-                                overflow: "hidden",
-                            }}
-                        >
-                            <Image
-                                source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
-                                style={{ width: "100%", height: "100%" }}
-                                resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
-                            />
-                            {activeFilter.opacity > 0 && (
-                                <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
-                            )}
+    const renderActiveToolPanel = () => {
+        switch (activeTool) {
+            case "target":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
+                        <View style={styles.targetRow}>
+                            {babies.map((baby) => {
+                                const isSelected = targetBabyIds.includes(baby.id);
+                                const babyTheme = getThemePreset(baby.themeColorHex);
+                                return (
+                                    <TouchableOpacity
+                                        key={baby.id}
+                                        style={[
+                                            styles.targetChip,
+                                            isSelected
+                                                ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
+                                                : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
+                                        ]}
+                                        onPress={() => toggleTargetBaby(baby.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[styles.targetDot, { backgroundColor: isSelected ? "#FFF" : babyTheme.accent }]} />
+                                        <Text style={[styles.targetText, { color: isSelected ? "#FFF" : "#555" }]}>{baby.name}</Text>
+                                        {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
-
-                        <View
-                            style={{
-                                position: "absolute",
-                                right: margin,
-                                ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
-                                alignItems: "flex-end",
-                            }}
-                        >
-                            {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
-                                <Text
-                                    style={{
-                                        fontFamily: editorOptions.fontId,
-                                        fontSize: previewDateFontSize,
-                                        color: editorOptions.dateColorHex,
-                                        fontWeight: "bold",
-                                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                        textShadowOffset: { width: 1, height: 1 },
-                                        textShadowRadius: 1,
-                                        width: previewMaxWidth,
-                                        textAlign: "right",
-                                    }}
-                                    numberOfLines={1}
-                                    adjustsFontSizeToFit
-                                >
-                                    {dateTextLine1}
-                                </Text>
-                            )}
-                            {editorOptions.commentText ? (
-                                <Text
-                                    style={{
-                                        fontFamily: editorOptions.fontId,
-                                        fontSize: previewCommentFontSize,
-                                        color: editorOptions.dateColorHex,
-                                        fontWeight: "bold",
-                                        marginTop: gap,
-                                        textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                        textShadowOffset: { width: 1, height: 1 },
-                                        textShadowRadius: 1,
-                                        width: previewMaxWidth,
-                                        textAlign: "right",
-                                    }}
-                                    numberOfLines={1}
-                                    adjustsFontSizeToFit
-                                >
-                                    {editorOptions.commentText}
-                                </Text>
-                            ) : null}
-                        </View>
-
-                        {saving && (
-                            <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
-                                <ActivityIndicator size="large" color={theme.accent} />
-                                <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
-                            </View>
-                        )}
+                        {targetBabyIds.length > 1 && <Text style={styles.targetHint}>{i18n.t("editor.saveTargetHint")}</Text>}
                     </View>
-                </View>
-                <ScrollView
-                    ref={formScrollRef}
-                    style={[styles.container, { backgroundColor: theme.background }]}
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
-                    showsVerticalScrollIndicator={false}
-                    contentInsetAdjustmentBehavior="never"
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-                    onScroll={(event) => {
-                        const nextCollapsed = event.nativeEvent.contentOffset.y > PREVIEW_COLLAPSE_THRESHOLD;
-                        if (nextCollapsed !== previewCollapsed) {
-                            setPreviewCollapsed(nextCollapsed);
-                        }
-                    }}
-                    scrollEventThrottle={16}
-                >
-
-                    {babies.length > 0 && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{i18n.t("editor.saveTargetTitle")}</Text>
-                            <View style={styles.targetRow}>
-                                {babies.map((baby) => {
-                                    const isSelected = targetBabyIds.includes(baby.id);
-                                    const babyTheme = getThemePreset(baby.themeColorHex);
-                                    return (
-                                        <TouchableOpacity
-                                            key={baby.id}
-                                            style={[
-                                                styles.targetChip,
-                                                isSelected
-                                                    ? { backgroundColor: babyTheme.accent, borderColor: babyTheme.accent }
-                                                    : { backgroundColor: "#F5F5F5", borderColor: "#E0E0E0" },
-                                            ]}
-                                            onPress={() => toggleTargetBaby(baby.id)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <View style={[styles.targetDot, { backgroundColor: isSelected ? "#FFF" : babyTheme.accent }]} />
-                                            <Text style={[styles.targetText, { color: isSelected ? "#FFF" : "#555" }]}>{baby.name}</Text>
-                                            {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                            {targetBabyIds.length > 1 && <Text style={styles.targetHint}>{i18n.t("editor.saveTargetHint")}</Text>}
-                        </View>
-                    )}
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.templateTitle")}</Text>
+                );
+            case "template":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.templateTitle")}</Text>
                         <View style={styles.templateRow}>
                             {TEMPLATES.map((t) => (
                                 <TouchableOpacity
@@ -696,10 +596,12 @@ export default function EditorScreen() {
                             ))}
                         </View>
                     </View>
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.fontTitle")}</Text>
-                        <View style={styles.fontRow}>
+                );
+            case "font":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.fontTitle")}</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
                             {FONT_OPTIONS.map((f) => (
                                 <TouchableOpacity
                                     key={f.id}
@@ -714,11 +616,13 @@ export default function EditorScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             ))}
-                        </View>
+                        </ScrollView>
                     </View>
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.filterTitle")}</Text>
+                );
+            case "filter":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.filterTitle")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                             {FILTER_OPTIONS.map((option) => {
                                 const isActive = (editorOptions as any).filterId === option.id;
@@ -738,9 +642,11 @@ export default function EditorScreen() {
                             })}
                         </ScrollView>
                     </View>
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.dateColorTitle")}</Text>
+                );
+            case "text":
+                return (
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.toolScrollContent}>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.dateColorTitle")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorRow}>
                             {COLOR_PALETTE.map((c) => (
                                 <TouchableOpacity
@@ -763,10 +669,8 @@ export default function EditorScreen() {
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
-                    </View>
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
+                        <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{i18n.t("editor.textVisibilityTitle")}</Text>
                         <View style={styles.toggleRowContainer}>
                             <View style={styles.toggleItem}>
                                 <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
@@ -815,54 +719,221 @@ export default function EditorScreen() {
                                 )}
                             </View>
                         </View>
-                    </View>
-
-                    <View style={styles.section} onLayout={handleCommentSectionLayout}>
-                        <Text style={styles.sectionTitle}>{i18n.t("editor.commentTitle")}</Text>
+                    </ScrollView>
+                );
+            case "comment":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.commentTitle")}</Text>
                         <TextInput
-                            style={[styles.commentInput, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
+                            style={[styles.commentInput, styles.commentComposer, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
                             value={editorOptions.commentText}
                             onChangeText={handleCommentChange}
-                            onFocus={() => {
-                                setCommentFocused(true);
-                                scrollCommentIntoView();
-                            }}
+                            onFocus={() => setCommentFocused(true)}
                             onBlur={() => setCommentFocused(false)}
                             placeholder={i18n.t("editor.commentPlaceholder")}
                             placeholderTextColor="#BDBDBD"
                             maxLength={50}
-                            returnKeyType="done"
-                            blurOnSubmit
+                            multiline
+                            textAlignVertical="top"
                             selectionColor={theme.accent}
                         />
                     </View>
+                );
+            case "save":
+                return (
+                    <View>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.toolsSave")}</Text>
+                        <View style={styles.toolSaveActions}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                                onPress={handleSaveToApp}
+                                disabled={saving}
+                            >
+                                {saving ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="download-outline" size={20} color="#FFF" />
+                                        <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
 
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                            onPress={handleSaveToApp}
-                            disabled={saving}
-                        >
-                            {saving ? (
-                                <ActivityIndicator color="#FFF" />
-                            ) : (
-                                <>
-                                    <Ionicons name="download-outline" size={20} color="#FFF" />
-                                    <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.photoButton, { borderColor: theme.accent }]}
-                            onPress={handleSaveToPhotos}
-                            disabled={saving}
-                        >
-                            <Ionicons name="image-outline" size={20} color={theme.accent} />
-                            <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.photoButton, { borderColor: theme.accent }]}
+                                onPress={handleSaveToPhotos}
+                                disabled={saving}
+                            >
+                                <Ionicons name="image-outline" size={20} color={theme.accent} />
+                                <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </ScrollView>
+                );
+        }
+    };
+
+    return (
+        <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
+            <AppHeader
+                title={i18n.t("common.edit")}
+                onBackPress={handleBackPress}
+                rightSlot={(
+                    <TouchableOpacity
+                        style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                        onPress={handleSaveToApp}
+                        disabled={saving}
+                        activeOpacity={0.85}
+                    >
+                        {saving ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <>
+                                <Ionicons name="download-outline" size={16} color="#FFF" />
+                                <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                )}
+            />
+            <KeyboardAvoidingView
+                style={[styles.container, { backgroundColor: theme.background }]}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={0}
+            >
+                <View style={styles.previewStage}>
+                    <View style={styles.previewSection}>
+                        <View
+                            style={[
+                                styles.previewContainer,
+                                {
+                                    height: previewHeight,
+                                    backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
+                                },
+                            ]}
+                        >
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    left: previewPhotoX,
+                                    top: previewPhotoY,
+                                    width: previewPhotoW,
+                                    height: previewPhotoH,
+                                    overflow: "hidden",
+                                }}
+                            >
+                                <Image
+                                    source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
+                                    style={{ width: "100%", height: "100%" }}
+                                    resizeMode={editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover"}
+                                />
+                                {activeFilter.opacity > 0 && (
+                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
+                                )}
+                            </View>
+
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    right: margin,
+                                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
+                                    alignItems: "flex-end",
+                                }}
+                            >
+                                {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
+                                    <Text
+                                        style={{
+                                            fontFamily: editorOptions.fontId,
+                                            fontSize: previewDateFontSize,
+                                            color: editorOptions.dateColorHex,
+                                            fontWeight: "bold",
+                                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                            textShadowOffset: { width: 1, height: 1 },
+                                            textShadowRadius: 1,
+                                            width: previewMaxWidth,
+                                            textAlign: "right",
+                                        }}
+                                        numberOfLines={1}
+                                        adjustsFontSizeToFit
+                                    >
+                                        {dateTextLine1}
+                                    </Text>
+                                )}
+                                {editorOptions.commentText ? (
+                                    <Text
+                                        style={{
+                                            fontFamily: editorOptions.fontId,
+                                            fontSize: previewCommentFontSize,
+                                            color: editorOptions.dateColorHex,
+                                            fontWeight: "bold",
+                                            marginTop: gap,
+                                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                            textShadowOffset: { width: 1, height: 1 },
+                                            textShadowRadius: 1,
+                                            width: previewMaxWidth,
+                                            textAlign: "right",
+                                        }}
+                                        numberOfLines={1}
+                                        adjustsFontSizeToFit
+                                    >
+                                        {editorOptions.commentText}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            {saving && (
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }]}>
+                                    <ActivityIndicator size="large" color={theme.accent} />
+                                    <Text style={{ color: "#FFF", marginTop: 12, fontWeight: "bold" }}>{i18n.t("editor.saving")}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                </View>
+
+                <View style={[styles.toolPanel, { height: editorPanelHeight + insets.bottom }]}>
+                    <View style={styles.toolHandle} />
+                    <Animated.View
+                        key={activeTool}
+                        style={[
+                            styles.toolContent,
+                            {
+                                opacity: toolPanelAnimation,
+                                transform: [
+                                    {
+                                        translateY: toolPanelAnimation.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [18, 0],
+                                        }),
+                                    },
+                                ],
+                            },
+                        ]}
+                    >
+                        {renderActiveToolPanel()}
+                    </Animated.View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={[styles.toolTabRow, { paddingBottom: Math.max(insets.bottom, 8) }]}
+                    >
+                        {toolTabs.map((tool) => {
+                            const isActive = activeTool === tool.id;
+                            return (
+                                <TouchableOpacity
+                                    key={tool.id}
+                                    style={[styles.toolTab, isActive && { backgroundColor: theme.light }]}
+                                    onPress={() => setActiveTool(tool.id)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name={tool.icon} size={20} color={isActive ? theme.accent : "#777"} />
+                                    <Text style={[styles.toolTabLabel, isActive && { color: theme.accent }]}>{tool.label}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -877,14 +948,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#FFF",
     },
+    previewStage: {
+        flex: 1,
+        justifyContent: "center",
+    },
     previewSection: {
+        flex: 1,
         paddingHorizontal: 16,
         paddingTop: 16,
-        paddingBottom: 12,
-    },
-    scrollContent: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
+        paddingBottom: 10,
+        alignItems: "center",
+        justifyContent: "center",
     },
     previewContainer: {
         width: PREVIEW_WIDTH,
@@ -894,15 +968,11 @@ const styles = StyleSheet.create({
         overflow: "hidden",
         justifyContent: "center",
         alignItems: "center",
-    },
-    section: {
-        marginTop: 20,
-    },
-    sectionTitle: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#333",
-        marginBottom: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 6,
     },
     headerSaveButton: {
         flexDirection: "row",
@@ -921,6 +991,61 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 13,
         fontWeight: "700",
+    },
+    toolPanel: {
+        backgroundColor: "#FFF",
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingTop: 8,
+        shadowColor: "#1F1A1C",
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 16,
+    },
+    toolHandle: {
+        width: 42,
+        height: 5,
+        borderRadius: 999,
+        backgroundColor: "#D9D4D6",
+        alignSelf: "center",
+        marginBottom: 10,
+    },
+    toolContent: {
+        flex: 1,
+        paddingHorizontal: 18,
+        paddingBottom: 8,
+    },
+    toolScrollContent: {
+        paddingBottom: 6,
+    },
+    panelTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#2B2628",
+        marginBottom: 14,
+    },
+    panelTitleSpaced: {
+        marginTop: 18,
+    },
+    toolTabRow: {
+        paddingHorizontal: 10,
+        paddingTop: 6,
+        gap: 4,
+    },
+    toolTab: {
+        width: 70,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        borderRadius: 16,
+    },
+    toolTabLabel: {
+        marginTop: 4,
+        fontSize: 11,
+        fontWeight: "600",
+        color: "#777",
     },
     targetRow: {
         flexDirection: "row",
@@ -1093,6 +1218,9 @@ const styles = StyleSheet.create({
         color: "#333",
         backgroundColor: "#FAFAFA",
     },
+    commentComposer: {
+        minHeight: 118,
+    },
     toggleRowContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
@@ -1149,8 +1277,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#888",
     },
-    buttonContainer: {
-        marginTop: 24,
+    toolSaveActions: {
         gap: 12,
     },
     saveButton: {
