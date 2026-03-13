@@ -80,47 +80,27 @@ export default function EditorScreen() {
     }, [targetBabyIds, babies]);
 
     // 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・｣陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｵ鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ (鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｾ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ繝ｻ繧托ｽｽ・ｧ驛｢譎｢・ｽ・ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｯ繝ｻ・ｩ鬮｢・ｧ繝ｻ・ｴ髯溷供蟷ｲ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-    useEffect(() => {
-        navigation.setOptions({
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => {
-                        const libId = editingLibraryId;
-                        dispatch({ type: "RESET_EDITOR" });
-                        if (libId) {
-                            router.navigate(`/(tabs)/library/${libId}`);
-                            setTimeout(() => {
-                                (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
-                            }, 100);
-                        } else {
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.replace("/(tabs)/camera");
-                            }
-                        }
-                    }}
-                    style={{ flexDirection: "row", alignItems: "center", marginLeft: 4, paddingRight: 16 }}
-                >
-                    <Ionicons name="chevron-back" size={28} color="#333" />
-                    <Text style={{ fontSize: 17, color: "#333" }}>{i18n.t("editor.backButton")}</Text>
-                </TouchableOpacity>
-            ),
-            headerRight: () => (
-                <TouchableOpacity
-                    onPress={handleSaveToApp}
-                    disabled={saving || !currentPhoto || !computed}
-                    style={[
-                        styles.headerSaveButton,
-                        { backgroundColor: saving || !currentPhoto || !computed ? "#F2C6D0" : theme.accent },
-                    ]}
-                >
-                    <Ionicons name="download-outline" size={16} color="#FFF" />
-                    <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
-                </TouchableOpacity>
-            ),
-        });
-    }, [navigation, editingLibraryId, dispatch, router, handleSaveToApp, saving, currentPhoto, computed, theme.accent]);
+    const handleBackPress = useCallback(() => {
+        const libId = editingLibraryId;
+
+        dispatch({ type: "RESET_EDITOR" });
+
+        if (libId) {
+            router.navigate(`/(tabs)/library/${libId}`);
+
+            setTimeout(() => {
+                (navigation as any).reset({ index: 0, routes: [{ name: "index" }] });
+            }, 100);
+
+            return;
+        }
+
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace("/(tabs)/camera");
+        }
+    }, [editingLibraryId, dispatch, router, navigation]);
 
     // RN鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ陝・ｈ繝ｻ郢晢ｽｻ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｭ驛｢譎｢・ｽ・ｻ髯橸ｽｳ髣鯉ｽｨ繝ｻ・ｽ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ蜴・ｽｽ・ｧ繝ｻ・ｭ繝ｻ譛ｱ雎ｪ繝ｻ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｴ鬯ｮ・ｮ隲幢ｽｶ繝ｻ・ｽ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ
     const [rnFontsLoaded] = useFonts({
@@ -521,17 +501,40 @@ export default function EditorScreen() {
     const previewCommentFontSize = commentFontSize;
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["left", "right", "bottom"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top", "left", "right", "bottom"]}>
+            <View style={styles.header}>
+                <TouchableOpacity style={styles.headerBackButton} onPress={handleBackPress} activeOpacity={0.8}>
+                    <Ionicons name="chevron-back" size={18} color="#444" />
+                    <Text style={styles.headerBackText}>{i18n.t("common.back")}</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>{i18n.t("common.edit")}</Text>
+                <TouchableOpacity
+                    style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                    onPress={handleSaveToApp}
+                    disabled={saving}
+                    activeOpacity={0.85}
+                >
+                    {saving ? (
+                        <ActivityIndicator color="#FFF" size="small" />
+                    ) : (
+                        <>
+                            <Ionicons name="download-outline" size={16} color="#FFF" />
+                            <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </View>
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
             >
                 <ScrollView
                     ref={formScrollRef}
                     style={[styles.container, { backgroundColor: theme.background }]}
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
                     showsVerticalScrollIndicator={false}
+                    contentInsetAdjustmentBehavior="never"
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
                 >
@@ -856,12 +859,40 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#FFF",
     },
+    header: {
+        height: 60,
+        paddingHorizontal: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: "#E9DDE2",
+        backgroundColor: "#FFF",
+    },
+    headerBackButton: {
+        minWidth: 72,
+        minHeight: 44,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 2,
+    },
+    headerBackText: {
+        fontSize: 15,
+        fontWeight: "500",
+        color: "#444",
+    },
+    headerTitle: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#222",
+    },
     scrollContent: {
         paddingHorizontal: 16,
-        paddingTop: 12,
+        paddingTop: 16,
     },
     previewContainer: {
         width: PREVIEW_WIDTH,
+        alignSelf: "center",
         backgroundColor: "#F5F5F5",
         borderRadius: 12,
         overflow: "hidden",
@@ -888,7 +919,7 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         borderWidth: 0,
         overflow: "hidden",
-        marginRight: 8,
+        minWidth: 84,
     },
     headerSaveText: {
         color: "#FFF",
