@@ -243,7 +243,7 @@ export default function EditorScreen() {
 
             duration: 220,
 
-            useNativeDriver: true,
+            useNativeDriver: false,
 
         }).start();
 
