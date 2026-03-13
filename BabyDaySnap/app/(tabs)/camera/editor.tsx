@@ -249,6 +249,12 @@ export default function EditorScreen() {
 
     }, [activeTool, panelExpanded, toolPanelAnimation]);
 
+    useEffect(() => {
+
+        setPanelExpanded(true);
+
+    }, [activeTool]);
+
     const toggleTargetBaby = (babyId: string) => {
         const current = targetBabyIds;
         if (current.includes(babyId)) {
@@ -781,7 +787,7 @@ export default function EditorScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
+        <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
             <AppHeader
                 title={i18n.t("common.edit")}
                 onBackPress={handleBackPress}
@@ -915,29 +921,28 @@ export default function EditorScreen() {
                         >
                             <View style={styles.toolHandle} />
                         </TouchableOpacity>
-                        <Animated.View
-                            key={`panel-${activeTool}`}
-                            style={[
-                                styles.panelBody,
-                                {
-                                    height: toolPanelAnimation.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, panelExpandedHeight],
-                                    }),
-                                    opacity: toolPanelAnimation,
-                                    transform: [
-                                        {
-                                            translateY: toolPanelAnimation.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: [24, 0],
-                                            }),
-                                        },
-                                    ],
-                                },
-                            ]}
-                        >
-                            <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
-                        </Animated.View>
+                        {panelExpanded ? (
+                            <Animated.View
+                                key={`panel-${activeTool}`}
+                                style={[
+                                    styles.panelBody,
+                                    {
+                                        minHeight: panelExpandedHeight,
+                                        opacity: toolPanelAnimation,
+                                        transform: [
+                                            {
+                                                translateY: toolPanelAnimation.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [24, 0],
+                                                }),
+                                            },
+                                        ],
+                                    },
+                                ]}
+                            >
+                                <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
+                            </Animated.View>
+                        ) : null}
                     </View>
                     <View style={styles.toolBar}>
                         <ScrollView
@@ -985,7 +990,7 @@ const styles = StyleSheet.create({
     },
     previewSection: {
         paddingHorizontal: 16,
-        paddingBottom: 10,
+        paddingBottom: 16,
         alignItems: "center",
         justifyContent: "flex-start",
     },
@@ -1023,6 +1028,7 @@ const styles = StyleSheet.create({
     },
     toolDock: {
         backgroundColor: "#FFF",
+        marginTop: 8,
     },
     panelSheet: {
         backgroundColor: "#FFF",
@@ -1039,15 +1045,15 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     toolHandleButton: {
-        minHeight: 24,
+        minHeight: 32,
         justifyContent: "center",
+        alignItems: "center",
     },
     toolHandle: {
         width: 42,
         height: 5,
         borderRadius: 999,
         backgroundColor: "#D9D4D6",
-        alignSelf: "center",
     },
     toolContent: {
         paddingHorizontal: 18,
