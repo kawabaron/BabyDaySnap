@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
@@ -63,10 +62,10 @@ export default function EditorScreen() {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [commentFocused, setCommentFocused] = useState(false);
     const [activeTool, setActiveTool] = useState<EditorToolId>("template");
+    const [panelExpanded, setPanelExpanded] = useState(true);
     const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
-    const tabBarHeight = useBottomTabBarHeight();
     const formScrollRef = useRef<ScrollView>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
 
@@ -240,7 +239,7 @@ export default function EditorScreen() {
 
         Animated.timing(toolPanelAnimation, {
 
-            toValue: 1,
+            toValue: panelExpanded ? 1 : 0,
 
             duration: 220,
 
@@ -248,7 +247,7 @@ export default function EditorScreen() {
 
         }).start();
 
-    }, [activeTool, toolPanelAnimation]);
+    }, [activeTool, panelExpanded, toolPanelAnimation]);
 
     const toggleTargetBaby = (babyId: string) => {
         const current = targetBabyIds;
@@ -500,12 +499,11 @@ export default function EditorScreen() {
     const previewAspect = currentPhoto.width / currentPhoto.height;
     const naturalPreviewHeight = previewWidth / previewAspect;
     const toolBarHeight = 90;
-    const editorPanelHeight = keyboardVisible ? 228 : 188;
-    const editorDockHeight = toolBarHeight + editorPanelHeight;
-    const tabBarOffset = Math.max(tabBarHeight - insets.bottom, 0);
+    const panelExpandedHeight = panelExpanded ? (keyboardVisible ? 228 : 188) : 0;
+    const editorDockHeight = toolBarHeight + panelExpandedHeight + 20;
     const previewStageMaxHeight = Math.max(
         220,
-        SCREEN_HEIGHT - insets.top - 60 - tabBarOffset - editorDockHeight - 28,
+        SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - 28,
     );
     const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
@@ -815,7 +813,7 @@ export default function EditorScreen() {
                         styles.previewStage,
                         {
                             paddingTop: 12,
-                            paddingBottom: editorDockHeight + tabBarOffset + 12,
+                            paddingBottom: 12,
                         },
                     ]}
                 >
@@ -908,28 +906,39 @@ export default function EditorScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.toolDock, { bottom: tabBarOffset }]}>
-                    <Animated.View
-                        key={`panel-${activeTool}`}
-                        style={[
-                            styles.panelSheet,
-                            {
-                                height: editorPanelHeight,
-                                opacity: toolPanelAnimation,
-                                transform: [
-                                    {
-                                        translateY: toolPanelAnimation.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [48, 0],
-                                        }),
-                                    },
-                                ],
-                            },
-                        ]}
-                    >
-                        <View style={styles.toolHandle} />
-                        <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
-                    </Animated.View>
+                <View style={styles.toolDock}>
+                    <View style={styles.panelSheet}>
+                        <TouchableOpacity
+                            style={styles.toolHandleButton}
+                            onPress={() => setPanelExpanded((current) => !current)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.toolHandle} />
+                        </TouchableOpacity>
+                        <Animated.View
+                            key={`panel-${activeTool}`}
+                            style={[
+                                styles.panelBody,
+                                {
+                                    height: toolPanelAnimation.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0, panelExpandedHeight],
+                                    }),
+                                    opacity: toolPanelAnimation,
+                                    transform: [
+                                        {
+                                            translateY: toolPanelAnimation.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [24, 0],
+                                            }),
+                                        },
+                                    ],
+                                },
+                            ]}
+                        >
+                            <View style={styles.toolContent}>{renderActiveToolPanel()}</View>
+                        </Animated.View>
+                    </View>
                     <View style={styles.toolBar}>
                         <ScrollView
                             horizontal
@@ -942,7 +951,10 @@ export default function EditorScreen() {
                                     <TouchableOpacity
                                         key={tool.id}
                                         style={[styles.toolTab, isActive && { backgroundColor: theme.light }]}
-                                        onPress={() => setActiveTool(tool.id)}
+                                        onPress={() => {
+                                            setActiveTool(tool.id);
+                                            setPanelExpanded(true);
+                                        }}
                                         activeOpacity={0.8}
                                     >
                                         <Ionicons name={tool.icon} size={20} color={isActive ? theme.accent : "#777"} />
@@ -1010,21 +1022,25 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     toolDock: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        paddingHorizontal: 0,
+        backgroundColor: "#FFF",
     },
     panelSheet: {
         backgroundColor: "#FFF",
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        paddingTop: 8,
         shadowColor: "#1F1A1C",
         shadowOffset: { width: 0, height: -8 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
         elevation: 16,
+        overflow: "hidden",
+    },
+    panelBody: {
+        overflow: "hidden",
+    },
+    toolHandleButton: {
+        minHeight: 24,
+        justifyContent: "center",
     },
     toolHandle: {
         width: 42,
@@ -1032,12 +1048,10 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         backgroundColor: "#D9D4D6",
         alignSelf: "center",
-        marginBottom: 10,
     },
     toolContent: {
-        flex: 1,
         paddingHorizontal: 18,
-        paddingTop: 2,
+        paddingTop: 10,
         paddingBottom: 10,
     },
     toolScrollContent: {
