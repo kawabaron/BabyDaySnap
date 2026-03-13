@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import i18n from "@/lib/i18n";
+import { AppHeader } from "@/components/AppHeader";
 
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
@@ -144,12 +145,14 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{i18n.t("settings.headerTitle")}</Text>
-            </View>
+        <SafeAreaView style={styles.screen} edges={["top"]}>
+            <AppHeader title={i18n.t("settings.headerTitle")} />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <ScrollView
+                style={styles.container}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
+            >
 
                 {/* 家族の管理 */}
                 <View style={styles.section}>
@@ -517,18 +520,13 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: "#FFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#F8F8FA",
-    },
-    header: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: "800",
-        color: "#333",
     },
     section: {
         paddingHorizontal: 16,

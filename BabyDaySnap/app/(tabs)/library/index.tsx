@@ -19,6 +19,7 @@ import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { AppLibraryItem } from "@/types";
 import i18n from "@/lib/i18n";
+import { AppHeader } from "@/components/AppHeader";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const NUM_COLUMNS = 3;
@@ -161,7 +162,19 @@ export default function LibraryGridScreen() {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top"]}>
+        <SafeAreaView style={styles.screen} edges={["top"]}>
+            <AppHeader
+                title={activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
+                subtitle={i18n.t("library.headerCount", { count: filteredLibrary.length })}
+                rightSlot={filteredLibrary.length > 0 ? (
+                    <TouchableOpacity onPress={toggleSelectionMode} style={[styles.headerButton, { backgroundColor: theme.light }]}>
+                        <Text style={[styles.headerButtonText, { color: theme.accent }]}>
+                            {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
+                        </Text>
+                    </TouchableOpacity>
+                ) : null}
+            />
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* 赤ちゃん切り替えタブ（2人以上の場合のみ） */}
             {babies.length > 1 && (
                 <View style={styles.babyTabContainer}>
@@ -198,22 +211,6 @@ export default function LibraryGridScreen() {
             )}
 
             {/* ヘッダー */}
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.headerTitle}>
-                        {activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
-                    </Text>
-                    <Text style={[styles.headerCount, { color: theme.accent }]}>{i18n.t("library.headerCount", { count: filteredLibrary.length })}</Text>
-                </View>
-                {filteredLibrary.length > 0 && (
-                    <TouchableOpacity onPress={toggleSelectionMode} style={[styles.headerButton, { backgroundColor: theme.light }]}>
-                        <Text style={[styles.headerButtonText, { color: theme.accent }]}>
-                            {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-
             {babies.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="images-outline" size={64} color="#DDD" />
@@ -302,11 +299,16 @@ export default function LibraryGridScreen() {
                     )}
                 </View>
             )}
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: "#FFF",
+    },
     container: {
         flex: 1,
     },
@@ -336,22 +338,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "500",
         color: "#666",
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: "800",
-        color: "#333",
-    },
-    headerCount: {
-        fontSize: 15,
-        fontWeight: "500",
     },
     gridContainer: {
         paddingHorizontal: GRID_GAP,

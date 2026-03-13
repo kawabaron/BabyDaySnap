@@ -18,6 +18,8 @@ import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { formatDateDisplay, msToDateISO, calcAgeMonthsAndDays } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AppHeader } from "@/components/AppHeader";
 import i18n from "@/lib/i18n";
 import type { AppLibraryItem } from "@/types";
 
@@ -274,23 +276,31 @@ export default function LibraryDetailScreen() {
     };
 
     return (
-        <FlatList
-            data={filteredLibrary}
-            keyExtractor={(i) => i.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={initialIndex}
-            getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-            renderItem={renderItem}
-            windowSize={3}
-            maxToRenderPerBatch={3}
-        />
+        <SafeAreaView style={styles.screen} edges={["top"]}>
+            <AppHeader title={i18n.t("common.detail")} onBackPress={() => router.back()} />
+            <FlatList
+                style={styles.container}
+                data={filteredLibrary}
+                keyExtractor={(i) => i.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                initialScrollIndex={initialIndex}
+                getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+                renderItem={renderItem}
+                windowSize={3}
+                maxToRenderPerBatch={3}
+            />
+        </SafeAreaView>
     );
 }
 
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: "#FFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#FFF",

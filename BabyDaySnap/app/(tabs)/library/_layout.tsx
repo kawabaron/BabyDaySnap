@@ -1,5 +1,4 @@
 import { Stack } from "expo-router";
-import i18n from "@/lib/i18n";
 
 export default function LibraryStackLayout() {
     return (
@@ -12,11 +11,7 @@ export default function LibraryStackLayout() {
             <Stack.Screen
                 name="[id]"
                 options={{
-                    headerShown: true,
-                    headerTitle: i18n.t("common.detail"),
-                    headerTintColor: "#333",
-                    headerStyle: { backgroundColor: "#FFF" },
-                    headerBackTitle: i18n.t("common.back"),
+                    headerShown: false,
                 }}
             />
             <Stack.Screen

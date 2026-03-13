@@ -29,11 +29,13 @@ import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId, FilterId } from "@/types";
-import i18n from "@/lib/i18n";
+import i18n from "@/lib/i18n";
+import { AppHeader } from "@/components/AppHeader";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
+const PREVIEW_COLLAPSE_THRESHOLD = 72;
 
 const FILTER_OPTIONS: Array<{ id: FilterId; labelKey: string; color: string; opacity: number }> = [
     { id: "filter_none", labelKey: "filters.filter_none", color: "transparent", opacity: 0 },
@@ -56,7 +58,8 @@ export default function EditorScreen() {
     const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
     const [saving, setSaving] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const [commentFocused, setCommentFocused] = useState(false);
+    const [commentFocused, setCommentFocused] = useState(false);
+    const [previewCollapsed, setPreviewCollapsed] = useState(false);
     const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
@@ -474,7 +477,10 @@ export default function EditorScreen() {
     const tpl = getTemplateConfig(editorOptions.templateId);
     const previewWidth = PREVIEW_WIDTH;
     const previewAspect = currentPhoto.width / currentPhoto.height;
-    const previewHeight = previewWidth / previewAspect;
+    const naturalPreviewHeight = previewWidth / previewAspect;
+    const expandedPreviewHeight = Math.min(naturalPreviewHeight, SCREEN_HEIGHT * 0.46);
+    const compactPreviewHeight = Math.min(160, Math.max(132, SCREEN_HEIGHT * 0.24));
+    const previewHeight = keyboardVisible || previewCollapsed ? compactPreviewHeight : expandedPreviewHeight;
     const activeFilter = getFilterOption((editorOptions as any).filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
@@ -501,43 +507,34 @@ export default function EditorScreen() {
     const previewCommentFontSize = commentFontSize;
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top", "left", "right", "bottom"]}>
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.headerBackButton} onPress={handleBackPress} activeOpacity={0.8}>
-                    <Ionicons name="chevron-back" size={18} color="#444" />
-                    <Text style={styles.headerBackText}>{i18n.t("common.back")}</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{i18n.t("common.edit")}</Text>
-                <TouchableOpacity
-                    style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                    onPress={handleSaveToApp}
-                    disabled={saving}
-                    activeOpacity={0.85}
-                >
-                    {saving ? (
-                        <ActivityIndicator color="#FFF" size="small" />
-                    ) : (
-                        <>
-                            <Ionicons name="download-outline" size={16} color="#FFF" />
-                            <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
+            <AppHeader
+                title={i18n.t("common.edit")}
+                onBackPress={handleBackPress}
+                rightSlot={(
+                    <TouchableOpacity
+                        style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
+                        onPress={handleSaveToApp}
+                        disabled={saving}
+                        activeOpacity={0.85}
+                    >
+                        {saving ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <>
+                                <Ionicons name="download-outline" size={16} color="#FFF" />
+                                <Text style={styles.headerSaveText}>{i18n.t("editor.headerSaveButton")}</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                )}
+            />
             <KeyboardAvoidingView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: theme.background }]}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+                keyboardVerticalOffset={0}
             >
-                <ScrollView
-                    ref={formScrollRef}
-                    style={[styles.container, { backgroundColor: theme.background }]}
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
-                    showsVerticalScrollIndicator={false}
-                    contentInsetAdjustmentBehavior="never"
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-                >
+                <View style={styles.previewSection}>
                     <View
                         style={[
                             styles.previewContainer,
@@ -623,6 +620,23 @@ export default function EditorScreen() {
                             </View>
                         )}
                     </View>
+                </View>
+                <ScrollView
+                    ref={formScrollRef}
+                    style={[styles.container, { backgroundColor: theme.background }]}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
+                    showsVerticalScrollIndicator={false}
+                    contentInsetAdjustmentBehavior="never"
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                    onScroll={(event) => {
+                        const nextCollapsed = event.nativeEvent.contentOffset.y > PREVIEW_COLLAPSE_THRESHOLD;
+                        if (nextCollapsed !== previewCollapsed) {
+                            setPreviewCollapsed(nextCollapsed);
+                        }
+                    }}
+                    scrollEventThrottle={16}
+                >
 
                     {babies.length > 0 && (
                         <View style={styles.section}>
@@ -855,40 +869,22 @@ export default function EditorScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: "#FFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#FFF",
     },
-    header: {
-        height: 60,
+    previewSection: {
         paddingHorizontal: 16,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: "#E9DDE2",
-        backgroundColor: "#FFF",
-    },
-    headerBackButton: {
-        minWidth: 72,
-        minHeight: 44,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 2,
-    },
-    headerBackText: {
-        fontSize: 15,
-        fontWeight: "500",
-        color: "#444",
-    },
-    headerTitle: {
-        fontSize: 17,
-        fontWeight: "700",
-        color: "#222",
+        paddingTop: 16,
+        paddingBottom: 12,
     },
     scrollContent: {
         paddingHorizontal: 16,
-        paddingTop: 16,
+        paddingTop: 8,
     },
     previewContainer: {
         width: PREVIEW_WIDTH,

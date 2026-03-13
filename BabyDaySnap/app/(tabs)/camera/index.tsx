@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { PhotoSource } from "@/types";
 import i18n from "@/lib/i18n";
+import { AppHeader } from "@/components/AppHeader";
 
 export default function CameraScreen() {
     const dispatch = useAppDispatch();
@@ -148,25 +149,27 @@ export default function CameraScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <View style={styles.content}>
+        <SafeAreaView style={styles.screen} edges={["top"]}>
+            <AppHeader
+                title={i18n.t("camera.headerTitle")}
+                rightSlot={activeBaby ? (
+                    <TouchableOpacity
+                        style={styles.babyBadge}
+                        onPress={() => setShowBabyPicker(true)}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
+                        <Text style={[styles.babyBadgeText, { color: theme.accent }]}>
+                            {activeBaby.name}
+                        </Text>
+                        <Ionicons name="chevron-down" size={12} color={theme.accent} style={{ marginLeft: 2 }} />
+                    </TouchableOpacity>
+                ) : null}
+            />
+            <View style={[styles.content, { backgroundColor: theme.background }]}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>
                     <Ionicons name="add-circle" size={64} color={theme.accent} />
-                    <Text style={styles.title}>{i18n.t("camera.headerTitle")}</Text>
-                    {activeBaby && (
-                        <TouchableOpacity
-                            style={styles.babyBadge}
-                            onPress={() => setShowBabyPicker(true)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
-                            <Text style={[styles.babyBadgeText, { color: theme.accent }]}>
-                                {activeBaby.name}
-                            </Text>
-                            <Ionicons name="chevron-down" size={12} color={theme.accent} style={{ marginLeft: 2 }} />
-                        </TouchableOpacity>
-                    )}
                 </View>
 
                 {/* ボタンエリア */}
@@ -230,6 +233,10 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        backgroundColor: "#FFF",
+    },
     container: {
         flex: 1,
         backgroundColor: "#FFF",
@@ -244,16 +251,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 48,
     },
-    title: {
-        fontSize: 24,
-        fontWeight: "700",
-        color: "#333",
-        marginTop: 16,
-    },
     babyBadge: {
         flexDirection: "row",
         alignItems: "center",
-        marginTop: 8,
         gap: 6,
         backgroundColor: "#F5F5F5",
         paddingHorizontal: 12,
