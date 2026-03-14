@@ -48,7 +48,7 @@ export type EditorOptions = {
     dateColorHex: string;
     commentText: string;
     fontId: FontId;
-    filterId?: FilterId;
+    filterId: FilterId;
     showDate: boolean;
     showName: boolean;
     showAge: boolean;
@@ -72,6 +72,7 @@ export type AppLibraryItem = {
     dateColorHex: string;
     commentText: string;
     fontId: FontId;
+    filterId: FilterId;
     showDate: boolean;
     showName: boolean;
     showAge: boolean;
@@ -92,6 +93,7 @@ export type UserSettings = {
     babyName: string;
     defaultTemplateId: TemplateId;
     defaultFontId: FontId;
+    defaultFilterId: FilterId;
     defaultShowDate: boolean;
     defaultShowName: boolean;
     defaultShowAge: boolean;
@@ -127,7 +129,7 @@ export type AppAction =
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_BABY_NAME"; payload: string }
     | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean; defaultAgeFormat: AgeFormat } }
-    | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId } }
+    | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId; defaultFilterId?: FilterId } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
     // 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｮ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ

@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     babyName: "",
     defaultTemplateId: "tpl_noframe_full",
     defaultFontId: "font_standard",
+    defaultFilterId: "filter_none",
     defaultShowDate: true,
     defaultShowName: true,
     defaultShowAge: true,
@@ -62,6 +63,7 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
             return items.map((item) => ({
                 ...item,
                 babyIds: item.babyIds || [],
+                filterId: item.filterId || "filter_none",
                 ageFormat: item.ageFormat || "days",
             }));
         }

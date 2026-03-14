@@ -16,8 +16,9 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
+import { FILTER_OPTIONS } from "@/utils/filters";
 import { THEME_COLOR_PRESETS, getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId, BabyProfile } from "@/types";
+import type { TemplateId, FontId, FilterId, BabyProfile } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
@@ -133,6 +134,13 @@ export default function SettingsScreen() {
         dispatch({
             type: "SET_DEFAULT_PREFS",
             payload: { defaultFontId: id },
+        });
+    };
+
+    const handleFilterChange = (id: FilterId) => {
+        dispatch({
+            type: "SET_DEFAULT_PREFS",
+            payload: { defaultFilterId: id },
         });
     };
 
@@ -464,6 +472,29 @@ export default function SettingsScreen() {
                                 </Text>
                             </TouchableOpacity>
                         ))}
+                    </ScrollView>
+
+                    <Text style={styles.subTitle}>{i18n.t("editor.filterTitle")}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                        {FILTER_OPTIONS.map((option) => {
+                            const isActive = settings.defaultFilterId === option.id;
+                            return (
+                                <TouchableOpacity
+                                    key={option.id}
+                                    style={[
+                                        styles.filterChip,
+                                        isActive && [styles.filterChipActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                    ]}
+                                    onPress={() => handleFilterChange(option.id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[styles.filterDot, { backgroundColor: option.id === "filter_none" ? "#E7E7E7" : option.color }]} />
+                                    <Text style={[styles.filterLabel, isActive && { color: theme.accent }]}>
+                                        {i18n.t(option.labelKey)}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </ScrollView>
                 </View>
 
@@ -850,5 +881,35 @@ const styles = StyleSheet.create({
     fontBadgeTextActive: {
         color: "#FF8FA3",
         fontWeight: "bold",
+    },
+    filterRow: {
+        flexDirection: "row",
+        gap: 8,
+        paddingVertical: 4,
+    },
+    filterChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#F5F5F5",
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: "transparent",
+    },
+    filterChipActive: {
+        backgroundColor: "#FFF5F7",
+        borderColor: "#FF8FA3",
+    },
+    filterDot: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    filterLabel: {
+        fontSize: 14,
+        color: "#666",
+        fontWeight: "500",
     },
 });

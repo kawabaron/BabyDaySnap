@@ -104,7 +104,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
 
         // 鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｵ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ髯懷雀迴ｾ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｰ鬯ｮ・ｯ繝ｻ・ｷ繝ｻ縺､ﾂ鬮ｫ・ｲ繝ｻ・､髫ｲ蟶帷樟郢晢ｽｻ
         drawPhoto(canvas, skImage, canvasW, canvasH, editorOptions.templateId, tpl.hasFrame, imageWidth, imageHeight);
-        drawFilterOverlay(canvas, canvasW, canvasH, (editorOptions as any).filterId, editorOptions.templateId, tpl.hasFrame);
+        drawFilterOverlay(canvas, canvasW, canvasH, editorOptions.filterId, editorOptions.templateId, tpl.hasFrame);
 
         // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ・つ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｹ隴会ｽｦ繝ｻ・ｽ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ鬮ｯ譎｢・ｽ・ｶ髫ｰ・ｨ鬲托ｽｴ・つ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ
         drawText(canvas, canvasW, canvasH, editorOptions, computed, tpl.hasFrame, tpl.hasTextStroke, typeface, dateTextLine1, isMultiBaby);
@@ -330,7 +330,7 @@ function drawFilterOverlay(
     canvas: SkCanvas,
     canvasW: number,
     canvasH: number,
-    filterId: FilterId,
+    filterId?: FilterId,
     templateId: TemplateId,
     hasFrame: boolean,
 ) {

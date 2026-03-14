@@ -23,7 +23,8 @@ import { useIsFocused } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
-import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
+import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
+import { FILTER_OPTIONS, getFilterOption } from "@/utils/filters";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
 import { calcAgeDays, calcAgeMonthsAndDays } from "@/utils/date";
@@ -31,25 +32,13 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId, FilterId } from "@/types";
+import type { TemplateId, FontId } from "@/types";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
-
-const FILTER_OPTIONS: Array<{ id: FilterId; labelKey: string; color: string; opacity: number }> = [
-    { id: "filter_none", labelKey: "filters.filter_none", color: "transparent", opacity: 0 },
-    { id: "filter_milk", labelKey: "filters.filter_milk", color: "#FFF3E8", opacity: 0.24 },
-    { id: "filter_blossom", labelKey: "filters.filter_blossom", color: "#FFDCE6", opacity: 0.2 },
-    { id: "filter_nap", labelKey: "filters.filter_nap", color: "#F2E4D7", opacity: 0.22 },
-    { id: "filter_sparkle", labelKey: "filters.filter_sparkle", color: "#FFF8D6", opacity: 0.16 },
-];
-
-function getFilterOption(filterId?: FilterId) {
-    return FILTER_OPTIONS.find((option) => option.id === filterId) ?? FILTER_OPTIONS[0];
-}
 
 type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment" | "save";
 
@@ -583,7 +572,7 @@ export default function EditorScreen() {
     const previewScale = Math.min(1, previewStageMaxHeight / naturalPreviewHeight);
     const previewWidth = previewBaseWidth * previewScale;
     const previewHeight = naturalPreviewHeight * previewScale;
-    const activeFilter = getFilterOption((editorOptions as any).filterId);
+    const activeFilter = getFilterOption(editorOptions.filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
     const isMultiBaby = targetBabyIds.length > 1;
@@ -709,7 +698,7 @@ export default function EditorScreen() {
                         <Text style={styles.panelTitle}>{i18n.t("editor.filterTitle")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                             {FILTER_OPTIONS.map((option) => {
-                                const isActive = (editorOptions as any).filterId === option.id;
+                                const isActive = editorOptions.filterId === option.id;
                                 return (
                                     <TouchableOpacity
                                         key={option.id}

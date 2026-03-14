@@ -73,6 +73,7 @@ export async function saveToAppLibrary(
         dateColorHex: editorOptions.dateColorHex,
         commentText: editorOptions.commentText,
         fontId: editorOptions.fontId,
+        filterId: editorOptions.filterId,
         showDate: editorOptions.showDate,
         showName: editorOptions.showName,
         showAge: editorOptions.showAge,
