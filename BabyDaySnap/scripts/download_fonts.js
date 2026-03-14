@@ -21,7 +21,12 @@ const download = (url, dest) => {
 
 Promise.all([
     download("https://github.com/googlefonts/zen-marugothic/raw/main/fonts/ttf/ZenMaruGothic-Bold.ttf", "assets/fonts/ZenMaruGothic-Bold.ttf"),
-    download("https://github.com/googlefonts/zen-kurenaido/raw/main/fonts/ttf/ZenKurenaido-Regular.ttf", "assets/fonts/ZenKurenaido-Regular.ttf")
+    download("https://github.com/googlefonts/zen-kurenaido/raw/main/fonts/ttf/ZenKurenaido-Regular.ttf", "assets/fonts/ZenKurenaido-Regular.ttf"),
+    download("https://github.com/Kinutafontfactory/Yuji/raw/master/fonts/ttf/YujiSyuku-Regular.ttf", "assets/fonts/YujiSyuku-Regular.ttf"),
+    download("https://github.com/nagamaki008/NewTegomin/raw/master/fonts/ttf/NewTegomin-Regular.ttf", "assets/fonts/NewTegomin-Regular.ttf"),
+    download("https://github.com/google/fonts/raw/main/ofl/mplusrounded1c/MPLUSRounded1c-Bold.ttf", "assets/fonts/MPLUSRounded1c-Bold.ttf"),
+    download("https://github.com/fontworks-fonts/Train/raw/master/fonts/ttf/TrainOne-Regular.ttf", "assets/fonts/TrainOne-Regular.ttf"),
+    download("https://github.com/fontworks-fonts/Klee/raw/master/fonts/ttf/KleeOne-SemiBold.ttf", "assets/fonts/KleeOne-SemiBold.ttf")
 ]).then(() => {
     console.log("Fonts downloaded successfully");
 }).catch((e) => {

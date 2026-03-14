@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { AppProvider, useAppState } from "@/context/AppContext";
 import { View, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
-import { FONT_OPTIONS } from "@/utils/templates";
+import { FONT_ASSET_MAP } from "@/utils/templates";
 import "../global.css";
 import "@/lib/i18n";
 
@@ -16,12 +16,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const searchParams = useGlobalSearchParams();
 
-  const [fontsLoaded] = useFonts({
-    font_standard: FONT_OPTIONS.find(f => f.id === "font_standard")!.file,
-    font_soft: FONT_OPTIONS.find(f => f.id === "font_soft")!.file,
-    font_stylish: FONT_OPTIONS.find(f => f.id === "font_stylish")!.file,
-    font_cute: FONT_OPTIONS.find(f => f.id === "font_cute")!.file,
-  });
+  const [fontsLoaded] = useFonts(FONT_ASSET_MAP);
 
   useEffect(() => {
     if (loading || !fontsLoaded) return;

@@ -135,7 +135,12 @@
         "font_standard": "Standard",
         "font_soft": "Soft",
         "font_stylish": "Stylish",
-        "font_cute": "Cute"
+        "font_cute": "Cute",
+        "font_calligraphy": "Calligraphy",
+        "font_scary": "Eerie",
+        "font_round": "Rounded",
+        "font_cool": "Cool",
+        "font_handwritten": "Handwritten"
     },
     "filters": {
         "filter_none": "None",

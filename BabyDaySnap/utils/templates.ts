@@ -66,7 +66,36 @@ export const FONT_OPTIONS: FontOption[] = [
         get label() { return i18n.t("fonts.font_cute"); },
         file: require("../assets/fonts/HachiMaruPop-Regular.ttf"),
     },
+    {
+        id: "font_calligraphy",
+        get label() { return i18n.t("fonts.font_calligraphy"); },
+        file: require("../assets/fonts/YujiSyuku-Regular.ttf"),
+    },
+    {
+        id: "font_scary",
+        get label() { return i18n.t("fonts.font_scary"); },
+        file: require("../assets/fonts/NewTegomin-Regular.ttf"),
+    },
+    {
+        id: "font_round",
+        get label() { return i18n.t("fonts.font_round"); },
+        file: require("../assets/fonts/MPLUSRounded1c-Bold.ttf"),
+    },
+    {
+        id: "font_cool",
+        get label() { return i18n.t("fonts.font_cool"); },
+        file: require("../assets/fonts/TrainOne-Regular.ttf"),
+    },
+    {
+        id: "font_handwritten",
+        get label() { return i18n.t("fonts.font_handwritten"); },
+        file: require("../assets/fonts/KleeOne-SemiBold.ttf"),
+    },
 ];
+
+export const FONT_ASSET_MAP = Object.fromEntries(
+    FONT_OPTIONS.map((font) => [font.id, font.file]),
+) as Record<FontId, FontOption["file"]>;
 
 export function getFontConfig(id: FontId): FontOption {
     return FONT_OPTIONS.find((font) => font.id === id) ?? FONT_OPTIONS[0];

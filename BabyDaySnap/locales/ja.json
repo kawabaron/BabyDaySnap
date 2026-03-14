@@ -132,10 +132,15 @@
         "tpl_frame_crop": "フチあり（切取）"
     },
     "fonts": {
-        "font_standard": "標準",
-        "font_soft": "柔らかめ",
-        "font_stylish": "おしゃれ",
-        "font_cute": "かわいい"
+        "font_standard": "\u6a19\u6e96",
+        "font_soft": "\u67d4\u3089\u304b\u3081",
+        "font_stylish": "\u304a\u3057\u3083\u308c",
+        "font_cute": "\u304b\u308f\u3044\u3044",
+        "font_calligraphy": "\u9054\u7b46",
+        "font_scary": "\u3061\u3087\u3044\u6016",
+        "font_round": "\u307e\u308b\u3081",
+        "font_cool": "\u30af\u30fc\u30eb",
+        "font_handwritten": "\u624b\u66f8\u304d\u98a8"
     },
     "filters": {
         "filter_none": "なし",

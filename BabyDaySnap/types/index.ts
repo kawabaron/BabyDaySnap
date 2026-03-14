@@ -19,7 +19,16 @@ export type TemplateId =
     | "tpl_frame_crop";     // 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ竏ｫ豬ｹ鬯･・ｴ邵ｺ蜉ｱ繝ｻ繝ｻ・ｺ鬩幢ｽ｢繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬮｣雋ｻ・｣・ｰ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｿ鬮ｯ・ｷ繝ｻ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
 
 // --- 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ繝ｻ謳ｨ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ---
-export type FontId = "font_standard" | "font_soft" | "font_stylish" | "font_cute";
+export type FontId =
+    | "font_standard"
+    | "font_soft"
+    | "font_stylish"
+    | "font_cute"
+    | "font_calligraphy"
+    | "font_scary"
+    | "font_round"
+    | "font_cool"
+    | "font_handwritten";
 export type FilterId = "filter_none" | "filter_milk" | "filter_blossom" | "filter_nap" | "filter_sparkle";
 
 // --- 鬯ｮ・ｯ繝ｻ・ｷ繝ｻ縺､ﾂ鬮ｯ・ｷ繝ｻ・･髣包ｽｵ隴会ｽｦ繝ｻ・ｽ郢晢ｽｻ・取鱒繝ｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ ---
