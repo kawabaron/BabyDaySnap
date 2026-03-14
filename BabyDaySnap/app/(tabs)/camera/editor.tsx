@@ -516,9 +516,44 @@ export default function EditorScreen() {
     }, [targetBabyIds, babies, computed]);
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｰ鬨ｾ謳ｾ・ｽ・ｲ郢晢ｽｻ繝ｻ・ｻ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｮ・ｫ繝ｻ・ｰ鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｶ陷ｻ・ｵ繝ｻ・ｶ繝ｻ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｩ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｯ繝ｻ・ｩ髯懶ｽ｣繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｸ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ驕ｶ荵暦ｽｧ・ｭ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｲ繝ｻ・､鬮ｴ蝓滄ｱ堤ｹ晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｮ・｣陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｳ鬯ｩ諤憺●繝ｻ・ｽ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｬ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陷ｿ髢・ｾ蜉ｱ繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｯ・ｷ繝ｻ・ｴ郢晢ｽｻ繝ｻ・･鬮ｫ・ｴ隲・ｹ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｰ繝ｻ・ｨ鬯ｲ謇假ｽｽ・ｴ繝ｻ縺､ﾂ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｳ鬮ｯ讓奇ｽｻ繧托ｽｽ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｩ鬩包ｽｨ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｼ髯樊ｻゑｽｽ・ｲ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ
-    if (!editorIsFocused) {
-        return <View style={[styles.container, { backgroundColor: theme.background }]} />;
-    }
+    const animatePanelTo = useCallback((nextExpanded: boolean) => {
+        setPanelExpanded(nextExpanded);
+        Animated.timing(toolPanelAnimation, {
+            toValue: nextExpanded ? 1 : 0,
+            duration: 180,
+            useNativeDriver: false,
+        }).start();
+    }, [toolPanelAnimation]);
+
+    const panelPanResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 2,
+        onPanResponderGrant: () => {
+            toolPanelAnimation.stopAnimation((value) => {
+                panelDragStart.current = typeof value === "number" ? value : panelExpanded ? 1 : 0;
+            });
+        },
+        onPanResponderMove: (_, gestureState) => {
+            const dragRange = Math.max(activePanelHeight, 1);
+            const nextValue = Math.max(0, Math.min(1, panelDragStart.current - gestureState.dy / dragRange));
+            toolPanelAnimation.setValue(nextValue);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+            toolPanelAnimation.stopAnimation((value) => {
+                const currentValue = typeof value === "number" ? value : panelExpanded ? 1 : 0;
+                const wasDrag = Math.abs(gestureState.dy) > 6;
+                const nextExpanded = wasDrag ? currentValue > 0.5 : !panelExpanded;
+                animatePanelTo(nextExpanded);
+            });
+        },
+        onPanResponderTerminate: () => {
+            animatePanelTo(panelExpanded);
+        },
+    }), [activePanelHeight, animatePanelTo, panelExpanded, toolPanelAnimation]);
+
+    if (!editorIsFocused) {
+        return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+    }
 
     if (!currentPhoto || !computed || !rnFontsLoaded) {
         return (
@@ -582,41 +617,6 @@ export default function EditorScreen() {
         { id: "comment", icon: "chatbox-ellipses-outline", label: i18n.t("editor.toolsComment") },
         { id: "save", icon: "download-outline", label: i18n.t("editor.toolsSave") },
     ];
-
-    const animatePanelTo = useCallback((nextExpanded: boolean) => {
-        setPanelExpanded(nextExpanded);
-        Animated.timing(toolPanelAnimation, {
-            toValue: nextExpanded ? 1 : 0,
-            duration: 180,
-            useNativeDriver: false,
-        }).start();
-    }, [toolPanelAnimation]);
-
-    const panelPanResponder = useMemo(() => PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 2,
-        onPanResponderGrant: () => {
-            toolPanelAnimation.stopAnimation((value) => {
-                panelDragStart.current = typeof value === "number" ? value : panelExpanded ? 1 : 0;
-            });
-        },
-        onPanResponderMove: (_, gestureState) => {
-            const dragRange = Math.max(activePanelHeight, 1);
-            const nextValue = Math.max(0, Math.min(1, panelDragStart.current - gestureState.dy / dragRange));
-            toolPanelAnimation.setValue(nextValue);
-        },
-        onPanResponderRelease: (_, gestureState) => {
-            toolPanelAnimation.stopAnimation((value) => {
-                const currentValue = typeof value === "number" ? value : panelExpanded ? 1 : 0;
-                const wasDrag = Math.abs(gestureState.dy) > 6;
-                const nextExpanded = wasDrag ? currentValue > 0.5 : !panelExpanded;
-                animatePanelTo(nextExpanded);
-            });
-        },
-        onPanResponderTerminate: () => {
-            animatePanelTo(panelExpanded);
-        },
-    }), [activePanelHeight, animatePanelTo, panelExpanded, toolPanelAnimation]);
 
     const renderActiveToolPanel = () => {
         switch (activeTool) {
