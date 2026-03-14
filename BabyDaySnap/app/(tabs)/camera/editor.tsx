@@ -530,9 +530,9 @@ export default function EditorScreen() {
     }
 
     const tpl = getTemplateConfig(editorOptions.templateId);
-    const previewWidth = PREVIEW_WIDTH;
+    const previewBaseWidth = PREVIEW_WIDTH;
     const previewAspect = currentPhoto.width / currentPhoto.height;
-    const naturalPreviewHeight = previewWidth / previewAspect;
+    const naturalPreviewHeight = previewBaseWidth / previewAspect;
     const toolBarHeight = 90;
     const panelHandleHeight = 28;
     const panelExpandedHeight = panelExpanded ? activePanelHeight : 0;
@@ -545,7 +545,9 @@ export default function EditorScreen() {
         148,
         SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - tabBarReserve - previewBottomSpacing - 32,
     );
-    const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
+    const previewScale = Math.min(1, previewStageMaxHeight / naturalPreviewHeight);
+    const previewWidth = previewBaseWidth * previewScale;
+    const previewHeight = naturalPreviewHeight * previewScale;
     const activeFilter = getFilterOption((editorOptions as any).filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
@@ -570,7 +572,7 @@ export default function EditorScreen() {
     const previewMaxWidth = previewWidth - margin * 2;
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
-    const previewResizeMode = panelExpanded || editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
+    const previewResizeMode = editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
     const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
         { id: "template", icon: "copy-outline", label: i18n.t("editor.toolsTemplate") },
@@ -898,6 +900,7 @@ export default function EditorScreen() {
                             style={[
                                 styles.previewContainer,
                                 {
+                                    width: previewWidth,
                                     height: previewHeight,
                                     backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
                                 },
