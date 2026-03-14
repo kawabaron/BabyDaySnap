@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_OPTIONS } from "@/utils/templates";
@@ -91,6 +92,7 @@ export default function EditorScreen() {
     const [commentSectionY, setCommentSectionY] = useState(0);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabBarHeight();
     const formScrollRef = useRef<ScrollView>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
     const panelDragStart = useRef(1);
@@ -534,13 +536,14 @@ export default function EditorScreen() {
     const toolBarHeight = 90;
     const panelHandleHeight = 28;
     const panelExpandedHeight = panelExpanded ? activePanelHeight : 0;
+    const tabBarReserve = Math.max(tabBarHeight - insets.bottom, 48);
     const previewBottomSpacing = panelExpanded
-        ? (activeTool === "save" || activeTool === "comment" || activeTool === "text" ? 22 : 18)
-        : 12;
+        ? (activeTool === "save" || activeTool === "comment" || activeTool === "text" ? 28 : 24)
+        : 16;
     const editorDockHeight = toolBarHeight + panelHandleHeight + panelExpandedHeight + 20;
     const previewStageMaxHeight = Math.max(
-        168,
-        SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - previewBottomSpacing - 28,
+        148,
+        SCREEN_HEIGHT - insets.top - 60 - editorDockHeight - tabBarReserve - previewBottomSpacing - 32,
     );
     const previewHeight = Math.min(naturalPreviewHeight, previewStageMaxHeight);
     const activeFilter = getFilterOption((editorOptions as any).filterId);
@@ -1063,6 +1066,7 @@ const styles = StyleSheet.create({
     previewContainer: {
         width: PREVIEW_WIDTH,
         alignSelf: "center",
+        marginBottom: 6,
         backgroundColor: "#F5F5F5",
         borderRadius: 12,
         overflow: "hidden",
