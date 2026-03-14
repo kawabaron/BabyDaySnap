@@ -25,10 +25,9 @@ export type FontId =
     | "font_stylish"
     | "font_cute"
     | "font_calligraphy"
-    | "font_scary"
     | "font_round"
-    | "font_cool"
-    | "font_handwritten";
+    | "font_magic"
+    | "font_hina";
 export type FilterId = "filter_none" | "filter_milk" | "filter_blossom" | "filter_nap" | "filter_sparkle";
 
 // --- 鬯ｮ・ｯ繝ｻ・ｷ繝ｻ縺､ﾂ鬮ｯ・ｷ繝ｻ・･髣包ｽｵ隴会ｽｦ繝ｻ・ｽ郢晢ｽｻ・取鱒繝ｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ ---

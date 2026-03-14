@@ -72,24 +72,19 @@ export const FONT_OPTIONS: FontOption[] = [
         file: require("../assets/fonts/YujiSyuku-Regular.ttf"),
     },
     {
-        id: "font_scary",
-        get label() { return i18n.t("fonts.font_scary"); },
-        file: require("../assets/fonts/NewTegomin-Regular.ttf"),
-    },
-    {
         id: "font_round",
         get label() { return i18n.t("fonts.font_round"); },
         file: require("../assets/fonts/MPLUSRounded1c-Bold.ttf"),
     },
     {
-        id: "font_cool",
-        get label() { return i18n.t("fonts.font_cool"); },
-        file: require("../assets/fonts/TrainOne-Regular.ttf"),
+        id: "font_magic",
+        get label() { return i18n.t("fonts.font_magic"); },
+        file: require("../assets/fonts/YuseiMagic-Regular.ttf"),
     },
     {
-        id: "font_handwritten",
-        get label() { return i18n.t("fonts.font_handwritten"); },
-        file: require("../assets/fonts/KleeOne-SemiBold.ttf"),
+        id: "font_hina",
+        get label() { return i18n.t("fonts.font_hina"); },
+        file: require("../assets/fonts/Hina-Mincho-Regular.ttf"),
     },
 ];
 

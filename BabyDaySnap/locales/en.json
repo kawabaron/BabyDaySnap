@@ -137,10 +137,9 @@
         "font_stylish": "Stylish",
         "font_cute": "Cute",
         "font_calligraphy": "Calligraphy",
-        "font_scary": "Eerie",
         "font_round": "Rounded",
-        "font_cool": "Cool",
-        "font_handwritten": "Handwritten"
+        "font_magic": "Magic Hand",
+        "font_hina": "Hina Mincho"
     },
     "filters": {
         "filter_none": "None",
