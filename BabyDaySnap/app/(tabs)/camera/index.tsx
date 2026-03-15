@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { PhotoSource } from "@/types";
+import { resolveDecorationSeed } from "@/utils/decorativeFrame";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -95,6 +96,9 @@ export default function CameraScreen() {
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
+                const exifDateTimeOriginalMs = asset.exif?.DateTimeOriginal
+                    ? new Date(asset.exif.DateTimeOriginal as string).getTime()
+                    : undefined;
 
                 const photo: PhotoSource = {
                     uri: asset.uri,
@@ -102,10 +106,11 @@ export default function CameraScreen() {
                     width: asset.width,
                     height: asset.height,
                     source: "camera",
-                    creationTimeMs: asset.exif?.DateTimeOriginal
-                        ? new Date(asset.exif.DateTimeOriginal as string).getTime()
-                        : Date.now(),
+                    assetId: asset.assetId ?? undefined,
+                    creationTimeMs: exifDateTimeOriginalMs ?? Date.now(),
+                    exifDateTimeOriginalMs,
                 };
+                photo.decorationSeed = resolveDecorationSeed(photo);
                 navigateToEditor(photo);
             }
         } catch (e) {
@@ -125,6 +130,9 @@ export default function CameraScreen() {
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
+                const exifDateTimeOriginalMs = asset.exif?.DateTimeOriginal
+                    ? new Date(asset.exif.DateTimeOriginal as string).getTime()
+                    : undefined;
 
                 const photo: PhotoSource = {
                     uri: asset.uri,
@@ -132,10 +140,11 @@ export default function CameraScreen() {
                     width: asset.width,
                     height: asset.height,
                     source: "import",
-                    creationTimeMs: asset.exif?.DateTimeOriginal
-                        ? new Date(asset.exif.DateTimeOriginal as string).getTime()
-                        : Date.now(),
+                    assetId: asset.assetId ?? undefined,
+                    creationTimeMs: exifDateTimeOriginalMs ?? Date.now(),
+                    exifDateTimeOriginalMs,
                 };
+                photo.decorationSeed = resolveDecorationSeed(photo);
                 navigateToEditor(photo);
             }
         } catch {

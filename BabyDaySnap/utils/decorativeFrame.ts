@@ -17,6 +17,17 @@ export type DecorationPlacement = {
     rotation: number;
 };
 
+export type DecorationSeedSource = {
+    decorationSeed?: string;
+    source?: "camera" | "import";
+    width: number;
+    height: number;
+    assetId?: string;
+    creationTimeMs?: number;
+    exifDateTimeOriginalMs?: number;
+    shotDateISO?: string;
+};
+
 type DecorationSprite = {
     sheetId: DecorativeSheetId;
     source: Rect;
@@ -130,6 +141,22 @@ function expandRect(rect: Rect, by: number): Rect {
 
 function pickSprite(rng: () => number) {
     return DECORATIVE_SPRITES[Math.floor(rng() * DECORATIVE_SPRITES.length)];
+}
+
+export function resolveDecorationSeed(source: DecorationSeedSource) {
+    if (source.decorationSeed) {
+        return source.decorationSeed;
+    }
+
+    return [
+        source.source ?? "unknown",
+        source.assetId ?? "",
+        source.creationTimeMs ?? "",
+        source.exifDateTimeOriginalMs ?? "",
+        source.shotDateISO ?? "",
+        source.width,
+        source.height,
+    ].join(":");
 }
 
 export function getFramedPhotoRect(canvasW: number, canvasH: number): Rect {

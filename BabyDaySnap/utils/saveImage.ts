@@ -6,6 +6,7 @@ import * as MediaLibrary from "expo-media-library";
 import { Alert, Linking } from "react-native";
 import i18n from "@/lib/i18n";
 import type { AppLibraryItem, EditorOptions, ComputedInfo, PhotoSource } from "@/types";
+import { resolveDecorationSeed } from "@/utils/decorativeFrame";
 
 /** 驛｢譎｢・ｽ・ｩ驛｢・ｧ繝ｻ・､驛｢譎・§・主ｸｷ・ｹ譎｢・ｽ・ｪ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｬ驛｢・ｧ繝ｻ・ｯ驛｢譎冗樟・取㏍・ｹ・ｧ髮区ｧｫ蠕宣辧蠅灘惧繝ｻ・ｼ髢ｧ・ｲ隨乗ｪ趣ｽｸ・ｺ闔会ｽ｣繝ｻ讙趣ｽｸ・ｺ繝ｻ・ｰ髣厄ｽｴ隲帛現繝ｻ郢晢ｽｻ郢晢ｽｻ*/
 async function getLibraryDirPath(): Promise<string> {
@@ -63,6 +64,7 @@ export async function saveToAppLibrary(
         source: photoSource.source,
         originalFileUri: originalDestUri,
         renderedFileUri: destUri,
+        decorationSeed: resolveDecorationSeed({ ...photoSource, shotDateISO: computed.shotDateISO }),
         width: imageWidth,
         height: imageHeight,
         originalWidth: photoSource.width,

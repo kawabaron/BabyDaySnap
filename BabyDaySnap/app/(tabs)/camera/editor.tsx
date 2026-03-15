@@ -32,6 +32,7 @@ import {
     type DecorationPlacement,
     getBerrySakuraPlacements,
     getFramedPhotoRect,
+    resolveDecorationSeed,
 } from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS, getFilterOption } from "@/utils/filters";
 import { renderCompositeImage } from "@/utils/renderImage";
@@ -209,16 +210,17 @@ export default function EditorScreen() {
         }
 
         try {
-            const result = await renderCompositeImage({
-                imageUri: renderUri,
-                imageWidth: renderW,
-                imageHeight: renderH,
-                editorOptions,
-                computed,
-                fontId: editorOptions.fontId,
-                dateTextLine1,
-                isMultiBaby,
-            });
+            const result = await renderCompositeImage({
+                imageUri: renderUri,
+                imageWidth: renderW,
+                imageHeight: renderH,
+                editorOptions,
+                computed,
+                fontId: editorOptions.fontId,
+                dateTextLine1,
+                isMultiBaby,
+                decorationSeed: resolveDecorationSeed({ ...currentPhoto, shotDateISO: computed.shotDateISO }),
+            });
 
             return result;
         } finally {
@@ -642,7 +644,7 @@ export default function EditorScreen() {
     const previewCanvasBackgroundColor = tpl.canvasBackgroundColorHex ?? (tpl.hasFrame ? "#FFFFFF" : "#000000");
     const previewDecorationPlacements = tpl.decorationPreset === "berry_sakura"
         ? getBerrySakuraPlacements(previewWidth, previewHeight, {
-            seed: `${editorOptions.templateId}:${currentPhoto.uri}`,
+            seed: `${editorOptions.templateId}:${resolveDecorationSeed({ ...currentPhoto, shotDateISO: computed?.shotDateISO })}`,
             hasComment: editorOptions.commentText.trim().length > 0,
         })
         : [];

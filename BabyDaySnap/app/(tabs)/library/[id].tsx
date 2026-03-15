@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
+import { resolveDecorationSeed } from "@/utils/decorativeFrame";
 import { formatDateDisplay, msToDateISO, calcAgeMonthsAndDays } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
@@ -72,6 +73,12 @@ export default function LibraryDetailScreen() {
             payload: {
                 uri: item.originalFileUri || item.renderedFileUri,
                 previewUri: item.originalFileUri || item.renderedFileUri,
+                decorationSeed: item.decorationSeed || resolveDecorationSeed({
+                    source: item.source,
+                    width: (item as any).originalWidth ?? item.width,
+                    height: (item as any).originalHeight ?? item.height,
+                    shotDateISO: item.shotDateISO,
+                }),
                 width: (item as any).originalWidth ?? item.width,
                 height: (item as any).originalHeight ?? item.height,
                 source: item.source,
