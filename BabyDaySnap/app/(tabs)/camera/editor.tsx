@@ -588,11 +588,14 @@ export default function EditorScreen() {
 
     const previewPhotoX = tpl.hasFrame ? inset : 0;
     const previewPhotoY = tpl.hasFrame ? inset : 0;
-    const previewMaxWidth = previewWidth - margin * 2;
-    const previewDateFontSize = dateFontSize;
-    const previewCommentFontSize = commentFontSize;
     const previewInnerLineInset = tpl.innerLineColorHex ? shortSide * 0.05 : 0;
     const previewInnerLineWidth = tpl.innerLineColorHex ? Math.max(1, shortSide * 0.003) : 0;
+    const previewTextMargin = tpl.innerLineColorHex
+        ? Math.max(margin, previewInnerLineInset + gap + previewInnerLineWidth)
+        : margin;
+    const previewMaxWidth = previewWidth - previewTextMargin * 2;
+    const previewDateFontSize = dateFontSize;
+    const previewCommentFontSize = commentFontSize;
     const previewResizeMode = editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
     const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
@@ -931,8 +934,8 @@ export default function EditorScreen() {
                             <View
                                 style={{
                                     position: "absolute",
-                                    right: margin,
-                                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: margin }),
+                                    right: previewTextMargin,
+                                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: previewTextMargin }),
                                     alignItems: "flex-end",
                                 }}
                             >
