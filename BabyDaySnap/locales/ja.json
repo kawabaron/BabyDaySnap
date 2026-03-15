@@ -128,6 +128,7 @@
     },
     "templates": {
         "tpl_noframe_full": "フチなし全画面",
+        "tpl_noframe_line": "フチなし（内線）",
         "tpl_frame_full": "フチあり（全体）",
         "tpl_frame_crop": "フチあり（切取）"
     },

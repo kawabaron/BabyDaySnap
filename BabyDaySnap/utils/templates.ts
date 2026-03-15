@@ -1,13 +1,29 @@
 import i18n from "@/lib/i18n";
 import type { ColorOption, FontId, FontOption, TemplateConfig, TemplateId } from "@/types";
 
-export const TEMPLATES: TemplateConfig[] = [
+export type AppTemplateId = TemplateId | "tpl_noframe_line";
+
+export type AppTemplateConfig = Omit<TemplateConfig, "id"> & {
+    id: AppTemplateId;
+    innerLineColorHex?: string;
+};
+
+export const TEMPLATES: AppTemplateConfig[] = [
     {
         id: "tpl_noframe_full",
         get label() { return i18n.t("templates.tpl_noframe_full"); },
         hasFrame: false,
         isSquare: false,
         defaultDateColorHex: "#FFFFFF",
+        hasTextStroke: true,
+    },
+    {
+        id: "tpl_noframe_line",
+        get label() { return i18n.t("templates.tpl_noframe_line"); },
+        hasFrame: false,
+        isSquare: false,
+        defaultDateColorHex: "#FFFFFF",
+        innerLineColorHex: "#FFFFFF",
         hasTextStroke: true,
     },
     {
@@ -41,7 +57,7 @@ export const COLOR_PALETTE: ColorOption[] = [
     { hex: "#FFEB3B", get label() { return i18n.t("palette.yellow"); } },
 ];
 
-export function getTemplateConfig(id: TemplateId): TemplateConfig {
+export function getTemplateConfig(id: string): AppTemplateConfig {
     return TEMPLATES.find((template) => template.id === id) ?? TEMPLATES[0];
 }
 

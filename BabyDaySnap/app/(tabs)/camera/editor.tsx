@@ -189,12 +189,12 @@ export default function EditorScreen() {
     };
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ鬮ｮ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
-    const handleTemplateChange = (id: TemplateId) => {
+    const handleTemplateChange = (id: string) => {
         const tpl = getTemplateConfig(id);
         dispatch({
             type: "SET_EDITOR_OPTIONS",
             payload: {
-                templateId: id,
+                templateId: id as TemplateId,
                 dateColorHex: tpl.defaultDateColorHex,
             },
         });
@@ -591,6 +591,8 @@ export default function EditorScreen() {
     const previewMaxWidth = previewWidth - margin * 2;
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
+    const previewInnerLineInset = tpl.innerLineColorHex ? shortSide * 0.05 : 0;
+    const previewInnerLineWidth = tpl.innerLineColorHex ? Math.max(1, shortSide * 0.003) : 0;
     const previewResizeMode = editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
     const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
@@ -654,7 +656,9 @@ export default function EditorScreen() {
                                                 <View style={styles.templateInner} />
                                             </View>
                                         ) : (
-                                            <View style={styles.templateNoFrame} />
+                                            <View style={styles.templateNoFrame}>
+                                                {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
+                                            </View>
                                         )}
                                     </View>
                                     <Text style={[styles.templateLabel, editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }]]}>
@@ -908,6 +912,20 @@ export default function EditorScreen() {
                                 {activeFilter.opacity > 0 && (
                                     <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
                                 )}
+                                {tpl.innerLineColorHex ? (
+                                    <View
+                                        pointerEvents="none"
+                                        style={{
+                                            position: "absolute",
+                                            left: previewInnerLineInset,
+                                            top: previewInnerLineInset,
+                                            right: previewInnerLineInset,
+                                            bottom: previewInnerLineInset,
+                                            borderWidth: previewInnerLineWidth,
+                                            borderColor: tpl.innerLineColorHex,
+                                        }}
+                                    />
+                                ) : null}
                             </View>
 
                             <View
@@ -1211,6 +1229,15 @@ const styles = StyleSheet.create({
         height: 40,
         backgroundColor: "#E0E0E0",
         borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    templateNoFrameInnerLine: {
+        width: 42,
+        height: 30,
+        borderWidth: 1.5,
+        borderColor: "#FFF",
+        borderRadius: 2,
     },
     templateFrame: {
         width: 52,

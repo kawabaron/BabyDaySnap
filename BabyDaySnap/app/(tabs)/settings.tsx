@@ -123,10 +123,10 @@ export default function SettingsScreen() {
         }
     };
 
-    const handleTemplateChange = (id: TemplateId) => {
+    const handleTemplateChange = (id: string) => {
         dispatch({
             type: "SET_DEFAULT_PREFS",
-            payload: { defaultTemplateId: id },
+            payload: { defaultTemplateId: id as TemplateId },
         });
     };
 
@@ -430,7 +430,11 @@ export default function SettingsScreen() {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.templatePreviewBox}>
-                                    {!t.hasFrame && <View style={styles.templateNoFrame} />}
+                                    {!t.hasFrame && (
+                                        <View style={styles.templateNoFrame}>
+                                            {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
+                                        </View>
+                                    )}
                                     {t.hasFrame && (
                                         <View style={styles.templateFrame}>
                                             <View style={styles.templateInner} />
@@ -831,6 +835,15 @@ const styles = StyleSheet.create({
         height: 40,
         backgroundColor: "#E0E0E0",
         borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    templateNoFrameInnerLine: {
+        width: 42,
+        height: 30,
+        borderWidth: 1.5,
+        borderColor: "#FFF",
+        borderRadius: 2,
     },
     templateFrame: {
         width: 52,
