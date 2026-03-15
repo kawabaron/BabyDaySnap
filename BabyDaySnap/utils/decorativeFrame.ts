@@ -66,16 +66,16 @@ const FRAME_INSET_RATIO = 0.06;
 const FRAME_BOTTOM_INSET_RATIO = 0.18;
 
 const ANCHORS: Anchor[] = [
-    { xRatio: 0.08, yRatio: 0.07, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -14, rotationJitter: 12, jitterRatio: 0.018 },
-    { xRatio: 0.23, yRatio: 0.055, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.018 },
-    { xRatio: 0.52, yRatio: 0.055, minSizeRatio: 0.09, maxSizeRatio: 0.16, baseRotation: 0, rotationJitter: 16, jitterRatio: 0.016 },
-    { xRatio: 0.83, yRatio: 0.06, minSizeRatio: 0.12, maxSizeRatio: 0.18, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.018 },
-    { xRatio: 0.93, yRatio: 0.23, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: 8, rotationJitter: 16, jitterRatio: 0.016 },
-    { xRatio: 0.09, yRatio: 0.44, minSizeRatio: 0.1, maxSizeRatio: 0.15, baseRotation: -10, rotationJitter: 16, jitterRatio: 0.018 },
-    { xRatio: 0.91, yRatio: 0.44, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: 12, rotationJitter: 16, jitterRatio: 0.018 },
-    { xRatio: 0.11, yRatio: 0.87, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -12, rotationJitter: 18, jitterRatio: 0.018 },
-    { xRatio: 0.31, yRatio: 0.92, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: -4, rotationJitter: 16, jitterRatio: 0.016 },
-    { xRatio: 0.64, yRatio: 0.91, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: 6, rotationJitter: 16, jitterRatio: 0.016 },
+    { xRatio: 0.05, yRatio: 0.035, minSizeRatio: 0.12, maxSizeRatio: 0.18, baseRotation: -14, rotationJitter: 12, jitterRatio: 0.02 },
+    { xRatio: 0.26, yRatio: 0.02, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.018 },
+    { xRatio: 0.56, yRatio: 0.02, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 0, rotationJitter: 14, jitterRatio: 0.016 },
+    { xRatio: 0.88, yRatio: 0.035, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.02 },
+    { xRatio: 0.98, yRatio: 0.28, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 8, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.02, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.14, baseRotation: -10, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.98, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: 12, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.05, yRatio: 0.95, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -12, rotationJitter: 18, jitterRatio: 0.02 },
+    { xRatio: 0.34, yRatio: 0.99, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: -4, rotationJitter: 16, jitterRatio: 0.016 },
+    { xRatio: 0.68, yRatio: 0.98, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: 6, rotationJitter: 16, jitterRatio: 0.016 },
 ];
 
 function hashSeed(seed: string) {
@@ -158,7 +158,7 @@ export function getBerrySakuraPlacements(
 ): DecorationPlacement[] {
     const rng = createRng(options.seed);
     const shortSide = Math.min(canvasW, canvasH);
-    const photoSafeRect = expandRect(getFramedPhotoRect(canvasW, canvasH), shortSide * 0.025);
+    const photoSafeRect = expandRect(getFramedPhotoRect(canvasW, canvasH), -shortSide * 0.01);
     const textSafeRect = expandRect(getFramedTextSafeRect(canvasW, canvasH, options.hasComment), shortSide * 0.02);
     const placements: DecorationPlacement[] = [];
 
@@ -172,15 +172,19 @@ export function getBerrySakuraPlacements(
             const width = shortSide * sizeRatio;
             const height = width * (sprite.source.height / sprite.source.width);
             const jitter = shortSide * anchor.jitterRatio;
+            const minX = -width * 0.45;
+            const maxX = canvasW - width * 0.55;
+            const minY = -height * 0.45;
+            const maxY = canvasH - height * 0.55;
             const x = clamp(
                 canvasW * anchor.xRatio - width / 2 + (rng() - 0.5) * jitter * 2,
-                0,
-                Math.max(canvasW - width, 0),
+                minX,
+                Math.max(maxX, minX),
             );
             const y = clamp(
                 canvasH * anchor.yRatio - height / 2 + (rng() - 0.5) * jitter * 2,
-                0,
-                Math.max(canvasH - height, 0),
+                minY,
+                Math.max(maxY, minY),
             );
             const frame = { x, y, width, height };
 
