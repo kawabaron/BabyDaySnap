@@ -16,6 +16,10 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
+import {
+    DECORATIVE_FRAME_BACKGROUND_COLOR,
+    DECORATIVE_FRAME_LINE_COLOR,
+} from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS } from "@/utils/filters";
 import { THEME_COLOR_PRESETS, getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId, FilterId, BabyProfile } from "@/types";
@@ -430,12 +434,20 @@ export default function SettingsScreen() {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.templatePreviewBox}>
+                                    {t.decorationPreset === "berry_sakura" && (
+                                        <View style={styles.templateDecorativeFrame}>
+                                            <View style={styles.templateDecorativeInner} />
+                                            <View style={[styles.templateDecorativeDot, { left: 3, top: 4, width: 10, height: 10 }]} />
+                                            <View style={[styles.templateDecorativeDot, { right: 4, top: 6, width: 8, height: 8 }]} />
+                                            <View style={[styles.templateDecorativeDot, { left: 6, bottom: 4, width: 11, height: 11 }]} />
+                                        </View>
+                                    )}
                                     {!t.hasFrame && (
                                         <View style={styles.templateNoFrame}>
                                             {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
                                         </View>
                                     )}
-                                    {t.hasFrame && (
+                                    {t.hasFrame && !t.decorationPreset && (
                                         <View style={styles.templateFrame}>
                                             <View style={styles.templateInner} />
                                         </View>
@@ -854,6 +866,28 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         justifyContent: "center",
         alignItems: "center",
+    },
+    templateDecorativeFrame: {
+        width: 52,
+        height: 40,
+        backgroundColor: DECORATIVE_FRAME_BACKGROUND_COLOR,
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+    },
+    templateDecorativeInner: {
+        width: 40,
+        height: 28,
+        borderWidth: 1.5,
+        borderColor: DECORATIVE_FRAME_LINE_COLOR,
+        borderRadius: 2,
+        backgroundColor: "#FFF",
+    },
+    templateDecorativeDot: {
+        position: "absolute",
+        backgroundColor: "#FFB7D8",
+        borderRadius: 999,
     },
     templateInner: {
         width: 42,

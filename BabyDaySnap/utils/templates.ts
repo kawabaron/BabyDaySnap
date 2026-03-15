@@ -1,11 +1,19 @@
 import i18n from "@/lib/i18n";
 import type { ColorOption, FontId, FontOption, TemplateConfig, TemplateId } from "@/types";
+import {
+    BERRY_SAKURA_TEMPLATE_ID,
+    DECORATIVE_FRAME_BACKGROUND_COLOR,
+    DECORATIVE_FRAME_LINE_COLOR,
+} from "./decorativeFrame";
 
-export type AppTemplateId = TemplateId | "tpl_noframe_line";
+export type AppTemplateId = TemplateId | "tpl_noframe_line" | typeof BERRY_SAKURA_TEMPLATE_ID;
 
 export type AppTemplateConfig = Omit<TemplateConfig, "id"> & {
     id: AppTemplateId;
     innerLineColorHex?: string;
+    canvasBackgroundColorHex?: string;
+    photoLineColorHex?: string;
+    decorationPreset?: "berry_sakura";
 };
 
 export const TEMPLATES: AppTemplateConfig[] = [
@@ -41,6 +49,17 @@ export const TEMPLATES: AppTemplateConfig[] = [
         isSquare: false,
         defaultDateColorHex: "#000000",
         hasTextStroke: false,
+    },
+    {
+        id: BERRY_SAKURA_TEMPLATE_ID,
+        get label() { return i18n.t("templates.tpl_frame_berry_sakura"); },
+        hasFrame: true,
+        isSquare: false,
+        defaultDateColorHex: "#5D4B56",
+        hasTextStroke: false,
+        canvasBackgroundColorHex: DECORATIVE_FRAME_BACKGROUND_COLOR,
+        photoLineColorHex: DECORATIVE_FRAME_LINE_COLOR,
+        decorationPreset: "berry_sakura",
     },
 ];
 

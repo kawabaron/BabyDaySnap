@@ -130,7 +130,8 @@
         "tpl_noframe_full": "No Frame",
         "tpl_noframe_line": "No Frame + Line",
         "tpl_frame_full": "Frame (Full)",
-        "tpl_frame_crop": "Frame (Crop)"
+        "tpl_frame_crop": "Frame (Crop)",
+        "tpl_frame_berry_sakura": "Berry & Sakura"
     },
     "fonts": {
         "font_standard": "Standard",

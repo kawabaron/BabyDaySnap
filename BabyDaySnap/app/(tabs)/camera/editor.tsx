@@ -24,6 +24,15 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_ASSET_MAP, FONT_OPTIONS } from "@/utils/templates";
+import {
+    DECORATIVE_FRAME_LINE_COLOR,
+    DECORATIVE_FRAME_LINE_WIDTH_RATIO,
+    DECORATIVE_SHEET_SIZES,
+    DECORATIVE_SHEET_SOURCES,
+    type DecorationPlacement,
+    getBerrySakuraPlacements,
+    getFramedPhotoRect,
+} from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS, getFilterOption } from "@/utils/filters";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
@@ -66,7 +75,39 @@ function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
     }
 }
 
-export default function EditorScreen() {
+function SpriteSheetDecoration({ placement }: { placement: DecorationPlacement }) {
+    const sheetSize = DECORATIVE_SHEET_SIZES[placement.sheetId];
+    const scale = placement.frame.width / placement.source.width;
+
+    return (
+        <View
+            pointerEvents="none"
+            style={{
+                position: "absolute",
+                left: placement.frame.x,
+                top: placement.frame.y,
+                width: placement.frame.width,
+                height: placement.frame.height,
+                overflow: "hidden",
+                transform: [{ rotate: `${placement.rotation}deg` }],
+            }}
+        >
+            <Image
+                source={DECORATIVE_SHEET_SOURCES[placement.sheetId]}
+                style={{
+                    position: "absolute",
+                    left: -placement.source.x * scale,
+                    top: -placement.source.y * scale,
+                    width: sheetSize.width * scale,
+                    height: sheetSize.height * scale,
+                }}
+                resizeMode="stretch"
+            />
+        </View>
+    );
+}
+
+export default function EditorScreen() {
     const state = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
@@ -570,6 +611,9 @@ export default function EditorScreen() {
     const activeFilter = getFilterOption(editorOptions.filterId);
 
     const shortSide = Math.min(previewWidth, previewHeight);
+    const previewPhotoRect = tpl.decorationPreset === "berry_sakura"
+        ? getFramedPhotoRect(previewWidth, previewHeight)
+        : null;
     const isMultiBaby = targetBabyIds.length > 1;
     const dateFontSize = shortSide * 0.04 * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * 0.038;
@@ -578,18 +622,30 @@ export default function EditorScreen() {
     const inset = shortSide * 0.06;
     const bottomInset = shortSide * 0.18;
 
-    const previewPhotoW = tpl.hasFrame
-        ? previewWidth - inset * 2
-        : previewWidth;
+    const previewPhotoW = previewPhotoRect
+        ? previewPhotoRect.width
+        : tpl.hasFrame
+            ? previewWidth - inset * 2
+            : previewWidth;
 
-    const previewPhotoH = tpl.hasFrame
-        ? previewHeight - inset - bottomInset
-        : previewHeight;
+    const previewPhotoH = previewPhotoRect
+        ? previewPhotoRect.height
+        : tpl.hasFrame
+            ? previewHeight - inset - bottomInset
+            : previewHeight;
 
-    const previewPhotoX = tpl.hasFrame ? inset : 0;
-    const previewPhotoY = tpl.hasFrame ? inset : 0;
+    const previewPhotoX = previewPhotoRect ? previewPhotoRect.x : tpl.hasFrame ? inset : 0;
+    const previewPhotoY = previewPhotoRect ? previewPhotoRect.y : tpl.hasFrame ? inset : 0;
     const previewInnerLineInset = tpl.innerLineColorHex ? shortSide * 0.05 : 0;
     const previewInnerLineWidth = tpl.innerLineColorHex ? Math.max(1, shortSide * 0.003) : 0;
+    const previewPhotoOutlineWidth = Math.max(1, shortSide * DECORATIVE_FRAME_LINE_WIDTH_RATIO);
+    const previewCanvasBackgroundColor = tpl.canvasBackgroundColorHex ?? (tpl.hasFrame ? "#FFFFFF" : "#000000");
+    const previewDecorationPlacements = tpl.decorationPreset === "berry_sakura"
+        ? getBerrySakuraPlacements(previewWidth, previewHeight, {
+            seed: `${editorOptions.templateId}:${currentPhoto.uri}`,
+            hasComment: editorOptions.commentText.trim().length > 0,
+        })
+        : [];
     const previewTextMargin = tpl.innerLineColorHex
         ? Math.max(margin, previewInnerLineInset + gap + previewInnerLineWidth)
         : margin;
@@ -654,7 +710,14 @@ export default function EditorScreen() {
                                     onPress={() => handleTemplateChange(t.id)}
                                 >
                                     <View style={styles.templatePreviewBox}>
-                                        {t.hasFrame ? (
+                                        {t.decorationPreset === "berry_sakura" ? (
+                                            <View style={styles.templateDecorativeFrame}>
+                                                <View style={styles.templateDecorativeInner} />
+                                                <View style={[styles.templateDecorativeDot, { left: 3, top: 4, width: 10, height: 10 }]} />
+                                                <View style={[styles.templateDecorativeDot, { right: 4, top: 6, width: 8, height: 8 }]} />
+                                                <View style={[styles.templateDecorativeDot, { left: 6, bottom: 4, width: 11, height: 11 }]} />
+                                            </View>
+                                        ) : t.hasFrame ? (
                                             <View style={styles.templateFrame}>
                                                 <View style={styles.templateInner} />
                                             </View>
@@ -893,7 +956,7 @@ export default function EditorScreen() {
                                 {
                                     width: previewWidth,
                                     height: previewHeight,
-                                    backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#000000",
+                                    backgroundColor: previewCanvasBackgroundColor,
                                 },
                             ]}
                         >
@@ -930,6 +993,28 @@ export default function EditorScreen() {
                                     />
                                 ) : null}
                             </View>
+
+                            {previewDecorationPlacements.map((placement, index) => (
+                                <SpriteSheetDecoration
+                                    key={`${placement.sheetId}-${index}`}
+                                    placement={placement}
+                                />
+                            ))}
+
+                            {tpl.decorationPreset === "berry_sakura" ? (
+                                <View
+                                    pointerEvents="none"
+                                    style={{
+                                        position: "absolute",
+                                        left: previewPhotoX,
+                                        top: previewPhotoY,
+                                        width: previewPhotoW,
+                                        height: previewPhotoH,
+                                        borderWidth: previewPhotoOutlineWidth,
+                                        borderColor: tpl.photoLineColorHex ?? DECORATIVE_FRAME_LINE_COLOR,
+                                    }}
+                                />
+                            ) : null}
 
                             <View
                                 style={{
@@ -1251,6 +1336,28 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         justifyContent: "center",
         alignItems: "center",
+    },
+    templateDecorativeFrame: {
+        width: 52,
+        height: 40,
+        backgroundColor: "#FFF5FA",
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+    },
+    templateDecorativeInner: {
+        width: 40,
+        height: 28,
+        borderWidth: 1.5,
+        borderColor: "#FF7BC5",
+        borderRadius: 2,
+        backgroundColor: "#FFF",
+    },
+    templateDecorativeDot: {
+        position: "absolute",
+        backgroundColor: "#FFB7D8",
+        borderRadius: 999,
     },
     templateInner: {
         width: 42,
