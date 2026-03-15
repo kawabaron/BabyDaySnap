@@ -30,6 +30,7 @@ export type DecorationSeedSource = {
 };
 
 type DecorationSprite = {
+    kind: "strawberry" | "flower" | "sakura";
     sheetId: DecorativeSheetId;
     source: Rect;
 };
@@ -42,6 +43,7 @@ type Anchor = {
     baseRotation: number;
     rotationJitter: number;
     jitterRatio: number;
+    preferredKind?: DecorationSprite["kind"];
 };
 
 export const DECORATIVE_FRAME_BACKGROUND_COLOR = "#FFF5FA";
@@ -59,19 +61,19 @@ export const DECORATIVE_SHEET_SIZES: Record<DecorativeSheetId, { width: number; 
 };
 
 const DECORATIVE_SPRITES: DecorationSprite[] = [
-    { sheetId: "strawberry_sakura_1", source: { x: 4, y: 11, width: 186, height: 184 } },
-    { sheetId: "strawberry_sakura_1", source: { x: 369, y: 34, width: 86, height: 87 } },
-    { sheetId: "strawberry_sakura_1", source: { x: 253, y: 125, width: 106, height: 139 } },
-    { sheetId: "strawberry_sakura_1", source: { x: 94, y: 224, width: 97, height: 100 } },
-    { sheetId: "strawberry_sakura_1", source: { x: 294, y: 297, width: 157, height: 154 } },
-    { sheetId: "strawberry_sakura_1", source: { x: 18, y: 346, width: 114, height: 127 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 259, y: 9, width: 113, height: 106 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 11, y: 12, width: 53, height: 47 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 74, y: 18, width: 93, height: 103 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 192, y: 27, width: 45, height: 42 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 305, y: 129, width: 60, height: 55 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 257, y: 192, width: 103, height: 119 } },
-    { sheetId: "strawberry_sakura_2", source: { x: 310, y: 349, width: 62, height: 61 } },
+    { kind: "sakura", sheetId: "strawberry_sakura_1", source: { x: 4, y: 11, width: 186, height: 184 } },
+    { kind: "sakura", sheetId: "strawberry_sakura_1", source: { x: 369, y: 34, width: 86, height: 87 } },
+    { kind: "strawberry", sheetId: "strawberry_sakura_1", source: { x: 253, y: 125, width: 106, height: 139 } },
+    { kind: "sakura", sheetId: "strawberry_sakura_1", source: { x: 94, y: 224, width: 97, height: 100 } },
+    { kind: "sakura", sheetId: "strawberry_sakura_1", source: { x: 294, y: 297, width: 157, height: 154 } },
+    { kind: "strawberry", sheetId: "strawberry_sakura_1", source: { x: 18, y: 346, width: 114, height: 127 } },
+    { kind: "strawberry", sheetId: "strawberry_sakura_2", source: { x: 259, y: 9, width: 113, height: 106 } },
+    { kind: "flower", sheetId: "strawberry_sakura_2", source: { x: 11, y: 12, width: 53, height: 47 } },
+    { kind: "strawberry", sheetId: "strawberry_sakura_2", source: { x: 74, y: 18, width: 93, height: 103 } },
+    { kind: "flower", sheetId: "strawberry_sakura_2", source: { x: 192, y: 27, width: 45, height: 42 } },
+    { kind: "flower", sheetId: "strawberry_sakura_2", source: { x: 305, y: 129, width: 60, height: 55 } },
+    { kind: "strawberry", sheetId: "strawberry_sakura_2", source: { x: 257, y: 192, width: 103, height: 119 } },
+    { kind: "flower", sheetId: "strawberry_sakura_2", source: { x: 310, y: 349, width: 62, height: 61 } },
 ];
 
 const FRAME_INSET_RATIO = 0.06;
@@ -80,22 +82,22 @@ const FRAME_BOTTOM_INSET_RATIO = 0.18;
 const ANCHORS: Anchor[] = [
     { xRatio: 0.05, yRatio: 0.035, minSizeRatio: 0.12, maxSizeRatio: 0.18, baseRotation: -14, rotationJitter: 12, jitterRatio: 0.02 },
     { xRatio: 0.15, yRatio: 0.018, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -10, rotationJitter: 14, jitterRatio: 0.016 },
-    { xRatio: 0.26, yRatio: 0.02, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.018 },
+    { xRatio: 0.26, yRatio: 0.02, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.018, preferredKind: "strawberry" },
     { xRatio: 0.4, yRatio: 0.018, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -3, rotationJitter: 12, jitterRatio: 0.016 },
     { xRatio: 0.56, yRatio: 0.02, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 0, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.72, yRatio: 0.02, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 4, rotationJitter: 12, jitterRatio: 0.016 },
-    { xRatio: 0.88, yRatio: 0.035, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.02 },
+    { xRatio: 0.88, yRatio: 0.035, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.02, preferredKind: "strawberry" },
     { xRatio: 0.985, yRatio: 0.14, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 10, rotationJitter: 14, jitterRatio: 0.016 },
-    { xRatio: 0.98, yRatio: 0.28, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 8, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.98, yRatio: 0.28, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 8, rotationJitter: 16, jitterRatio: 0.018, preferredKind: "strawberry" },
     { xRatio: 0.02, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.14, baseRotation: -10, rotationJitter: 16, jitterRatio: 0.018 },
     { xRatio: 0.985, yRatio: 0.7, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.018 },
     { xRatio: 0.98, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: 12, rotationJitter: 16, jitterRatio: 0.018 },
     { xRatio: 0.02, yRatio: 0.76, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.016 },
-    { xRatio: 0.05, yRatio: 0.95, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -12, rotationJitter: 18, jitterRatio: 0.02 },
+    { xRatio: 0.05, yRatio: 0.95, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -12, rotationJitter: 18, jitterRatio: 0.02, preferredKind: "strawberry" },
     { xRatio: 0.2, yRatio: 0.99, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.34, yRatio: 0.99, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: -4, rotationJitter: 16, jitterRatio: 0.016 },
     { xRatio: 0.52, yRatio: 0.99, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 2, rotationJitter: 14, jitterRatio: 0.016 },
-    { xRatio: 0.68, yRatio: 0.98, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: 6, rotationJitter: 16, jitterRatio: 0.016 },
+    { xRatio: 0.68, yRatio: 0.98, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: 6, rotationJitter: 16, jitterRatio: 0.016, preferredKind: "strawberry" },
     { xRatio: 0.84, yRatio: 0.985, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 8, rotationJitter: 14, jitterRatio: 0.016 },
 ];
 
@@ -140,8 +142,12 @@ function expandRect(rect: Rect, by: number): Rect {
     };
 }
 
-function pickSprite(rng: () => number) {
-    return DECORATIVE_SPRITES[Math.floor(rng() * DECORATIVE_SPRITES.length)];
+function pickSprite(rng: () => number, preferredKind?: DecorationSprite["kind"]) {
+    const pool = preferredKind
+        ? DECORATIVE_SPRITES.filter((sprite) => sprite.kind === preferredKind)
+        : DECORATIVE_SPRITES;
+    const candidates = pool.length > 0 ? pool : DECORATIVE_SPRITES;
+    return candidates[Math.floor(rng() * candidates.length)];
 }
 
 export function resolveDecorationSeed(source: DecorationSeedSource) {
@@ -204,7 +210,7 @@ export function getBerrySakuraPlacements(
         let placed: DecorationPlacement | null = null;
 
         for (let attempt = 0; attempt < 10; attempt += 1) {
-            const sprite = pickSprite(rng);
+            const sprite = pickSprite(rng, anchor.preferredKind);
             const sizeRatio = anchor.minSizeRatio + (anchor.maxSizeRatio - anchor.minSizeRatio) * rng();
             const width = shortSide * sizeRatio;
             const height = width * (sprite.source.height / sprite.source.width);
