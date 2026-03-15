@@ -25,6 +25,7 @@ import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_ASSET_MAP, FONT_OPTIONS } from "@/utils/templates";
 import {
+    BERRY_SAKURA_LAYOUT_SEED,
     DECORATIVE_FRAME_LINE_COLOR,
     DECORATIVE_FRAME_LINE_WIDTH_RATIO,
     DECORATIVE_SHEET_SIZES,
@@ -32,7 +33,6 @@ import {
     type DecorationPlacement,
     getBerrySakuraPlacements,
     getFramedPhotoRect,
-    resolveDecorationSeed,
 } from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS, getFilterOption } from "@/utils/filters";
 import { renderCompositeImage } from "@/utils/renderImage";
@@ -219,7 +219,6 @@ export default function EditorScreen() {
                 fontId: editorOptions.fontId,
                 dateTextLine1,
                 isMultiBaby,
-                decorationSeed: resolveDecorationSeed({ ...currentPhoto, shotDateISO: computed.shotDateISO }),
             });
 
             return result;
@@ -644,7 +643,7 @@ export default function EditorScreen() {
     const previewCanvasBackgroundColor = tpl.canvasBackgroundColorHex ?? (tpl.hasFrame ? "#FFFFFF" : "#000000");
     const previewDecorationPlacements = tpl.decorationPreset === "berry_sakura"
         ? getBerrySakuraPlacements(previewWidth, previewHeight, {
-            seed: `${editorOptions.templateId}:${resolveDecorationSeed({ ...currentPhoto, shotDateISO: computed?.shotDateISO })}`,
+            seed: `${editorOptions.templateId}:${BERRY_SAKURA_LAYOUT_SEED}`,
             hasComment: editorOptions.commentText.trim().length > 0,
         })
         : [];

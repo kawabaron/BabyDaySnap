@@ -6,6 +6,7 @@ import { Paths, File } from "expo-file-system";
 import { Asset } from "expo-asset";
 import { getTemplateConfig, getFontConfig, FONT_OPTIONS } from "./templates";
 import {
+    BERRY_SAKURA_LAYOUT_SEED,
     DECORATIVE_FRAME_LINE_WIDTH_RATIO,
     DECORATIVE_SHEET_SOURCES,
     type DecorationPlacement,
@@ -34,7 +35,6 @@ type RenderParams = {
     fontId: FontId;
     dateTextLine1: string;
     isMultiBaby: boolean;
-    decorationSeed?: string;
 };
 
 type LoadedAssetImage = {
@@ -95,7 +95,7 @@ function getFilterOverlay(filterId?: FilterId): FilterOverlay | null {
  * @returns 鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ・ｷ繝ｻ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｶ髯橸ｽｳ髣鯉ｽｨ繝ｻ・ｽ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ髣費ｽｨ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｱ鬯ｮ・ｫ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｳ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｵ髢ｻ・ｸ郢晢ｽｻ繝ｻ・ｼ髫ｲ讖ｸ・ｽ・ｺ繝ｻ蜿夜ｱ堤ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮURI
  */
 export async function renderCompositeImage(params: RenderParams): Promise<string> {
-    const { imageUri, imageWidth, imageHeight, editorOptions, computed, fontId, dateTextLine1, isMultiBaby, decorationSeed } = params;
+    const { imageUri, imageWidth, imageHeight, editorOptions, computed, fontId, dateTextLine1, isMultiBaby } = params;
     const tpl = getTemplateConfig(editorOptions.templateId);
     const hasDecorations = tpl.decorationPreset === "berry_sakura";
 
@@ -171,7 +171,7 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
                 canvas,
                 decorationImages,
                 getBerrySakuraPlacements(canvasW, canvasH, {
-                    seed: `${editorOptions.templateId}:${decorationSeed ?? imageUri}`,
+                    seed: `${editorOptions.templateId}:${BERRY_SAKURA_LAYOUT_SEED}`,
                     hasComment: optionsHasComment(editorOptions),
                 }),
             );

@@ -1,4 +1,5 @@
 export const BERRY_SAKURA_TEMPLATE_ID = "tpl_frame_berry_sakura" as const;
+export const BERRY_SAKURA_LAYOUT_SEED = "berry_sakura_layout_v1";
 
 export type DecorativePresetId = "berry_sakura";
 export type DecorativeSheetId = "strawberry_sakura_1" | "strawberry_sakura_2";
