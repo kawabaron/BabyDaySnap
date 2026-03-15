@@ -67,15 +67,24 @@ const FRAME_BOTTOM_INSET_RATIO = 0.18;
 
 const ANCHORS: Anchor[] = [
     { xRatio: 0.05, yRatio: 0.035, minSizeRatio: 0.12, maxSizeRatio: 0.18, baseRotation: -14, rotationJitter: 12, jitterRatio: 0.02 },
+    { xRatio: 0.15, yRatio: 0.018, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -10, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.26, yRatio: 0.02, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.018 },
+    { xRatio: 0.4, yRatio: 0.018, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -3, rotationJitter: 12, jitterRatio: 0.016 },
     { xRatio: 0.56, yRatio: 0.02, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 0, rotationJitter: 14, jitterRatio: 0.016 },
+    { xRatio: 0.72, yRatio: 0.02, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 4, rotationJitter: 12, jitterRatio: 0.016 },
     { xRatio: 0.88, yRatio: 0.035, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.02 },
+    { xRatio: 0.985, yRatio: 0.14, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 10, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.98, yRatio: 0.28, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 8, rotationJitter: 16, jitterRatio: 0.018 },
     { xRatio: 0.02, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.14, baseRotation: -10, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.985, yRatio: 0.7, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: 10, rotationJitter: 16, jitterRatio: 0.018 },
     { xRatio: 0.98, yRatio: 0.52, minSizeRatio: 0.09, maxSizeRatio: 0.15, baseRotation: 12, rotationJitter: 16, jitterRatio: 0.018 },
+    { xRatio: 0.02, yRatio: 0.76, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.05, yRatio: 0.95, minSizeRatio: 0.11, maxSizeRatio: 0.17, baseRotation: -12, rotationJitter: 18, jitterRatio: 0.02 },
+    { xRatio: 0.2, yRatio: 0.99, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: -8, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.34, yRatio: 0.99, minSizeRatio: 0.08, maxSizeRatio: 0.13, baseRotation: -4, rotationJitter: 16, jitterRatio: 0.016 },
+    { xRatio: 0.52, yRatio: 0.99, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 2, rotationJitter: 14, jitterRatio: 0.016 },
     { xRatio: 0.68, yRatio: 0.98, minSizeRatio: 0.08, maxSizeRatio: 0.14, baseRotation: 6, rotationJitter: 16, jitterRatio: 0.016 },
+    { xRatio: 0.84, yRatio: 0.985, minSizeRatio: 0.07, maxSizeRatio: 0.12, baseRotation: 8, rotationJitter: 14, jitterRatio: 0.016 },
 ];
 
 function hashSeed(seed: string) {
@@ -166,7 +175,7 @@ export function getBerrySakuraPlacements(
         const anchor = ANCHORS[index];
         let placed: DecorationPlacement | null = null;
 
-        for (let attempt = 0; attempt < 6; attempt += 1) {
+        for (let attempt = 0; attempt < 10; attempt += 1) {
             const sprite = pickSprite(rng);
             const sizeRatio = anchor.minSizeRatio + (anchor.maxSizeRatio - anchor.minSizeRatio) * rng();
             const width = shortSide * sizeRatio;
