@@ -11,12 +11,12 @@ const monetizationConfig = Constants.expoConfig?.extra?.monetization;
 const isDev = typeof __DEV__ !== "undefined" && __DEV__;
 
 export const CREATE_BANNER_UNIT_ID =
-    monetizationConfig?.createBannerUnitId ?? (isDev ? TestIds.ADAPTIVE_BANNER : TestIds.ADAPTIVE_BANNER);
+    monetizationConfig?.createBannerUnitId ?? (isDev ? TestIds.BANNER : TestIds.BANNER);
 
 export const INTERSTITIAL_UNIT_ID =
     monetizationConfig?.interstitialUnitId ?? (isDev ? TestIds.INTERSTITIAL : TestIds.INTERSTITIAL);
 
-export const CREATE_BANNER_SIZE = BannerAdSize.ANCHORED_ADAPTIVE_BANNER;
+export const CREATE_BANNER_SIZE = BannerAdSize.BANNER;
 
 let interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
     requestNonPersonalizedAdsOnly: true,

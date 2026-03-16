@@ -19,7 +19,7 @@ import { useBilling } from "@/lib/billing";
 import i18n from "@/lib/i18n";
 import { AD_FREE_PRODUCT_ID, getDateKey } from "@/lib/monetization";
 
-const BANNER_HEIGHT = 58;
+const BANNER_HEIGHT = 54;
 const TEMP_HIDDEN_STORAGE_KEY = "@babydaysnap/create_banner_hidden_date";
 
 type SheetMode = "actions" | "purchase" | null;
@@ -134,34 +134,40 @@ export function CreateBannerAd() {
     return (
         <>
             <View style={styles.wrapper}>
-                <View style={styles.bannerFrame}>
-                    <BannerAd
-                        unitId={CREATE_BANNER_UNIT_ID}
-                        size={CREATE_BANNER_SIZE}
-                        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                        onAdLoaded={() => {
-                            if (__DEV__) {
-                                console.log("[ads] banner loaded", CREATE_BANNER_UNIT_ID);
-                            }
-                        }}
-                        onAdFailedToLoad={(error) => {
-                            console.warn("[ads] banner failed", error);
-                        }}
-                    />
-                </View>
+                <View style={styles.bannerRow}>
+                    <View style={styles.sideSlot} />
 
-                <Pressable
-                    accessibilityLabel={i18n.t("monetization.bannerCloseA11y")}
-                    accessibilityRole="button"
-                    hitSlop={10}
-                    onPress={() => setSheetMode("actions")}
-                    style={({ pressed }) => [
-                        styles.closeButton,
-                        pressed && styles.closeButtonPressed,
-                    ]}
-                >
-                    <Ionicons name="close" size={11} color="#FFFFFF" />
-                </Pressable>
+                    <View style={styles.bannerFrame}>
+                        <BannerAd
+                            unitId={CREATE_BANNER_UNIT_ID}
+                            size={CREATE_BANNER_SIZE}
+                            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+                            onAdLoaded={() => {
+                                if (__DEV__) {
+                                    console.log("[ads] banner loaded", CREATE_BANNER_UNIT_ID);
+                                }
+                            }}
+                            onAdFailedToLoad={(error) => {
+                                console.warn("[ads] banner failed", error);
+                            }}
+                        />
+                    </View>
+
+                    <View style={styles.closeSlot}>
+                        <Pressable
+                            accessibilityLabel={i18n.t("monetization.bannerCloseA11y")}
+                            accessibilityRole="button"
+                            hitSlop={10}
+                            onPress={() => setSheetMode("actions")}
+                            style={({ pressed }) => [
+                                styles.closeButton,
+                                pressed && styles.closeButtonPressed,
+                            ]}
+                        >
+                            <Ionicons name="close" size={10} color="#FFFFFF" />
+                        </Pressable>
+                    </View>
+                </View>
             </View>
 
             <Modal
@@ -278,29 +284,37 @@ export function CreateBannerAd() {
 
 const styles = StyleSheet.create({
     wrapper: {
-        position: "relative",
         minHeight: BANNER_HEIGHT,
         justifyContent: "center",
-        paddingHorizontal: 0,
-        paddingVertical: 3,
+        paddingHorizontal: 2,
+        paddingVertical: 2,
         backgroundColor: "#E9ECF0",
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: "#CDD2DA",
     },
-    bannerFrame: {
-        minHeight: 50,
-        width: "100%",
+    bannerRow: {
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 4,
+    },
+    sideSlot: {
+        width: 16,
+    },
+    bannerFrame: {
+        minHeight: 50,
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    closeSlot: {
+        width: 16,
+        alignItems: "center",
+        justifyContent: "center",
     },
     closeButton: {
-        position: "absolute",
-        top: 6,
-        right: 6,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "rgba(80, 87, 96, 0.7)",
