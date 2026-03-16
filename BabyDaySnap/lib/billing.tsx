@@ -8,7 +8,7 @@ import React, {
     useState,
     type ReactNode,
 } from "react";
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 
 import { useAppDispatch } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
@@ -108,12 +108,14 @@ async function requestInAppPurchase(iap: ExpoIapModuleLike, productId: string) {
     }
 
     const requestPayload = {
-        request: Platform.select({
-            ios: { sku: productId },
-            android: { skus: [productId] },
-            default: { sku: productId },
-        }),
-        type: "inapp",
+        request: {
+            apple: {
+                sku: productId,
+            },
+            google: {
+                skus: [productId],
+            },
+        },
     };
 
     const attempts = [
