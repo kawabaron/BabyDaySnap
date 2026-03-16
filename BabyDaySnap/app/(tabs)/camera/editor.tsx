@@ -45,7 +45,8 @@ import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { TemplateId, FontId } from "@/types";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -700,7 +701,11 @@ export default function EditorScreen() {
                 return (
                     <View>
                         <Text style={styles.panelTitle}>{i18n.t("editor.templateTitle")}</Text>
-                        <View style={styles.templateRow}>
+                        <ScrollHintedScrollView
+                            direction="horizontal"
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.templateRow}
+                        >
                             {TEMPLATES.map((t) => (
                                 <TouchableOpacity
                                     key={t.id}
@@ -733,14 +738,18 @@ export default function EditorScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             ))}
-                        </View>
+                        </ScrollHintedScrollView>
                     </View>
                 );
             case "font":
                 return (
                     <View>
                         <Text style={styles.panelTitle}>{i18n.t("editor.fontTitle")}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
+                        <ScrollHintedScrollView
+                            direction="horizontal"
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.fontRow}
+                        >
                             {FONT_OPTIONS.map((f) => (
                                 <TouchableOpacity
                                     key={f.id}
@@ -755,14 +764,18 @@ export default function EditorScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </ScrollHintedScrollView>
                     </View>
                 );
             case "filter":
                 return (
                     <View>
                         <Text style={styles.panelTitle}>{i18n.t("editor.filterTitle")}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                        <ScrollHintedScrollView
+                            direction="horizontal"
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.filterRow}
+                        >
                             {FILTER_OPTIONS.map((option) => {
                                 const isActive = editorOptions.filterId === option.id;
                                 return (
@@ -779,14 +792,23 @@ export default function EditorScreen() {
                                     </TouchableOpacity>
                                 );
                             })}
-                        </ScrollView>
+                        </ScrollHintedScrollView>
                     </View>
                 );
             case "text":
                 return (
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.toolScrollContent}>
+                    <ScrollHintedScrollView
+                        containerStyle={styles.toolScrollView}
+                        direction="vertical"
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.toolScrollContent}
+                    >
                         <Text style={styles.panelTitle}>{i18n.t("editor.dateColorTitle")}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.colorRow}>
+                        <ScrollHintedScrollView
+                            direction="horizontal"
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.colorRow}
+                        >
                             {COLOR_PALETTE.map((c) => (
                                 <TouchableOpacity
                                     key={c.hex}
@@ -807,7 +829,7 @@ export default function EditorScreen() {
                                     )}
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </ScrollHintedScrollView>
 
                         <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{i18n.t("editor.textVisibilityTitle")}</Text>
                         <View style={styles.toggleRowContainer}>
@@ -858,7 +880,7 @@ export default function EditorScreen() {
                                 )}
                             </View>
                         </View>
-                    </ScrollView>
+                    </ScrollHintedScrollView>
                 );
             case "comment":
                 return (
@@ -1223,6 +1245,9 @@ const styles = StyleSheet.create({
         paddingTop: 4,
         paddingBottom: 6,
     },
+    toolScrollView: {
+        maxHeight: "100%",
+    },
     toolScrollContent: {
         paddingBottom: 0,
     },
@@ -1292,9 +1317,10 @@ const styles = StyleSheet.create({
     templateRow: {
         flexDirection: "row",
         gap: 12,
+        paddingVertical: 4,
     },
     templateOption: {
-        flex: 1,
+        width: 100,
         alignItems: "center",
         padding: 10,
         borderRadius: 12,

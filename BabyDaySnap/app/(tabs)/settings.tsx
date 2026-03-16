@@ -28,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
+import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
@@ -422,7 +423,11 @@ export default function SettingsScreen() {
                     <Text style={styles.sectionTitle}>{i18n.t("settings.defaultStyleSection")}</Text>
 
                     <Text style={styles.subTitle}>{i18n.t("settings.templateSubtitle")}</Text>
-                    <View style={styles.templateRow}>
+                    <ScrollHintedScrollView
+                        direction="horizontal"
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.templateRow}
+                    >
                         {TEMPLATES.map((t) => (
                             <TouchableOpacity
                                 key={t.id}
@@ -463,10 +468,14 @@ export default function SettingsScreen() {
                                 </Text>
                             </TouchableOpacity>
                         ))}
-                    </View>
+                    </ScrollHintedScrollView>
 
                     <Text style={styles.subTitle}>{i18n.t("settings.fontSubtitle")}</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fontRow}>
+                    <ScrollHintedScrollView
+                        direction="horizontal"
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.fontRow}
+                    >
                         {FONT_OPTIONS.map((f) => (
                             <TouchableOpacity
                                 key={f.id}
@@ -488,10 +497,14 @@ export default function SettingsScreen() {
                                 </Text>
                             </TouchableOpacity>
                         ))}
-                    </ScrollView>
+                    </ScrollHintedScrollView>
 
                     <Text style={styles.subTitle}>{i18n.t("editor.filterTitle")}</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                    <ScrollHintedScrollView
+                        direction="horizontal"
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filterRow}
+                    >
                         {FILTER_OPTIONS.map((option) => {
                             const isActive = settings.defaultFilterId === option.id;
                             return (
@@ -511,7 +524,7 @@ export default function SettingsScreen() {
                                 </TouchableOpacity>
                             );
                         })}
-                    </ScrollView>
+                    </ScrollHintedScrollView>
                 </View>
 
                 {/* リンクセクション */}
@@ -821,9 +834,10 @@ const styles = StyleSheet.create({
     templateRow: {
         flexDirection: "row",
         gap: 12,
+        paddingVertical: 4,
     },
     templateOption: {
-        flex: 1,
+        width: 100,
         alignItems: "center",
         padding: 10,
         borderRadius: 12,
