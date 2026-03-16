@@ -94,6 +94,54 @@ function appReducer(state: AppState, action: AppAction): AppState {
             };
 
         // 鬯ｮ・ｫ闖ｫ・ｶ髫ｱ阮吶・繝ｻ・ｽ郢晢ｽｻ繝ｻ・､鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ鬯ｯ・･繝ｻ・ｴ郢晢ｽｻ郢ｧ繝ｻ繝ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｨ繝ｻ・ｾ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ
+        case "SET_AD_FREE_UNLOCKED":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    adFreeUnlocked: action.payload,
+                },
+            };
+        case "UNLOCK_SEASON_PACK":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    unlockedSeasonPackIds: state.settings.unlockedSeasonPackIds.includes(action.payload)
+                        ? state.settings.unlockedSeasonPackIds
+                        : [...state.settings.unlockedSeasonPackIds, action.payload],
+                },
+            };
+        case "REGISTER_SAVE_SUCCESS":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    saveSuccessCountTotal: state.settings.saveSuccessCountTotal + 1,
+                },
+            };
+        case "REGISTER_INTERSTITIAL_SHOWN":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    interstitialLastShownDate: action.payload.dateKey,
+                    interstitialDailyBucketDate: action.payload.dateKey,
+                    interstitialShownCountToday:
+                        state.settings.interstitialDailyBucketDate === action.payload.dateKey
+                            ? state.settings.interstitialShownCountToday + 1
+                            : 1,
+                },
+            };
+        case "RESET_INTERSTITIAL_DAILY_LIMIT":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    interstitialDailyBucketDate: action.payload.dateKey,
+                    interstitialShownCountToday: 0,
+                },
+            };
         case "LOAD_BABIES":
             return {
                 ...state,

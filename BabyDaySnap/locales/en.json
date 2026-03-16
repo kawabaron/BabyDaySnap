@@ -205,5 +205,23 @@
         "openSettings": "Open Settings",
         "saveFailedTitle": "Save failed",
         "saveFailedMessage": "Could not save the image to your photo library."
+    },
+    "monetization": {
+        "sectionTitle": "Premium & Packs",
+        "adFreeTitle": "Remove Ads",
+        "adFreeDescription": "Hide the create-screen banner and save milestone ads.",
+        "adFreeUnlocked": "Ads are already hidden on this device.",
+        "purchasedBadge": "Purchased",
+        "buyNow": "Buy",
+        "restoreButton": "Restore Purchases",
+        "restoreTitle": "Restored",
+        "restoreSuccess": "Your purchases have been restored.",
+        "restoreFailed": "Failed to restore purchases: %{message}",
+        "purchaseFailed": "Purchase failed: %{message}",
+        "billingUnavailable": "Billing is not available yet. Please try again after the store loads.",
+        "lockedTemplateTitle": "Season Pack",
+        "lockedTemplateMessage": "This frame is part of a seasonal pack.",
+        "springPackTitle": "Spring Pack 2026",
+        "springPackDescription": "Unlock the Berry & Sakura frame."
     }
 }

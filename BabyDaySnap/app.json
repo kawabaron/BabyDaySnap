@@ -13,9 +13,9 @@
       "bundleIdentifier": "com.kawabaron.bsnap.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "赤ちゃんの写真を撮影するためにカメラを使用します",
-        "NSPhotoLibraryUsageDescription": "写真を取り込むためにフォトライブラリにアクセスします",
-        "NSPhotoLibraryAddUsageDescription": "作成した写真をフォトライブラリに保存します"
+        "NSCameraUsageDescription": "Allow camera access to take baby photos.",
+        "NSPhotoLibraryUsageDescription": "Allow photo access to import baby photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow photo library access to save edited photos."
       }
     },
     "android": {
@@ -28,14 +28,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VIDEO",
-        "android.permission.READ_MEDIA_AUDIO",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -65,29 +57,44 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "赤ちゃんの写真を撮影するためにカメラを使用します"
+          "cameraPermission": "Allow camera access to take baby photos."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "写真を取り込むためにフォトライブラリにアクセスします"
+          "photosPermission": "Allow photo access to import baby photos."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "作成した写真をフォトライブラリに保存します",
-          "savePhotosPermission": "作成した写真をフォトライブラリに保存します",
+          "photosPermission": "Allow photo library access to read photos for editing.",
+          "savePhotosPermission": "Allow photo library access to save edited photos.",
           "isAccessMediaLocationEnabled": false
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-localization"
+      "expo-localization",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "monetization": {
+        "adFreeProductId": "ad_free",
+        "seasonPackSpring2026ProductId": "season_pack_spring_2026",
+        "createBannerUnitId": "ca-app-pub-3940256099942544/2934735716",
+        "interstitialUnitId": "ca-app-pub-3940256099942544/4411468910"
+      }
     }
   }
 }

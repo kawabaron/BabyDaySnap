@@ -1,25 +1,28 @@
 import { useEffect } from "react";
-import { Stack, useRouter, useSegments, useGlobalSearchParams } from "expo-router";
+import { Stack, useGlobalSearchParams, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { AppProvider, useAppState } from "@/context/AppContext";
-import { View, ActivityIndicator } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { useFonts } from "expo-font";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+import { AppProvider, useAppState } from "@/context/AppContext";
+import { BillingProvider } from "@/lib/billing";
+import { initializeAds } from "@/lib/ads";
 import { FONT_ASSET_MAP } from "@/utils/templates";
 import "../global.css";
 import "@/lib/i18n";
-
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function RootLayoutNav() {
   const { settings, loading } = useAppState();
   const router = useRouter();
   const segments = useSegments();
   const searchParams = useGlobalSearchParams();
-
   const [fontsLoaded] = useFonts(FONT_ASSET_MAP);
 
   useEffect(() => {
-    if (loading || !fontsLoaded) return;
+    if (loading || !fontsLoaded) {
+      return;
+    }
 
     const inOnboarding = segments[0] === "onboarding";
     const needsOnboarding = !settings.hasOnboarded || !settings.birthDateISO;
@@ -27,11 +30,21 @@ function RootLayoutNav() {
 
     if (needsOnboarding && !inOnboarding) {
       router.replace("/onboarding");
-    } else if (!needsOnboarding && inOnboarding && !isAddMode) {
-      // 初期登録完了済みで、単なる /onboarding アクセス（追加モードではない）の場合のみカメラへリダイレクト
+      return;
+    }
+
+    if (!needsOnboarding && inOnboarding && !isAddMode) {
       router.replace("/(tabs)/camera");
     }
-  }, [loading, fontsLoaded, settings.hasOnboarded, settings.birthDateISO, segments, searchParams.mode]);
+  }, [
+    fontsLoaded,
+    loading,
+    router,
+    searchParams.mode,
+    segments,
+    settings.birthDateISO,
+    settings.hasOnboarded,
+  ]);
 
   if (loading || !fontsLoaded) {
     return (
@@ -54,10 +67,16 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    initializeAds().catch(() => undefined);
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
-        <RootLayoutNav />
+        <BillingProvider>
+          <RootLayoutNav />
+        </BillingProvider>
       </AppProvider>
     </GestureHandlerRootView>
   );

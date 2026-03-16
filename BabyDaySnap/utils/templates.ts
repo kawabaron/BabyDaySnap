@@ -6,7 +6,7 @@ import {
     DECORATIVE_FRAME_LINE_COLOR,
 } from "./decorativeFrame";
 
-export type AppTemplateId = TemplateId | "tpl_noframe_line" | typeof BERRY_SAKURA_TEMPLATE_ID;
+export type AppTemplateId = TemplateId;
 
 export type AppTemplateConfig = Omit<TemplateConfig, "id"> & {
     id: AppTemplateId;
@@ -56,6 +56,7 @@ export const TEMPLATES: AppTemplateConfig[] = [
         hasFrame: true,
         isSquare: false,
         defaultDateColorHex: "#5D4B56",
+        seasonPackId: "season_pack_spring_2026",
         hasTextStroke: false,
         canvasBackgroundColorHex: DECORATIVE_FRAME_BACKGROUND_COLOR,
         photoLineColorHex: DECORATIVE_FRAME_LINE_COLOR,

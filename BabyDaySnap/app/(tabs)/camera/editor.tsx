@@ -47,6 +47,15 @@ import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBilling } from "@/lib/billing";
+import {
+    getDateKey,
+    getSeasonPackByTemplateId,
+    isSeasonPackUnlocked,
+    shouldResetInterstitialDailyLimit,
+    shouldShowInterstitial,
+} from "@/lib/monetization";
+import { showInterstitialAd } from "@/lib/ads";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -116,7 +125,8 @@ export default function EditorScreen() {
     const router = useRouter();
     useActiveBaby();
 
-    const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
+    const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
+    const { purchaseSeasonPack } = useBilling();
     const [saving, setSaving] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [commentFocused, setCommentFocused] = useState(false);
@@ -234,7 +244,25 @@ export default function EditorScreen() {
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ鬮ｮ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
     const handleTemplateChange = (id: string) => {
-        const tpl = getTemplateConfig(id);
+        const pack = getSeasonPackByTemplateId(id as TemplateId);
+        if (pack && !isSeasonPackUnlocked(settings, pack.id)) {
+            Alert.alert(
+                i18n.t("monetization.lockedTemplateTitle"),
+                i18n.t("monetization.lockedTemplateMessage"),
+                [
+                    { text: i18n.t("common.cancel"), style: "cancel" },
+                    {
+                        text: i18n.t("monetization.buyNow"),
+                        onPress: () => {
+                            purchaseSeasonPack(pack.id).catch(() => undefined);
+                        },
+                    },
+                ],
+            );
+            return;
+        }
+
+        const tpl = getTemplateConfig(id);
         dispatch({
             type: "SET_EDITOR_OPTIONS",
             payload: {
@@ -324,7 +352,32 @@ export default function EditorScreen() {
     };
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ隰費ｽｶ陷・ｰ鬮ｫ・ｲ繝ｻ・､髯ｷ・･隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-    async function handleSaveToApp() {
+    const maybeShowSaveInterstitial = useCallback(async (nextSaveSuccessCountTotal: number) => {
+        const dateKey = getDateKey();
+        const nextSettings = {
+            ...settings,
+            saveSuccessCountTotal: nextSaveSuccessCountTotal,
+            interstitialShownCountToday:
+                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialShownCountToday : 0,
+            interstitialDailyBucketDate:
+                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialDailyBucketDate : dateKey,
+        };
+
+        if (shouldResetInterstitialDailyLimit(settings, dateKey)) {
+            dispatch({ type: "RESET_INTERSTITIAL_DAILY_LIMIT", payload: { dateKey } });
+        }
+
+        if (!shouldShowInterstitial(nextSettings, dateKey)) {
+            return;
+        }
+
+        const shown = await showInterstitialAd().catch(() => false);
+        if (shown) {
+            dispatch({ type: "REGISTER_INTERSTITIAL_SHOWN", payload: { dateKey } });
+        }
+    }, [dispatch, settings]);
+
+    async function handleSaveToApp() {
         if (!currentPhoto || !computed) return;
         if (targetBabyIds.length === 0) {
             Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
@@ -376,11 +429,13 @@ export default function EditorScreen() {
                     lastFontId: editorOptions.fontId,
                 },
             });
-            Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
+            dispatch({ type: "REGISTER_SAVE_SUCCESS" });
+            Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
                 {
                     text: "OK",
                     onPress: () => {
-                        dispatch({ type: "RESET_EDITOR" });
+                        void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
+                        dispatch({ type: "RESET_EDITOR" });
 
                         router.navigate("/(tabs)/library");
 
@@ -407,7 +462,15 @@ export default function EditorScreen() {
             // 鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ髫ｴ蟷｢・ｽ・ｱ鬮ｮ雜｣・ｽ・ｪ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｮ・ｯ隲橸ｽｺ陞ｻ・ｮ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・｣髮具ｽｻ繝ｻ・｣繝ｻ・ｰ鬮ｮ荵昴・繝ｻ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
             try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
             if (success) {
-                Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"));
+                dispatch({ type: "REGISTER_SAVE_SUCCESS" });
+                Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"), [
+                    {
+                        text: "OK",
+                        onPress: () => {
+                            void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
+                        },
+                    },
+                ]);
             }
         } finally {
             setSaving(false);
@@ -777,38 +840,49 @@ export default function EditorScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.templateRow}
                         >
-                            {TEMPLATES.map((t) => (
-                                <TouchableOpacity
-                                    key={t.id}
-                                    style={[
-                                        styles.templateOption,
-                                        editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
-                                    ]}
-                                    onPress={() => handleTemplateChange(t.id)}
-                                >
-                                    <View style={styles.templatePreviewBox}>
-                                        {t.decorationPreset === "berry_sakura" ? (
-                                            <View style={styles.templateDecorativeFrame}>
-                                                <View style={styles.templateDecorativeInner} />
-                                                <View style={[styles.templateDecorativeDot, { left: 3, top: 4, width: 10, height: 10 }]} />
-                                                <View style={[styles.templateDecorativeDot, { right: 4, top: 6, width: 8, height: 8 }]} />
-                                                <View style={[styles.templateDecorativeDot, { left: 6, bottom: 4, width: 11, height: 11 }]} />
-                                            </View>
-                                        ) : t.hasFrame ? (
-                                            <View style={styles.templateFrame}>
-                                                <View style={styles.templateInner} />
-                                            </View>
-                                        ) : (
-                                            <View style={styles.templateNoFrame}>
-                                                {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
-                                            </View>
-                                        )}
-                                    </View>
-                                    <Text style={[styles.templateLabel, editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }]]}>
-                                        {t.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                            {TEMPLATES.map((t) => {
+                                const pack = getSeasonPackByTemplateId(t.id);
+                                const isLocked = pack ? !isSeasonPackUnlocked(settings, pack.id) : false;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={t.id}
+                                        style={[
+                                            styles.templateOption,
+                                            isLocked && styles.lockedTemplateOption,
+                                            editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                        ]}
+                                        onPress={() => handleTemplateChange(t.id)}
+                                    >
+                                        <View style={styles.templatePreviewBox}>
+                                            {t.decorationPreset === "berry_sakura" ? (
+                                                <View style={styles.templateDecorativeFrame}>
+                                                    <View style={styles.templateDecorativeInner} />
+                                                    <View style={[styles.templateDecorativeDot, { left: 3, top: 4, width: 10, height: 10 }]} />
+                                                    <View style={[styles.templateDecorativeDot, { right: 4, top: 6, width: 8, height: 8 }]} />
+                                                    <View style={[styles.templateDecorativeDot, { left: 6, bottom: 4, width: 11, height: 11 }]} />
+                                                </View>
+                                            ) : t.hasFrame ? (
+                                                <View style={styles.templateFrame}>
+                                                    <View style={styles.templateInner} />
+                                                </View>
+                                            ) : (
+                                                <View style={styles.templateNoFrame}>
+                                                    {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
+                                                </View>
+                                            )}
+                                            {isLocked ? (
+                                                <View style={styles.templateLockBadge}>
+                                                    <Ionicons name="lock-closed" size={11} color="#FFF" />
+                                                </View>
+                                            ) : null}
+                                        </View>
+                                        <Text style={[styles.templateLabel, editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }]]}>
+                                            {t.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </ScrollHintedScrollView>
                     </View>
                 );
@@ -1440,6 +1514,9 @@ const styles = StyleSheet.create({
         borderColor: "#F0F0F0",
         backgroundColor: "#FAFAFA",
     },
+    lockedTemplateOption: {
+        opacity: 0.75,
+    },
     templateOptionActive: {
         borderColor: "#FF8FA3",
         backgroundColor: "#FFF5F7",
@@ -1450,6 +1527,17 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 6,
+    },
+    templateLockBadge: {
+        position: "absolute",
+        top: -2,
+        right: -2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#FF8FA3",
     },
     templateNoFrame: {
         width: 52,

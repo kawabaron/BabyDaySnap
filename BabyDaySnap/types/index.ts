@@ -15,8 +15,10 @@ export type BabyProfile = {
 // --- 鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ髮懶ｽ｣繝ｻ・ｽ繝ｻ・ｦ鬯ｩ蟷｢・ｽ・｢髫ｴ諠ｹ・ｸ讖ｸ・ｽ・ｹ繝ｻ・ｲ郢晢ｽｻ陷ｿ蜴・ｽｽ・ｨ隰夲ｽｵ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ---
 export type TemplateId =
     | "tpl_noframe_full"   // 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ竏ｫ豬ｹ鬯･・ｴ隲ｱ・ｷ髮狗ｿｫ・代・・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｡鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｫ・ｲ繝ｻ・､髫ｲ蟶ｷ・ｿ・ｫ郢晢ｽｻ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｨ・ｾ髮懶ｽ｣繝ｻ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬮ｯ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・､驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬩包ｽｶ闕ｵ諤懃・髯溷供・ｮ・｣・取鱒繝ｻ繝ｻ・ｧ鬯ｯ・ｯ闖ｫ・ｶ繝ｻ・ｳ驕偵・・｣・ｰ郢晢ｽｻ陜咎豪・ｫ荳橸ｽ｣・ｹ郢晢ｽｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬮ｯ・ｷ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｱ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ繝ｻ謳ｨ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+    | "tpl_noframe_line"
     | "tpl_frame_full"      // 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ竏ｫ豬ｹ鬯･・ｴ邵ｺ蜉ｱ繝ｻ繝ｻ・ｺ鬩幢ｽ｢繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬮｣雋ｻ・｣・ｰ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・｣陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｴ鬯ｯ・ｮ繝ｻ・ｮ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
-    | "tpl_frame_crop";     // 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ竏ｫ豬ｹ鬯･・ｴ邵ｺ蜉ｱ繝ｻ繝ｻ・ｺ鬩幢ｽ｢繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬮｣雋ｻ・｣・ｰ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｿ鬮ｯ・ｷ繝ｻ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+    | "tpl_frame_crop"      // 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ竏ｫ豬ｹ鬯･・ｴ邵ｺ蜉ｱ繝ｻ繝ｻ・ｺ鬩幢ｽ｢繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩怜遜・ｽ・ｫ驛｢譎｢・ｽ・ｻ鬮｣雋ｻ・｣・ｰ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｿ鬮ｯ・ｷ繝ｻ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
+    | "tpl_frame_berry_sakura";
 
 // --- 鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ繝ｻ・ｽ繝ｻ・ｼ髫ｴ繝ｻ謳ｨ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ---
 export type FontId =
@@ -29,6 +31,7 @@ export type FontId =
     | "font_magic"
     | "font_hina";
 export type FilterId = "filter_none" | "filter_milk" | "filter_blossom" | "filter_nap" | "filter_sparkle";
+export type SeasonPackId = "season_pack_spring_2026";
 
 // --- 鬯ｮ・ｯ繝ｻ・ｷ繝ｻ縺､ﾂ鬮ｯ・ｷ繝ｻ・･髣包ｽｵ隴会ｽｦ繝ｻ・ｽ郢晢ｽｻ・取鱒繝ｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ ---
 export type PhotoSource = {
@@ -116,6 +119,12 @@ export type UserSettings = {
     lastFontId: FontId;
     lastDateColorHex: string;
     policyUrls: PolicyUrls;
+    adFreeUnlocked: boolean;
+    unlockedSeasonPackIds: SeasonPackId[];
+    saveSuccessCountTotal: number;
+    interstitialLastShownDate: string | null;
+    interstitialShownCountToday: number;
+    interstitialDailyBucketDate: string | null;
 };
 
 // --- 鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ諠ｹ・ｸ讖ｸ・ｽ・ｹ繝ｻ・ｲ郢晢ｽｻ陷ｿ謔ｶ蜀郢晢ｽｻ繝ｻ・ｿ郢晢ｽｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ---
@@ -146,6 +155,11 @@ export type AppAction =
     | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId; defaultFilterId?: FilterId } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
+    | { type: "SET_AD_FREE_UNLOCKED"; payload: boolean }
+    | { type: "UNLOCK_SEASON_PACK"; payload: SeasonPackId }
+    | { type: "REGISTER_SAVE_SUCCESS" }
+    | { type: "REGISTER_INTERSTITIAL_SHOWN"; payload: { dateKey: string } }
+    | { type: "RESET_INTERSTITIAL_DAILY_LIMIT"; payload: { dateKey: string } }
     // 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｮ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
     | { type: "SET_PHOTO"; payload: PhotoSource }
     | { type: "SET_COMPUTED"; payload: ComputedInfo }
@@ -178,6 +192,7 @@ export type TemplateConfig = {
     hasFrame: boolean;
     isSquare: boolean;
     defaultDateColorHex: string;
+    seasonPackId?: SeasonPackId;
     /** 鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ鬩搾ｽｵ繝ｻ・ｺ髯ｷﾂ隴会ｽｦ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｩ蟷｢・ｽ・｢髫ｴ荳ｻ繝ｻ隶捺ｻ・・闔ｨ繝ｻ・ｽ・ｦ繝ｻ・ｴ驍ｵ・ｺ驕会ｽｼ繝ｻ・ｫ闕ｵ諤懃・髯溷供・ｮ・｣・取鱒繝ｻ繝ｻ・ｧ鬮ｯ讒ｭ・・ｹ晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻtroke鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｯ譎｢・ｽ・ｲ郢晢ｽｻ繝ｻ・ｨ驛｢譎｢・ｽ・ｻ髯橸ｽｳ陞溯ｲｫﾂ鬮ｯ蛹ｺ・ｻ繧托ｽｽ・ｽ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬮｣蛹・ｽｽ・ｵ髫ｰ・ｨ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｰ */
     hasTextStroke: boolean;
 };

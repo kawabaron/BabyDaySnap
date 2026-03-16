@@ -31,6 +31,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
         privacyUrl: "https://kawabaron.github.io/BabyDaySnap/privacy.html",
         contactUrl: "https://kawabaron.github.io/BabyDaySnap/contact.html",
     },
+    adFreeUnlocked: false,
+    unlockedSeasonPackIds: [],
+    saveSuccessCountTotal: 0,
+    interstitialLastShownDate: null,
+    interstitialShownCountToday: 0,
+    interstitialDailyBucketDate: null,
 };
 
 // --- Settings ---
