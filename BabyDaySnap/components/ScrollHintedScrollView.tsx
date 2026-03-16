@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
     ScrollView,
     StyleSheet,
-    Text,
     View,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
@@ -38,8 +38,14 @@ export function ScrollHintedScrollView({
     const showStartHint = canScroll && offset > SCROLL_EDGE_THRESHOLD;
     const showEndHint = canScroll && offset < contentSize - viewportSize - SCROLL_EDGE_THRESHOLD;
 
-    const startHint = useMemo(() => (isHorizontal ? "<" : "^"), [isHorizontal]);
-    const endHint = useMemo(() => (isHorizontal ? ">" : "v"), [isHorizontal]);
+    const startHint = useMemo<keyof typeof Ionicons.glyphMap>(
+        () => (isHorizontal ? "chevron-back" : "chevron-up"),
+        [isHorizontal],
+    );
+    const endHint = useMemo<keyof typeof Ionicons.glyphMap>(
+        () => (isHorizontal ? "chevron-forward" : "chevron-down"),
+        [isHorizontal],
+    );
 
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const nextOffset = isHorizontal
@@ -81,7 +87,7 @@ export function ScrollHintedScrollView({
                     style={[styles.hintContainer, isHorizontal ? styles.hintLeft : styles.hintTop]}
                 >
                     <View style={styles.hintBadge}>
-                        <Text style={styles.hintText}>{startHint}</Text>
+                        <Ionicons name={startHint} size={16} color={styles.hintIcon.color} />
                     </View>
                 </View>
             ) : null}
@@ -92,7 +98,7 @@ export function ScrollHintedScrollView({
                     style={[styles.hintContainer, isHorizontal ? styles.hintRight : styles.hintBottom]}
                 >
                     <View style={styles.hintBadge}>
-                        <Text style={styles.hintText}>{endHint}</Text>
+                        <Ionicons name={endHint} size={16} color={styles.hintIcon.color} />
                     </View>
                 </View>
             ) : null}
@@ -134,9 +140,8 @@ const styles = StyleSheet.create({
         paddingBottom: 2,
     },
     hintBadge: {
-        minWidth: 24,
-        minHeight: 24,
-        paddingHorizontal: 6,
+        width: 26,
+        height: 26,
         borderRadius: 999,
         alignItems: "center",
         justifyContent: "center",
@@ -149,10 +154,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
-    hintText: {
-        fontSize: 14,
-        lineHeight: 16,
-        fontWeight: "700",
+    hintIcon: {
         color: "#7A7480",
     },
 });
