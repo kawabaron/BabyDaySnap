@@ -1,14 +1,18 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
+} from "react";
 import { Alert, Platform } from "react-native";
-import { useIAP } from "expo-iap";
 
 import { useAppDispatch } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
-import {
-    AD_FREE_PRODUCT_ID,
-    SEASON_PACKS,
-    getSeasonPackById,
-} from "@/lib/monetization";
+import { AD_FREE_PRODUCT_ID, SEASON_PACKS, getSeasonPackById } from "@/lib/monetization";
 import type { SeasonPackId } from "@/types";
 
 type BillingProduct = {
@@ -27,6 +31,17 @@ type BillingContextValue = {
     restorePurchases: () => Promise<void>;
 };
 
+type ExpoIapModuleLike = {
+    initConnection?: () => Promise<unknown>;
+    endConnection?: () => Promise<unknown>;
+    getProducts?: (...args: any[]) => Promise<any[]>;
+    getAvailablePurchases?: (...args: any[]) => Promise<any[]>;
+    requestPurchase?: (...args: any[]) => Promise<unknown>;
+    finishTransaction?: (...args: any[]) => Promise<unknown>;
+    purchaseUpdatedListener?: (listener: (purchase: any) => void | Promise<void>) => { remove?: () => void };
+    purchaseErrorListener?: (listener: (error: any) => void) => { remove?: () => void };
+};
+
 const BillingContext = createContext<BillingContextValue>({
     productsById: {},
     isReady: false,
@@ -36,8 +51,63 @@ const BillingContext = createContext<BillingContextValue>({
     restorePurchases: async () => undefined,
 });
 
-function purchaseRequestFor(productId: string) {
-    return {
+function mapProducts(products: any[]): Record<string, BillingProduct> {
+    return Object.fromEntries(
+        (products ?? []).map((product) => [
+            product.id ?? product.productId,
+            {
+                id: product.id ?? product.productId,
+                displayName: product.displayName ?? product.title,
+                description: product.description,
+                displayPrice: product.displayPrice ?? product.localizedPrice,
+            },
+        ]),
+    );
+}
+
+function unlockPurchase(dispatch: ReturnType<typeof useAppDispatch>, purchase: any) {
+    const productId = purchase?.productId ?? purchase?.id;
+
+    if (productId === AD_FREE_PRODUCT_ID) {
+        dispatch({ type: "SET_AD_FREE_UNLOCKED", payload: true });
+    }
+
+    const matchedPack = SEASON_PACKS.find((pack) => pack.productId === productId);
+    if (matchedPack) {
+        dispatch({ type: "UNLOCK_SEASON_PACK", payload: matchedPack.id });
+    }
+}
+
+async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
+    if (!iap.getProducts) {
+        return [];
+    }
+
+    const attempts = [
+        () => iap.getProducts?.({ skus: productIds, type: "inapp" }),
+        () => iap.getProducts?.(productIds),
+        () => iap.getProducts?.({ productIds, type: "inapp" }),
+    ];
+
+    for (const attempt of attempts) {
+        try {
+            const products = await attempt();
+            if (Array.isArray(products)) {
+                return products;
+            }
+        } catch {
+        }
+    }
+
+    return [];
+}
+
+async function requestInAppPurchase(iap: ExpoIapModuleLike, productId: string) {
+    if (!iap.requestPurchase) {
+        throw new Error("requestPurchase is unavailable");
+    }
+
+    const requestPayload = {
         request: Platform.select({
             ios: { sku: productId },
             android: { skus: [productId] },
@@ -45,79 +115,117 @@ function purchaseRequestFor(productId: string) {
         }),
         type: "inapp",
     };
+
+    const attempts = [
+        () => iap.requestPurchase?.(requestPayload),
+        () => iap.requestPurchase?.(productId),
+        () => iap.requestPurchase?.({ sku: productId }),
+    ];
+
+    let lastError: unknown;
+
+    for (const attempt of attempts) {
+        try {
+            await attempt();
+            return;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw lastError ?? new Error("requestPurchase failed");
+}
+
+async function finishInAppPurchase(iap: ExpoIapModuleLike, purchase: any) {
+    if (!iap.finishTransaction) {
+        return;
+    }
+
+    const attempts = [
+        () => iap.finishTransaction?.({ purchase, isConsumable: false }),
+        () => iap.finishTransaction?.(purchase, false),
+    ];
+
+    for (const attempt of attempts) {
+        try {
+            await attempt();
+            return;
+        } catch {
+        }
+    }
 }
 
 function BillingBootstrap({ children }: { children: ReactNode }) {
     const dispatch = useAppDispatch();
+    const [productsById, setProductsById] = useState<Record<string, BillingProduct>>({});
+    const [isReady, setIsReady] = useState(false);
     const [isPurchasing, setIsPurchasing] = useState(false);
 
-    const {
-        connected,
-        products,
-        requestProducts,
-        requestPurchase,
-        restorePurchases,
-        finishTransaction,
-    } = useIAP({
-        onPurchaseSuccess: async (purchase: any) => {
-            const productId = purchase?.productId ?? purchase?.id;
-
-            if (productId === AD_FREE_PRODUCT_ID) {
-                dispatch({ type: "SET_AD_FREE_UNLOCKED", payload: true });
-            }
-
-            const matchedPack = SEASON_PACKS.find((pack) => pack.productId === productId);
-            if (matchedPack) {
-                dispatch({ type: "UNLOCK_SEASON_PACK", payload: matchedPack.id });
-            }
-
-            if (finishTransaction) {
-                await (finishTransaction as any)({ purchase, isConsumable: false });
-            }
-
-            setIsPurchasing(false);
-        },
-        onPurchaseError: (error: any) => {
-            setIsPurchasing(false);
-
-            if (error?.code === "user-cancelled") {
-                return;
-            }
-
-            Alert.alert(
-                i18n.t("common.error"),
-                i18n.t("monetization.purchaseFailed", { message: error?.message ?? "Unknown error" }),
-            );
-        },
-    } as any);
+    const iapModuleRef = useRef<ExpoIapModuleLike | null>(null);
+    const purchaseUpdatedSubscriptionRef = useRef<{ remove?: () => void } | null>(null);
+    const purchaseErrorSubscriptionRef = useRef<{ remove?: () => void } | null>(null);
 
     useEffect(() => {
-        if (!connected || !requestProducts) {
-            return;
+        let disposed = false;
+
+        async function setupBilling() {
+            try {
+                const iap = (await import("expo-iap")) as ExpoIapModuleLike;
+                iapModuleRef.current = iap;
+
+                if (iap.initConnection) {
+                    await iap.initConnection();
+                }
+
+                purchaseUpdatedSubscriptionRef.current = iap.purchaseUpdatedListener?.(async (purchase: any) => {
+                    unlockPurchase(dispatch, purchase);
+                    await finishInAppPurchase(iap, purchase);
+                    setIsPurchasing(false);
+                }) ?? null;
+
+                purchaseErrorSubscriptionRef.current = iap.purchaseErrorListener?.((error: any) => {
+                    setIsPurchasing(false);
+
+                    if (error?.code === "user-cancelled" || error?.code === "E_USER_CANCELLED") {
+                        return;
+                    }
+
+                    Alert.alert(
+                        i18n.t("common.error"),
+                        i18n.t("monetization.purchaseFailed", { message: error?.message ?? "Unknown error" }),
+                    );
+                }) ?? null;
+
+                const productIds = [AD_FREE_PRODUCT_ID, ...SEASON_PACKS.map((pack) => pack.productId)];
+                const products = await loadStoreProducts(iap, productIds);
+
+                if (!disposed) {
+                    setProductsById(mapProducts(products));
+                    setIsReady(true);
+                }
+            } catch {
+                if (!disposed) {
+                    setIsReady(false);
+                }
+            }
         }
 
-        const productIds = [AD_FREE_PRODUCT_ID, ...SEASON_PACKS.map((pack) => pack.productId)];
-        (requestProducts as any)({ skus: productIds, type: "inapp" }).catch(() => undefined);
-    }, [connected, requestProducts]);
+        setupBilling().catch(() => undefined);
 
-    const productsById = useMemo<Record<string, BillingProduct>>(
-        () =>
-            Object.fromEntries(
-                (products ?? []).map((product: any) => [
-                    product.id ?? product.productId,
-                    {
-                        id: product.id ?? product.productId,
-                        displayName: product.displayName ?? product.title,
-                        description: product.description,
-                        displayPrice: product.displayPrice ?? product.localizedPrice,
-                    },
-                ]),
-            ),
-        [products],
-    );
+        return () => {
+            disposed = true;
+            purchaseUpdatedSubscriptionRef.current?.remove?.();
+            purchaseErrorSubscriptionRef.current?.remove?.();
+            purchaseUpdatedSubscriptionRef.current = null;
+            purchaseErrorSubscriptionRef.current = null;
+            iapModuleRef.current?.endConnection?.().catch?.(() => undefined);
+        };
+    }, [dispatch]);
 
-    const handlePurchase = async (productId: string) => {
-        if (!connected || !requestPurchase) {
+    const handlePurchase = useCallback(async (productId: string) => {
+        const iap = iapModuleRef.current;
+
+        if (!iap) {
             Alert.alert(i18n.t("common.error"), i18n.t("monetization.billingUnavailable"));
             return false;
         }
@@ -125,40 +233,35 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
         setIsPurchasing(true);
 
         try {
-            await (requestPurchase as any)(purchaseRequestFor(productId));
+            await requestInAppPurchase(iap, productId);
             return true;
         } catch (error: any) {
             setIsPurchasing(false);
-            if (error?.code !== "user-cancelled") {
+
+            if (error?.code !== "user-cancelled" && error?.code !== "E_USER_CANCELLED") {
                 Alert.alert(
                     i18n.t("common.error"),
                     i18n.t("monetization.purchaseFailed", { message: error?.message ?? "Unknown error" }),
                 );
             }
+
             return false;
         }
-    };
+    }, []);
 
-    const handleRestore = async () => {
-        if (!restorePurchases) {
+    const handleRestore = useCallback(async () => {
+        const iap = iapModuleRef.current;
+
+        if (!iap?.getAvailablePurchases) {
             Alert.alert(i18n.t("common.error"), i18n.t("monetization.billingUnavailable"));
             return;
         }
 
         try {
-            const restored = await (restorePurchases as any)();
-            const purchases = Array.isArray(restored) ? restored : [];
+            const purchases = await iap.getAvailablePurchases();
 
-            purchases.forEach((purchase: any) => {
-                const productId = purchase?.productId ?? purchase?.id;
-                if (productId === AD_FREE_PRODUCT_ID) {
-                    dispatch({ type: "SET_AD_FREE_UNLOCKED", payload: true });
-                }
-
-                const pack = SEASON_PACKS.find((entry) => entry.productId === productId);
-                if (pack) {
-                    dispatch({ type: "UNLOCK_SEASON_PACK", payload: pack.id });
-                }
+            (Array.isArray(purchases) ? purchases : []).forEach((purchase) => {
+                unlockPurchase(dispatch, purchase);
             });
 
             Alert.alert(i18n.t("monetization.restoreTitle"), i18n.t("monetization.restoreSuccess"));
@@ -168,12 +271,12 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
                 i18n.t("monetization.restoreFailed", { message: error?.message ?? "Unknown error" }),
             );
         }
-    };
+    }, [dispatch]);
 
     const value = useMemo<BillingContextValue>(
         () => ({
             productsById,
-            isReady: Boolean(connected),
+            isReady,
             isPurchasing,
             purchaseAdFree: () => handlePurchase(AD_FREE_PRODUCT_ID),
             purchaseSeasonPack: async (packId: SeasonPackId) => {
@@ -186,7 +289,7 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
             },
             restorePurchases: handleRestore,
         }),
-        [connected, isPurchasing, productsById],
+        [handlePurchase, handleRestore, isPurchasing, isReady, productsById],
     );
 
     return <BillingContext.Provider value={value}>{children}</BillingContext.Provider>;
