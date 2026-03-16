@@ -8,6 +8,7 @@ import {
     Pressable,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from "react-native";
 import { BannerAd } from "react-native-google-mobile-ads";
@@ -28,6 +29,7 @@ export function CreateBannerAd() {
     const { settings } = useAppState();
     const { productsById, isPurchasing, purchaseAdFree } = useBilling();
     const insets = useSafeAreaInsets();
+    const { width: screenWidth } = useWindowDimensions();
 
     const [sheetMode, setSheetMode] = useState<SheetMode>(null);
     const [hiddenDateKey, setHiddenDateKey] = useState<string | null>(null);
@@ -40,6 +42,8 @@ export function CreateBannerAd() {
     const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
     const isSheetVisible = sheetMode !== null;
     const isHiddenForToday = hiddenDateKey === todayKey;
+    const shellHorizontalMargin = screenWidth >= 360 ? 8 : 4;
+    const sideSlotWidth = screenWidth >= 360 ? 18 : 14;
 
     useEffect(() => {
         let isMounted = true;
@@ -134,39 +138,46 @@ export function CreateBannerAd() {
     return (
         <>
             <View style={styles.wrapper}>
-                <View style={styles.bannerRow}>
-                    <View style={styles.sideSlot} />
+                <View
+                    style={[
+                        styles.bannerShell,
+                        { marginHorizontal: shellHorizontalMargin },
+                    ]}
+                >
+                    <View style={styles.bannerRow}>
+                        <View style={[styles.sideSlot, { width: sideSlotWidth }]} />
 
-                    <View style={styles.bannerFrame}>
-                        <BannerAd
-                            unitId={CREATE_BANNER_UNIT_ID}
-                            size={CREATE_BANNER_SIZE}
-                            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                            onAdLoaded={() => {
-                                if (__DEV__) {
-                                    console.log("[ads] banner loaded", CREATE_BANNER_UNIT_ID);
-                                }
-                            }}
-                            onAdFailedToLoad={(error) => {
-                                console.warn("[ads] banner failed", error);
-                            }}
-                        />
+                        <View style={styles.bannerFrame}>
+                            <BannerAd
+                                unitId={CREATE_BANNER_UNIT_ID}
+                                size={CREATE_BANNER_SIZE}
+                                requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+                                onAdLoaded={() => {
+                                    if (__DEV__) {
+                                        console.log("[ads] banner loaded", CREATE_BANNER_UNIT_ID);
+                                    }
+                                }}
+                                onAdFailedToLoad={(error) => {
+                                    console.warn("[ads] banner failed", error);
+                                }}
+                            />
+                        </View>
+
+                        <View style={[styles.sideSlot, { width: sideSlotWidth }]} />
                     </View>
 
-                    <View style={styles.closeSlot}>
-                        <Pressable
-                            accessibilityLabel={i18n.t("monetization.bannerCloseA11y")}
-                            accessibilityRole="button"
-                            hitSlop={10}
-                            onPress={() => setSheetMode("actions")}
-                            style={({ pressed }) => [
-                                styles.closeButton,
-                                pressed && styles.closeButtonPressed,
-                            ]}
-                        >
-                            <Ionicons name="close" size={10} color="#FFFFFF" />
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        accessibilityLabel={i18n.t("monetization.bannerCloseA11y")}
+                        accessibilityRole="button"
+                        hitSlop={10}
+                        onPress={() => setSheetMode("actions")}
+                        style={({ pressed }) => [
+                            styles.closeButton,
+                            pressed && styles.closeButtonPressed,
+                        ]}
+                    >
+                        <Ionicons name="close" size={10} color="#FFFFFF" />
+                    </Pressable>
                 </View>
             </View>
 
@@ -286,32 +297,35 @@ const styles = StyleSheet.create({
     wrapper: {
         minHeight: BANNER_HEIGHT,
         justifyContent: "center",
-        paddingHorizontal: 2,
         paddingVertical: 2,
         backgroundColor: "#E9ECF0",
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: "#CDD2DA",
+    },
+    bannerShell: {
+        position: "relative",
+        minHeight: 50,
+        borderRadius: 10,
+        backgroundColor: "#DDE2E8",
+        justifyContent: "center",
+        overflow: "hidden",
     },
     bannerRow: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
     },
-    sideSlot: {
-        width: 16,
-    },
+    sideSlot: {},
     bannerFrame: {
         minHeight: 50,
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
     },
-    closeSlot: {
-        width: 16,
-        alignItems: "center",
-        justifyContent: "center",
-    },
     closeButton: {
+        position: "absolute",
+        top: 4,
+        right: 4,
         width: 14,
         height: 14,
         borderRadius: 7,
