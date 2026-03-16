@@ -289,9 +289,10 @@ const styles = StyleSheet.create({
     },
     bannerFrame: {
         minHeight: 50,
+        width: "100%",
         alignItems: "center",
         justifyContent: "center",
-        paddingRight: 26,
+        paddingHorizontal: 4,
     },
     closeButton: {
         position: "absolute",
