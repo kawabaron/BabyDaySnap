@@ -2,6 +2,23 @@
 // BabyDaySnap - 日付ユーティリティ
 // ============================================================
 import i18n from '@/lib/i18n';
+import type { AgeFormat, DisplayStyle } from "@/types";
+
+const ENGLISH_MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+const ENGLISH_MONTHS_LONG = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+] as const;
 
 /**
  * 生後日数を計算
@@ -87,6 +104,60 @@ export function formatDateDisplay(dateStr: string): string {
     return i18n.t("editor.dateDisplay", { year: y, month: m, day: d });
 }
 
+export function formatStyledDateDisplay(dateStr: string, displayStyle: DisplayStyle): string {
+    if (displayStyle === "current") {
+        return formatDateDisplay(dateStr);
+    }
+
+    const cleanStr = dateStr.replace(/-/g, "/");
+    const [y, m, d] = cleanStr.split("/").map(Number);
+    const monthNames = displayStyle === "soft_english" ? ENGLISH_MONTHS_SHORT : ENGLISH_MONTHS_LONG;
+
+    return `${monthNames[m - 1]} ${d}, ${y}`;
+}
+
+export function formatStyledAgeDisplay(params: {
+    ageFormat: AgeFormat;
+    ageDays: number;
+    birthDateISO?: string | null;
+    shotDateISO: string;
+    displayStyle: DisplayStyle;
+}): string {
+    const { ageFormat, ageDays, birthDateISO, shotDateISO, displayStyle } = params;
+
+    if (displayStyle === "current") {
+        return formatCurrentAgeDisplay(ageFormat, ageDays, birthDateISO, shotDateISO);
+    }
+
+    if (ageDays < 0 || !birthDateISO || ageFormat === "days") {
+        return formatEnglishDays(ageDays, displayStyle);
+    }
+
+    const { years, months, days } = calcAgeMonthsAndDays(birthDateISO, shotDateISO);
+
+    if (ageFormat === "years_months") {
+        if (years === 0) {
+            if (months === 0) return formatEnglishDays(days, displayStyle);
+            return formatEnglishParts([{ value: months, shortLabel: "mo", singular: "month", plural: "months" }], displayStyle);
+        }
+
+        const parts = [{ value: years, shortLabel: "yr", singular: "year", plural: "years" }];
+        if (months > 0) {
+            parts.push({ value: months, shortLabel: "mo", singular: "month", plural: "months" });
+        }
+        return formatEnglishParts(parts, displayStyle);
+    }
+
+    const totalMonths = years * 12 + months;
+    if (totalMonths === 0) return formatEnglishDays(days, displayStyle);
+
+    const parts = [{ value: totalMonths, shortLabel: "mo", singular: "month", plural: "months" }];
+    if (days > 0) {
+        parts.push({ value: days, shortLabel: "d", singular: "day", plural: "days" });
+    }
+    return formatEnglishParts(parts, displayStyle);
+}
+
 /**
  * PhotoSourceから撮影日ISOを取得
  */
@@ -102,4 +173,66 @@ export function getShotDateISO(
     }
     // フォールバック: 現在日時
     return formatDateISO(new Date());
+}
+
+function formatCurrentAgeDisplay(
+    ageFormat: AgeFormat,
+    ageDays: number,
+    birthDateISO: string | null | undefined,
+    shotDateISO: string,
+): string {
+    if (ageDays < 0) {
+        return i18n.t("editor.ageTextDays", { days: ageDays });
+    }
+
+    if (!birthDateISO || ageFormat === "days") {
+        return i18n.t("editor.ageTextDays", { days: ageDays });
+    }
+
+    const { years, months, days } = calcAgeMonthsAndDays(birthDateISO, shotDateISO);
+
+    if (ageFormat === "years_months") {
+        if (years === 0) {
+            if (months === 0) return i18n.t("editor.ageTextDays", { days });
+            return i18n.t("editor.ageTextMonths", { months });
+        }
+
+        if (months === 0) return i18n.t("editor.ageTextYears", { years });
+        return i18n.t("editor.ageTextYearsMonths", { years, months });
+    }
+
+    const totalMonths = years * 12 + months;
+    if (totalMonths === 0) return i18n.t("editor.ageTextDays", { days });
+    if (days === 0) return i18n.t("editor.ageTextMonths", { months: totalMonths });
+    return i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days });
+}
+
+function formatEnglishDays(days: number, displayStyle: DisplayStyle): string {
+    if (displayStyle === "soft_english") {
+        return `Day ${days}`;
+    }
+
+    const label = Math.abs(days) === 1 ? "day" : "days";
+    const text = `${days} ${label}`;
+    return displayStyle === "keepsake_english" ? toTitleCase(text) : text;
+}
+
+function formatEnglishParts(
+    parts: Array<{ value: number; shortLabel: string; singular: string; plural: string }>,
+    displayStyle: DisplayStyle,
+): string {
+    if (displayStyle === "soft_english") {
+        return parts.map((part) => `${part.value} ${part.shortLabel}`).join(" ");
+    }
+
+    const separator = displayStyle === "keepsake_english" ? ", " : " ";
+    const text = parts
+        .map((part) => `${part.value} ${part.value === 1 ? part.singular : part.plural}`)
+        .join(separator);
+
+    return displayStyle === "keepsake_english" ? toTitleCase(text) : text;
+}
+
+function toTitleCase(text: string): string {
+    return text.replace(/\b([a-z])/g, (match) => match.toUpperCase());
 }

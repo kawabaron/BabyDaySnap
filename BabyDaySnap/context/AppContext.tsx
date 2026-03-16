@@ -18,6 +18,7 @@ const initialEditorOptions: EditorOptions = {
     showName: true,
     showAge: true,
     ageFormat: "days",
+    displayStyle: "current",
 };
 
 const initialState: AppState = {
@@ -68,6 +69,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     defaultShowName: action.payload.defaultShowName,
                     defaultShowAge: action.payload.defaultShowAge,
                     defaultAgeFormat: action.payload.defaultAgeFormat,
+                    defaultDisplayStyle: action.payload.defaultDisplayStyle,
                 },
             };
         case "SET_DEFAULT_PREFS":
@@ -176,6 +178,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     showName: state.settings.defaultShowName,
                     showAge: state.settings.defaultShowAge,
                     ageFormat: state.settings.defaultAgeFormat || "days",
+                    displayStyle: state.settings.defaultDisplayStyle || "current",
                 },
                 renderedUri: null,
                 editingLibraryId: null,

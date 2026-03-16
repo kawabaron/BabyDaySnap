@@ -80,6 +80,7 @@ export async function saveToAppLibrary(
         showName: editorOptions.showName,
         showAge: editorOptions.showAge,
         ageFormat: editorOptions.ageFormat,
+        displayStyle: editorOptions.displayStyle,
     };
 
     return item;

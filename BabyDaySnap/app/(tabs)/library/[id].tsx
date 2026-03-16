@@ -16,7 +16,7 @@ import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { resolveDecorationSeed } from "@/utils/decorativeFrame";
-import { formatDateDisplay, msToDateISO, calcAgeMonthsAndDays } from "@/utils/date";
+import { formatStyledAgeDisplay, formatStyledDateDisplay, msToDateISO } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,6 +105,7 @@ export default function LibraryDetailScreen() {
                 showName: (item as any).showName ?? true,
                 showAge: (item as any).showAge ?? true,
                 ageFormat: (item as any).ageFormat || "days",
+                displayStyle: (item as any).displayStyle || "current",
             },
         });
 
@@ -193,28 +194,14 @@ export default function LibraryDetailScreen() {
                             <Text style={styles.metaLabel}>{i18n.t("detail.ageLabel")}</Text>
                             <Text style={styles.metaValue}>
                                 {(() => {
-                                    if (item.ageDays < 0) return i18n.t("editor.ageTextDays", { days: item.ageDays });
                                     const b = babies.find(x => item.babyIds.includes(x.id)) || babies[0];
-                                    if (!b) return i18n.t("editor.ageTextDays", { days: item.ageDays });
-
-                                    const format = item.ageFormat || "days";
-                                    if (format === "days") return i18n.t("editor.ageTextDays", { days: item.ageDays });
-
-                                    const { years, months, days } = calcAgeMonthsAndDays(b.birthDateISO, item.shotDateISO);
-                                    if (format === "years_months") {
-                                        if (years === 0) {
-                                            if (months === 0) return i18n.t("editor.ageTextDays", { days });
-                                            return i18n.t("editor.ageTextMonths", { months });
-                                        }
-                                        if (months === 0) return i18n.t("editor.ageTextYears", { years });
-                                        return i18n.t("editor.ageTextYearsMonths", { years, months });
-                                    } else {
-                                        // months_days
-                                        const totalMonths = years * 12 + months;
-                                        if (totalMonths === 0) return i18n.t("editor.ageTextDays", { days });
-                                        if (days === 0) return i18n.t("editor.ageTextMonths", { months: totalMonths });
-                                        return i18n.t("editor.ageTextMonthsDays", { months: totalMonths, days });
-                                    }
+                                    return formatStyledAgeDisplay({
+                                        ageFormat: item.ageFormat || "days",
+                                        ageDays: item.ageDays,
+                                        birthDateISO: b?.birthDateISO,
+                                        shotDateISO: item.shotDateISO,
+                                        displayStyle: item.displayStyle || "current",
+                                    });
                                 })()}
                             </Text>
                         </View>
@@ -222,7 +209,7 @@ export default function LibraryDetailScreen() {
                         <View style={styles.metaRow}>
                             <Text style={styles.metaLabel}>{i18n.t("detail.shotDateLabel")}</Text>
                             <Text style={styles.metaValue}>
-                                {formatDateDisplay(item.shotDateISO)}
+                                {formatStyledDateDisplay(item.shotDateISO, item.displayStyle || "current")}
                             </Text>
                         </View>
 

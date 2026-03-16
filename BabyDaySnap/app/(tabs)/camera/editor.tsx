@@ -37,12 +37,12 @@ import {
 import { FILTER_OPTIONS, getFilterOption } from "@/utils/filters";
 import { renderCompositeImage } from "@/utils/renderImage";
 import { saveToAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
-import { calcAgeDays, calcAgeMonthsAndDays } from "@/utils/date";
+import { calcAgeDays, calcAgeMonthsAndDays, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId } from "@/types";
+import type { TemplateId, FontId, DisplayStyle } from "@/types";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
@@ -50,6 +50,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
+const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
 type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment" | "save";
 
@@ -218,7 +219,7 @@ export default function EditorScreen() {
                 editorOptions,
                 computed,
                 fontId: editorOptions.fontId,
-                dateTextLine1,
+                dateTextLine1: formattedDateTextLine1,
                 isMultiBaby,
             });
 
@@ -533,7 +534,77 @@ export default function EditorScreen() {
     }, [targetBabyIds, editorOptions, computed, babies, displayBabyName]);
 
     // 鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｮ・｣髮具ｽｻ繝ｻ・ｽ繝ｻ・ｨ鬮ｫ・ｲ陝ｶ・ｷ繝ｻ・ｿ繝ｻ・ｫ驛｢譎｢・ｽ・ｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｰ鬨ｾ謳ｾ・ｽ・ｲ郢晢ｽｻ繝ｻ・ｺ髯区ｻゑｽｽ・･驛｢譎｢・ｽ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蛹・ｽｽ・ｶ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ繝ｻ縺､ﾂ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬯ｯ・ｮ繝ｻ・ｮ驛｢譎｢・ｽ・ｻ繝ｻ縺､ﾂ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ髢ｧ・ｴ繝ｻ・ｺ陋滂ｽ･郢晢ｽｻ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬯ｯ・ｲ郢晢ｽｻ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬯ｲ繝ｻ繝ｻ繝ｻ・ｽ繝ｻ・ｹ鬮｣雋ｻ・｣・ｰ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｾ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｮ繝ｻ・ｯ髯ｷ闌ｨ・ｽ・ｷ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｮ繝ｻ・ｯ髫ｶ蜴・ｽｽ・ｸ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｮ・ｯ隶灘･・ｽｽ・ｻ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・ｯ隲幄ご陲也ｹ晢ｽｻ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｾ鬯ｩ髦ｪ繝ｻ驕倪・繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｬ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・｢鬩幢ｽ｢繝ｻ・ｻ鬮ｯ・ｦ陟輔・led鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｴ謇假ｽｽ・｢髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｮ闕ｵ譏ｴ繝ｻ驕ｶ荵暦ｽｧ・ｭ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ鬩包ｽｶ闕ｳ讖ｸ・ｽ・｣繝ｻ・ｹ驛｢譎｢・ｽ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-    const allSelectedBeforeBirth = useMemo(() => {
+    const formattedDateTextLine1 = useMemo(() => {
+        if (!computed) return "";
+        if (editorOptions.displayStyle === "current") return dateTextLine1;
+
+        const lineParts: string[] = [];
+        const formattedDate = formatStyledDateDisplay(computed.shotDateISO, editorOptions.displayStyle);
+
+        if (editorOptions.showDate) {
+            lineParts.push(formattedDate);
+        }
+
+        if (targetBabyIds.length <= 1) {
+            if (editorOptions.showName && displayBabyName) {
+                lineParts.push(displayBabyName);
+            }
+
+            const targetBabyId = targetBabyIds.length === 1
+                ? targetBabyIds[0]
+                : activeBabyForEditor?.id;
+            const baby = babies.find((item) => item.id === targetBabyId);
+            const targetAgeDays = baby ? calcAgeDays(baby.birthDateISO, computed.shotDateISO || "") : computed.ageDays;
+
+            if (editorOptions.showAge && targetAgeDays !== undefined && targetAgeDays >= 0) {
+                lineParts.push(
+                    formatStyledAgeDisplay({
+                        ageFormat: editorOptions.ageFormat,
+                        ageDays: targetAgeDays,
+                        birthDateISO: baby?.birthDateISO,
+                        shotDateISO: computed.shotDateISO,
+                        displayStyle: editorOptions.displayStyle,
+                    }),
+                );
+            }
+
+            return lineParts.join("  ");
+        }
+
+        const babyEntries = targetBabyIds.map((id) => {
+            const baby = babies.find((item) => item.id === id);
+            if (!baby) return "";
+
+            const targetAgeDays = calcAgeDays(baby.birthDateISO, computed.shotDateISO || "");
+            const ageText = editorOptions.showAge && targetAgeDays >= 0
+                ? formatStyledAgeDisplay({
+                    ageFormat: editorOptions.ageFormat,
+                    ageDays: targetAgeDays,
+                    birthDateISO: baby.birthDateISO,
+                    shotDateISO: computed.shotDateISO,
+                    displayStyle: editorOptions.displayStyle,
+                })
+                : "";
+
+            if (editorOptions.showName && editorOptions.showAge && ageText) {
+                return `${baby.name} (${ageText})`;
+            }
+
+            if (editorOptions.showName) {
+                return baby.name;
+            }
+
+            if (ageText) {
+                return ageText;
+            }
+
+            return "";
+        }).filter(Boolean);
+
+        return [...lineParts, ...babyEntries].join("  ");
+    }, [activeBabyForEditor, babies, computed, dateTextLine1, displayBabyName, editorOptions, targetBabyIds]);
+
+    const allSelectedBeforeBirth = useMemo(() => {
         if (!computed || targetBabyIds.length === 0) return false;
         return targetBabyIds.every(id => {
             const b = babies.find(x => x.id === id);
@@ -864,19 +935,60 @@ export default function EditorScreen() {
                                     />
                                 </View>
                                 {editorOptions.showAge && !allSelectedBeforeBirth && (
-                                    <View style={styles.formatSegmentContainer}>
-                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}>
-                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
-                                        </TouchableOpacity>
-                                        <View style={styles.formatSegmentDivider} />
-                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}>
-                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
-                                        </TouchableOpacity>
-                                        <View style={styles.formatSegmentDivider} />
-                                        <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}>
-                                            <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    <>
+                                        <View style={styles.formatSegmentContainer}>
+                                            <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "days" } })}>
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatDays")}</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.formatSegmentDivider} />
+                                            <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "months_days" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "months_days" } })}>
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "months_days" && { color: theme.accent }]}>{i18n.t("editor.ageFormatMonthsDays")}</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.formatSegmentDivider} />
+                                            <TouchableOpacity style={[styles.formatSegmentButton, editorOptions.ageFormat === "years_months" && styles.formatSegmentButtonActive]} onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { ageFormat: "years_months" } })}>
+                                                <Text style={[styles.formatSegmentText, editorOptions.ageFormat === "years_months" && { color: theme.accent }]}>{i18n.t("editor.ageFormatYearsMonths")}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                        <View style={styles.displayStyleSection}>
+                                            <Text style={styles.displayStyleLabel}>{i18n.t("editor.displayStyleTitle")}</Text>
+                                            <ScrollHintedScrollView
+                                                direction="horizontal"
+                                                showsHorizontalScrollIndicator={false}
+                                                contentContainerStyle={styles.displayStyleRow}
+                                            >
+                                                {DISPLAY_STYLE_OPTIONS.map((style) => {
+                                                    const isActive = editorOptions.displayStyle === style;
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={style}
+                                                            style={[
+                                                                styles.displayStyleButton,
+                                                                isActive && [styles.displayStyleButtonActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                                            ]}
+                                                            onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { displayStyle: style } })}
+                                                            activeOpacity={0.8}
+                                                        >
+                                                            <Text style={[styles.displayStyleTitle, isActive && { color: theme.accent }]}>
+                                                                {i18n.t(`editor.displayStyle.${style}`)}
+                                                            </Text>
+                                                            <Text style={styles.displayStylePreview}>
+                                                                {formatStyledDateDisplay(computed.shotDateISO, style)}
+                                                            </Text>
+                                                            <Text style={styles.displayStylePreview}>
+                                                                {formatStyledAgeDisplay({
+                                                                    ageFormat: editorOptions.ageFormat,
+                                                                    ageDays: computed.ageDays,
+                                                                    birthDateISO: activeBabyForEditor?.birthDateISO,
+                                                                    shotDateISO: computed.shotDateISO,
+                                                                    displayStyle: style,
+                                                                })}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </ScrollHintedScrollView>
+                                        </View>
+                                    </>
                                 )}
                             </View>
                         </View>
@@ -1063,7 +1175,7 @@ export default function EditorScreen() {
                                         numberOfLines={1}
                                         adjustsFontSizeToFit
                                     >
-                                        {dateTextLine1}
+                                        {formattedDateTextLine1}
                                     </Text>
                                 )}
                                 {editorOptions.commentText ? (
@@ -1546,6 +1658,45 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
         color: "#888",
+    },
+    displayStyleSection: {
+        marginTop: 12,
+        gap: 10,
+    },
+    displayStyleLabel: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#666",
+    },
+    displayStyleRow: {
+        gap: 12,
+        paddingRight: 12,
+    },
+    displayStyleButton: {
+        width: 152,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#E9E3DE",
+        backgroundColor: "#FFF",
+        gap: 4,
+    },
+    displayStyleButtonActive: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    displayStyleTitle: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#333",
+    },
+    displayStylePreview: {
+        fontSize: 12,
+        color: "#777",
     },
     toolSaveActions: {
         gap: 10,

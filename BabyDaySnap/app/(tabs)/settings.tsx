@@ -14,7 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
-import { formatDateISO, formatDateDisplay } from "@/utils/date";
+import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
 import {
     DECORATIVE_FRAME_BACKGROUND_COLOR,
@@ -22,13 +22,15 @@ import {
 } from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS } from "@/utils/filters";
 import { THEME_COLOR_PRESETS, getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId, FilterId, BabyProfile } from "@/types";
+import type { TemplateId, FontId, FilterId, BabyProfile, DisplayStyle } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
+
+const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
@@ -317,7 +319,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: val,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: settings.defaultAgeFormat
+                                            defaultAgeFormat: settings.defaultAgeFormat,
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })
                                 }
@@ -340,7 +343,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: val,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: settings.defaultAgeFormat
+                                            defaultAgeFormat: settings.defaultAgeFormat,
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })
                                 }
@@ -363,7 +367,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: val,
-                                            defaultAgeFormat: settings.defaultAgeFormat
+                                            defaultAgeFormat: settings.defaultAgeFormat,
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })
                                 }
@@ -379,7 +384,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: "days"
+                                            defaultAgeFormat: "days",
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })}
                                 >
@@ -393,7 +399,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: "months_days"
+                                            defaultAgeFormat: "months_days",
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })}
                                 >
@@ -407,7 +414,8 @@ export default function SettingsScreen() {
                                             defaultShowDate: settings.defaultShowDate,
                                             defaultShowName: settings.defaultShowName,
                                             defaultShowAge: settings.defaultShowAge,
-                                            defaultAgeFormat: "years_months"
+                                            defaultAgeFormat: "years_months",
+                                            defaultDisplayStyle: settings.defaultDisplayStyle,
                                         }
                                     })}
                                 >
@@ -415,6 +423,56 @@ export default function SettingsScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
+                        <View style={styles.divider} />
+                        <View style={styles.displayStyleSection}>
+                            <Text style={styles.displayStyleLabel}>{i18n.t("settings.defaultDisplayStyle")}</Text>
+                            <ScrollHintedScrollView
+                                direction="horizontal"
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.displayStyleRow}
+                            >
+                                {DISPLAY_STYLE_OPTIONS.map((style) => {
+                                    const isActive = settings.defaultDisplayStyle === style;
+                                    return (
+                                        <TouchableOpacity
+                                            key={style}
+                                            style={[
+                                                styles.displayStyleButton,
+                                                isActive && [styles.displayStyleButtonActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                            ]}
+                                            onPress={() =>
+                                                dispatch({
+                                                    type: "SET_DEFAULT_TOGGLES",
+                                                    payload: {
+                                                        defaultShowDate: settings.defaultShowDate,
+                                                        defaultShowName: settings.defaultShowName,
+                                                        defaultShowAge: settings.defaultShowAge,
+                                                        defaultAgeFormat: settings.defaultAgeFormat,
+                                                        defaultDisplayStyle: style,
+                                                    },
+                                                })
+                                            }
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={[styles.displayStyleTitle, isActive && { color: theme.accent }]}>
+                                                {i18n.t(`editor.displayStyle.${style}`)}
+                                            </Text>
+                                            <Text style={styles.displayStylePreview}>
+                                                {formatStyledDateDisplay("2026/03/16", style)}
+                                            </Text>
+                                            <Text style={styles.displayStylePreview}>
+                                                {formatStyledAgeDisplay({
+                                                    ageFormat: "days",
+                                                    ageDays: 120,
+                                                    shotDateISO: "2026/03/16",
+                                                    displayStyle: style,
+                                                })}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollHintedScrollView>
+                        </View>
                     </View>
                 </View>
 
@@ -781,6 +839,46 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
         color: "#888",
+    },
+    displayStyleSection: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        gap: 10,
+    },
+    displayStyleLabel: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#666",
+    },
+    displayStyleRow: {
+        gap: 12,
+        paddingRight: 16,
+    },
+    displayStyleButton: {
+        width: 152,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#E9E3DE",
+        backgroundColor: "#FFF",
+        gap: 4,
+    },
+    displayStyleButtonActive: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    displayStyleTitle: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#333",
+    },
+    displayStylePreview: {
+        fontSize: 12,
+        color: "#777",
     },
     datePicker: {
         width: "100%",

@@ -51,6 +51,7 @@ export type ComputedInfo = {
 
 // --- 鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ鬩搾ｽｵ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｩ蟷｢・ｽ・｢髫ｴ諠ｹ・ｸ讖ｸ・ｽ・ｹ繝ｻ・ｲ鬩搾ｽｵ繝ｻ・ｺ髯ｷ・･隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ ---
 export type AgeFormat = "days" | "months_days" | "years_months";
+export type DisplayStyle = "current" | "soft_english" | "diary_english" | "keepsake_english";
 
 export type EditorOptions = {
     templateId: TemplateId;
@@ -62,6 +63,7 @@ export type EditorOptions = {
     showName: boolean;
     showAge: boolean;
     ageFormat: AgeFormat;
+    displayStyle: DisplayStyle;
 };
 
 // --- 鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ諠ｹ・ｸ讖ｸ・ｽ・ｹ繝ｻ・ｲ郢晢ｽｻ陷ｿ謔ｶ蜀髫ｲ・､陷･謫ｾ・ｽ・ｹ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ郢晢ｽｻ闕ｳ・ｻ繝ｻ・ｸ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ・ゑｽｧ郢晢ｽｻ闕ｳ・ｻ繝ｻ・ｸ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｪ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ郢晢ｽｻ陟托ｽｱ郢晢ｽｻ---
@@ -87,6 +89,7 @@ export type AppLibraryItem = {
     showName: boolean;
     showAge: boolean;
     ageFormat: AgeFormat;
+    displayStyle: DisplayStyle;
     createdAtMs: number;
 };
 
@@ -108,6 +111,7 @@ export type UserSettings = {
     defaultShowName: boolean;
     defaultShowAge: boolean;
     defaultAgeFormat: AgeFormat;
+    defaultDisplayStyle: DisplayStyle;
     lastTemplateId: TemplateId;
     lastFontId: FontId;
     lastDateColorHex: string;
@@ -138,7 +142,7 @@ export type AppAction =
     | { type: "SET_ONBOARDED"; payload: boolean }
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_BABY_NAME"; payload: string }
-    | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean; defaultAgeFormat: AgeFormat } }
+    | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean; defaultAgeFormat: AgeFormat; defaultDisplayStyle: DisplayStyle } }
     | { type: "SET_DEFAULT_PREFS"; payload: { defaultTemplateId?: TemplateId; defaultFontId?: FontId; defaultFilterId?: FilterId } }
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }

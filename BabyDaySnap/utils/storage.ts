@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     defaultShowName: true,
     defaultShowAge: true,
     defaultAgeFormat: "days",
+    defaultDisplayStyle: "current",
     lastTemplateId: "tpl_noframe_full",
     lastFontId: "font_standard",
     lastDateColorHex: "#FFFFFF",
@@ -65,6 +66,7 @@ export async function loadLibrary(): Promise<AppLibraryItem[]> {
                 babyIds: item.babyIds || [],
                 filterId: item.filterId || "filter_none",
                 ageFormat: item.ageFormat || "days",
+                displayStyle: item.displayStyle || "current",
             }));
         }
         return [];
