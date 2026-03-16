@@ -34,6 +34,7 @@ type BillingContextValue = {
 type ExpoIapModuleLike = {
     initConnection?: () => Promise<unknown>;
     endConnection?: () => Promise<unknown>;
+    fetchProducts?: (...args: any[]) => Promise<any[]>;
     getProducts?: (...args: any[]) => Promise<any[]>;
     getAvailablePurchases?: (...args: any[]) => Promise<any[]>;
     requestPurchase?: (...args: any[]) => Promise<unknown>;
@@ -79,11 +80,12 @@ function unlockPurchase(dispatch: ReturnType<typeof useAppDispatch>, purchase: a
 }
 
 async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
-    if (!iap.getProducts) {
+    if (!iap.fetchProducts && !iap.getProducts) {
         return [];
     }
 
     const attempts = [
+        () => iap.fetchProducts?.({ skus: productIds, type: "in-app" }),
         () => iap.getProducts?.({ skus: productIds, type: "inapp" }),
         () => iap.getProducts?.(productIds),
         () => iap.getProducts?.({ productIds, type: "inapp" }),
@@ -111,31 +113,15 @@ async function requestInAppPurchase(iap: ExpoIapModuleLike, productId: string) {
         request: {
             apple: {
                 sku: productId,
+                quantity: 1,
             },
             google: {
                 skus: [productId],
             },
         },
+        type: "in-app",
     };
-
-    const attempts = [
-        () => iap.requestPurchase?.(requestPayload),
-        () => iap.requestPurchase?.(productId),
-        () => iap.requestPurchase?.({ sku: productId }),
-    ];
-
-    let lastError: unknown;
-
-    for (const attempt of attempts) {
-        try {
-            await attempt();
-            return;
-        } catch (error) {
-            lastError = error;
-        }
-    }
-
-    throw lastError ?? new Error("requestPurchase failed");
+    await iap.requestPurchase(requestPayload);
 }
 
 async function finishInAppPurchase(iap: ExpoIapModuleLike, purchase: any) {
