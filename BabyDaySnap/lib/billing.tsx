@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Platform } from "react-native";
-import { IAPProvider, useIAP } from "expo-iap";
+import { useIAP } from "expo-iap";
 
 import { useAppDispatch } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
@@ -193,11 +193,7 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
 }
 
 export function BillingProvider({ children }: { children: ReactNode }) {
-    return (
-        <IAPProvider>
-            <BillingBootstrap>{children}</BillingBootstrap>
-        </IAPProvider>
-    );
+    return <BillingBootstrap>{children}</BillingBootstrap>;
 }
 
 export function useBilling() {
