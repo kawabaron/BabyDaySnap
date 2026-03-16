@@ -8,12 +8,13 @@ import {
 } from "react-native-google-mobile-ads";
 
 const monetizationConfig = Constants.expoConfig?.extra?.monetization;
+const isDev = typeof __DEV__ !== "undefined" && __DEV__;
 
 export const CREATE_BANNER_UNIT_ID =
-    monetizationConfig?.createBannerUnitId ?? TestIds.BANNER;
+    monetizationConfig?.createBannerUnitId ?? (isDev ? TestIds.ADAPTIVE_BANNER : TestIds.ADAPTIVE_BANNER);
 
 export const INTERSTITIAL_UNIT_ID =
-    monetizationConfig?.interstitialUnitId ?? TestIds.INTERSTITIAL;
+    monetizationConfig?.interstitialUnitId ?? (isDev ? TestIds.INTERSTITIAL : TestIds.INTERSTITIAL);
 
 export const CREATE_BANNER_SIZE = BannerAdSize.ANCHORED_ADAPTIVE_BANNER;
 
@@ -65,7 +66,6 @@ export async function initializeAds() {
     }
 
     attachInterstitialListeners();
-    interstitial.load();
 }
 
 export async function showInterstitialAd(): Promise<boolean> {
