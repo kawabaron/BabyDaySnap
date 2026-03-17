@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
-import { TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
+import { VISIBLE_TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
 import {
     DECORATIVE_FRAME_BACKGROUND_COLOR,
     DECORATIVE_FRAME_LINE_COLOR,
@@ -30,7 +30,7 @@ import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { useBilling } from "@/lib/billing";
-import { AD_FREE_PRODUCT_ID, SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
+import { AD_FREE_PRODUCT_ID, VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
@@ -508,7 +508,7 @@ export default function SettingsScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.templateRow}
                     >
-                        {TEMPLATES.map((t) => {
+                        {VISIBLE_TEMPLATES.map((t) => {
                             const pack = getSeasonPackByTemplateId(t.id);
                             const isLocked = pack ? !isSeasonPackUnlocked(settings, pack.id) : false;
 
@@ -650,7 +650,7 @@ export default function SettingsScreen() {
 
                         <View style={styles.divider} />
 
-                        {SEASON_PACKS.map((pack, index) => {
+                        {VISIBLE_SEASON_PACKS.map((pack, index) => {
                             const product = productsById[pack.productId];
                             const unlocked = settings.unlockedSeasonPackIds.includes(pack.id);
 
@@ -681,8 +681,6 @@ export default function SettingsScreen() {
                                 </View>
                             );
                         })}
-
-                        <View style={styles.divider} />
 
                         <TouchableOpacity
                             style={[styles.restoreButton, { borderColor: theme.accent }]}

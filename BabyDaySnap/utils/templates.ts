@@ -14,6 +14,7 @@ export type AppTemplateConfig = Omit<TemplateConfig, "id"> & {
     canvasBackgroundColorHex?: string;
     photoLineColorHex?: string;
     decorationPreset?: "berry_sakura";
+    isHidden?: boolean;
 };
 
 export const TEMPLATES: AppTemplateConfig[] = [
@@ -61,8 +62,11 @@ export const TEMPLATES: AppTemplateConfig[] = [
         canvasBackgroundColorHex: DECORATIVE_FRAME_BACKGROUND_COLOR,
         photoLineColorHex: DECORATIVE_FRAME_LINE_COLOR,
         decorationPreset: "berry_sakura",
+        isHidden: true,
     },
 ];
+
+export const VISIBLE_TEMPLATES = TEMPLATES.filter((template) => !template.isHidden);
 
 export const COLOR_PALETTE: ColorOption[] = [
     { hex: "#FFFFFF", get label() { return i18n.t("palette.white"); } },
@@ -79,6 +83,15 @@ export const COLOR_PALETTE: ColorOption[] = [
 
 export function getTemplateConfig(id: string): AppTemplateConfig {
     return TEMPLATES.find((template) => template.id === id) ?? TEMPLATES[0];
+}
+
+export function resolveSelectableTemplateId(id: string): TemplateId {
+    const template = TEMPLATES.find((item) => item.id === id);
+    if (template && !template.isHidden) {
+        return template.id;
+    }
+
+    return VISIBLE_TEMPLATES[0]?.id ?? TEMPLATES[0].id;
 }
 
 export const FONT_OPTIONS: FontOption[] = [

@@ -8,6 +8,7 @@ type SeasonPackDefinition = {
     templateIds: TemplateId[];
     titleKey: string;
     descriptionKey: string;
+    isHidden?: boolean;
 };
 
 export const AD_FREE_PRODUCT_ID =
@@ -25,8 +26,11 @@ export const SEASON_PACKS: SeasonPackDefinition[] = [
         templateIds: ["tpl_frame_berry_sakura"],
         titleKey: "monetization.springPackTitle",
         descriptionKey: "monetization.springPackDescription",
+        isHidden: true,
     },
 ];
+
+export const VISIBLE_SEASON_PACKS = SEASON_PACKS.filter((pack) => !pack.isHidden);
 
 export function getSeasonPackById(packId: SeasonPackId): SeasonPackDefinition | undefined {
     return SEASON_PACKS.find((pack) => pack.id === packId);

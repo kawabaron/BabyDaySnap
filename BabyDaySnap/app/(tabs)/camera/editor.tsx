@@ -23,7 +23,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFonts } from "expo-font";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
-import { TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_ASSET_MAP, FONT_OPTIONS } from "@/utils/templates";
+import { VISIBLE_TEMPLATES, COLOR_PALETTE, getTemplateConfig, FONT_ASSET_MAP, FONT_OPTIONS } from "@/utils/templates";
 import {
     BERRY_SAKURA_LAYOUT_SEED,
     DECORATIVE_FRAME_LINE_COLOR,
@@ -840,7 +840,7 @@ export default function EditorScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.templateRow}
                         >
-                            {TEMPLATES.map((t) => {
+                            {VISIBLE_TEMPLATES.map((t) => {
                                 const pack = getSeasonPackByTemplateId(t.id);
                                 const isLocked = pack ? !isSeasonPackUnlocked(settings, pack.id) : false;
 

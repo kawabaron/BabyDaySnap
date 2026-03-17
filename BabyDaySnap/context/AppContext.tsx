@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from "react";
 import type { AppState, AppAction, EditorOptions, BabyProfile } from "@/types";
 import { loadSettings, saveSettings, loadLibrary, saveLibrary, loadBabies, saveBabies, DEFAULT_SETTINGS } from "@/utils/storage";
-import { getTemplateConfig } from "@/utils/templates";
+import { getTemplateConfig, resolveSelectableTemplateId } from "@/utils/templates";
 import * as FileSystem from "expo-file-system/legacy";
 
 // --- 鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ郢晢ｽｻ隲ｱ繝ｻ繝ｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ---
@@ -43,7 +43,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "LOAD_SETTINGS":
             return {
                 ...state,
-                settings: action.payload,
+                settings: {
+                    ...action.payload,
+                    defaultTemplateId: resolveSelectableTemplateId(action.payload.defaultTemplateId),
+                    lastTemplateId: resolveSelectableTemplateId(action.payload.lastTemplateId),
+                },
             };
         case "SET_ONBOARDED":
             return {
@@ -210,7 +214,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 }
             }
 
-            const templateId = state.settings.defaultTemplateId || "tpl_noframe_full";
+            const templateId = resolveSelectableTemplateId(state.settings.defaultTemplateId || "tpl_noframe_full");
             const tpl = getTemplateConfig(templateId);
             return {
                 ...state,
