@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
     },
     monthTabIndicator: {
         marginTop: 8,
-        width: "100%",
+        width: 28,
         height: 3,
         borderRadius: 999,
         backgroundColor: "transparent",
