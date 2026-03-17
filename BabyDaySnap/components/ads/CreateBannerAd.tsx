@@ -14,7 +14,8 @@ import {
 import { BannerAd } from "react-native-google-mobile-ads";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAppState } from "@/context/AppContext";
+import { useActiveBaby, useAppState } from "@/context/AppContext";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import { showInterstitialAd, CREATE_BANNER_SIZE, CREATE_BANNER_UNIT_ID } from "@/lib/ads";
 import { useBilling } from "@/lib/billing";
 import i18n from "@/lib/i18n";
@@ -27,6 +28,7 @@ type SheetMode = "actions" | "purchase" | null;
 
 export function CreateBannerAd() {
     const { settings } = useAppState();
+    const activeBaby = useActiveBaby();
     const { productsById, isPurchasing, purchaseAdFree } = useBilling();
     const insets = useSafeAreaInsets();
     const { width: screenWidth } = useWindowDimensions();
@@ -42,6 +44,7 @@ export function CreateBannerAd() {
     const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
     const isSheetVisible = sheetMode !== null;
     const isHiddenForToday = hiddenDateKey === todayKey;
+    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
     const shellHorizontalMargin = screenWidth >= 360 ? 8 : 4;
     const sideSlotWidth = screenWidth >= 360 ? 18 : 14;
 
@@ -137,7 +140,7 @@ export function CreateBannerAd() {
 
     return (
         <>
-            <View style={styles.wrapper}>
+            <View style={[styles.wrapper, { backgroundColor: theme.background }]}>
                 <View
                     style={[
                         styles.bannerShell,
