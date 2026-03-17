@@ -404,7 +404,7 @@ export default function LibraryGridScreen() {
     return (
         <SafeAreaView style={styles.screen} edges={["top"]}>
             <AppHeader
-                title={activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
+                title={i18n.t("library.headerTitle")}
                 subtitle={i18n.t("library.headerCount", { count: filteredLibrary.length })}
                 leftSlot={headerLeftSlot}
                 rightSlot={headerRightSlot}
