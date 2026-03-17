@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import {
     Alert,
     Animated,
@@ -32,6 +33,7 @@ export function CreateBannerAd() {
     const activeBaby = useActiveBaby();
     const { productsById, isPurchasing, purchaseAdFree } = useBilling();
     const insets = useSafeAreaInsets();
+    const isFocused = useIsFocused();
     const { width: screenWidth } = useWindowDimensions();
 
     const [sheetMode, setSheetMode] = useState<SheetMode>(null);
@@ -51,25 +53,25 @@ export function CreateBannerAd() {
     const shellHorizontalMargin = screenWidth >= 360 ? 8 : 4;
     const sideSlotWidth = screenWidth >= 360 ? 18 : 14;
 
+    const syncHiddenState = useCallback(async () => {
+        const storedValue = await AsyncStorage.getItem(TEMP_HIDDEN_STORAGE_KEY);
+
+        if (storedValue === todayKey) {
+            setHiddenDateKey(storedValue);
+            return;
+        }
+
+        setHiddenDateKey(null);
+
+        if (storedValue) {
+            AsyncStorage.removeItem(TEMP_HIDDEN_STORAGE_KEY).catch(() => undefined);
+        }
+    }, [todayKey]);
+
     useEffect(() => {
         let isMounted = true;
 
-        AsyncStorage.getItem(TEMP_HIDDEN_STORAGE_KEY)
-            .then((storedValue) => {
-                if (!isMounted) {
-                    return;
-                }
-
-                if (storedValue === todayKey) {
-                    setHiddenDateKey(storedValue);
-                    return;
-                }
-
-                setHiddenDateKey(null);
-                if (storedValue) {
-                    AsyncStorage.removeItem(TEMP_HIDDEN_STORAGE_KEY).catch(() => undefined);
-                }
-            })
+        syncHiddenState()
             .finally(() => {
                 if (isMounted) {
                     setStorageReady(true);
@@ -79,7 +81,15 @@ export function CreateBannerAd() {
         return () => {
             isMounted = false;
         };
-    }, [todayKey]);
+    }, [syncHiddenState]);
+
+    useEffect(() => {
+        if (!isFocused || !storageReady) {
+            return;
+        }
+
+        syncHiddenState().catch(() => undefined);
+    }, [isFocused, storageReady, syncHiddenState]);
 
     useEffect(() => {
         if (!isSheetVisible) {
