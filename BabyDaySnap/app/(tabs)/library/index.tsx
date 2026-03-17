@@ -375,41 +375,39 @@ export default function LibraryGridScreen() {
         [isSelectionMode, renderMonthBlock],
     );
 
-    const headerRightSlot = (
-        <View style={styles.headerActions}>
-            {filteredLibrary.length > 0 ? (
-                <TouchableOpacity
-                    onPress={toggleSelectionMode}
-                    style={[styles.headerButton, { backgroundColor: theme.light }]}
-                    activeOpacity={0.8}
-                >
-                    <Text style={[styles.headerButtonText, { color: theme.accent }]}>
-                        {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
-                    </Text>
-                </TouchableOpacity>
-            ) : null}
-            {activeBaby ? (
-                <TouchableOpacity
-                    style={styles.babyBadge}
-                    onPress={() => setShowBabyPicker(true)}
-                    activeOpacity={0.8}
-                >
-                    <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
-                    <Text style={[styles.babyBadgeText, { color: theme.accent }]} numberOfLines={1}>
-                        {activeBaby.name}
-                    </Text>
-                    <Ionicons name="chevron-down" size={12} color={theme.accent} />
-                </TouchableOpacity>
-            ) : null}
-        </View>
-    );
+    const headerLeftSlot = filteredLibrary.length > 0 ? (
+        <TouchableOpacity
+            onPress={toggleSelectionMode}
+            style={[styles.headerButton, { backgroundColor: theme.light }]}
+            activeOpacity={0.8}
+        >
+            <Text style={[styles.headerButtonText, { color: theme.accent }]}>
+                {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
+            </Text>
+        </TouchableOpacity>
+    ) : null;
+
+    const headerRightSlot = activeBaby ? (
+        <TouchableOpacity
+            style={[styles.headerButton, styles.switchButton, { backgroundColor: theme.light }]}
+            onPress={() => setShowBabyPicker(true)}
+            activeOpacity={0.8}
+        >
+            <Text style={[styles.headerButtonText, { color: theme.accent }]}>
+                {i18n.t("camera.switchBabyTitle")}
+            </Text>
+            <Ionicons name="chevron-down" size={12} color={theme.accent} />
+        </TouchableOpacity>
+    ) : null;
 
     return (
         <SafeAreaView style={styles.screen} edges={["top"]}>
             <AppHeader
                 title={activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
                 subtitle={i18n.t("library.headerCount", { count: filteredLibrary.length })}
+                leftSlot={headerLeftSlot}
                 rightSlot={headerRightSlot}
+                sideWidth={104}
             />
             <CreateBannerAd />
             <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -557,40 +555,21 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerActions: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
     headerButton: {
         minHeight: 36,
         paddingHorizontal: 12,
         borderRadius: 16,
         justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "row",
+        gap: 6,
     },
     headerButtonText: {
         fontSize: 14,
         fontWeight: "600",
     },
-    babyBadge: {
-        maxWidth: 120,
-        minHeight: 36,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        backgroundColor: "#F5F5F5",
-        paddingHorizontal: 12,
-        borderRadius: 16,
-    },
-    babyBadgeDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-    },
-    babyBadgeText: {
-        flexShrink: 1,
-        fontSize: 14,
-        fontWeight: "600",
+    switchButton: {
+        minWidth: 82,
     },
     monthHeader: {
         paddingTop: 8,

@@ -7,26 +7,30 @@ type AppHeaderProps = {
     title: string;
     subtitle?: string;
     onBackPress?: () => void;
+    leftSlot?: ReactNode;
     rightSlot?: ReactNode;
     backgroundColor?: string;
+    sideWidth?: number;
 };
 
 export function AppHeader({
     title,
     subtitle,
     onBackPress,
+    leftSlot,
     rightSlot,
     backgroundColor = "#FFF",
+    sideWidth = 88,
 }: AppHeaderProps) {
     return (
         <View style={[styles.header, { backgroundColor }]}>
-            <View style={styles.side}>
+            <View style={[styles.side, { width: sideWidth }]}>
                 {onBackPress ? (
                     <TouchableOpacity style={styles.backButton} onPress={onBackPress} activeOpacity={0.8}>
                         <Ionicons name="chevron-back" size={18} color="#444" />
                         <Text style={styles.backText}>{i18n.t("common.back")}</Text>
                     </TouchableOpacity>
-                ) : null}
+                ) : leftSlot}
             </View>
             <View style={styles.center}>
                 <Text style={styles.title} numberOfLines={1}>
@@ -38,7 +42,7 @@ export function AppHeader({
                     </Text>
                 ) : null}
             </View>
-            <View style={[styles.side, styles.sideRight]}>{rightSlot}</View>
+            <View style={[styles.side, styles.sideRight, { width: sideWidth }]}>{rightSlot}</View>
         </View>
     );
 }
@@ -54,7 +58,6 @@ const styles = StyleSheet.create({
         borderBottomColor: "#E9DDE2",
     },
     side: {
-        minWidth: 88,
         minHeight: 44,
         justifyContent: "center",
     },
