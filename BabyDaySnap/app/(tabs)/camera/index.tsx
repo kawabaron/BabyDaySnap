@@ -10,6 +10,7 @@ import {
     ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { useRouter } from "expo-router";
 import { useAppDispatch, useAppState, useActiveBaby } from "@/context/AppContext";
@@ -22,6 +23,40 @@ import { resolveDecorationSeed } from "@/utils/decorativeFrame";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
+
+function parseExifDateTimeToMs(value: unknown): number | undefined {
+    if (typeof value !== "string" || value.trim().length === 0) {
+        return undefined;
+    }
+
+    const normalized = value
+        .trim()
+        .replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3")
+        .replace(" ", "T");
+    const parsed = new Date(normalized).getTime();
+
+    return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+async function resolvePickedPhotoTimeMs(asset: ImagePicker.ImagePickerAsset): Promise<number | undefined> {
+    const exifDateTimeOriginalMs = parseExifDateTimeToMs(asset.exif?.DateTimeOriginal);
+    if (exifDateTimeOriginalMs) {
+        return exifDateTimeOriginalMs;
+    }
+
+    if (!asset.assetId) {
+        return undefined;
+    }
+
+    try {
+        const assetInfo = await MediaLibrary.getAssetInfoAsync(asset.assetId, {
+            shouldDownloadFromNetwork: false,
+        });
+        return assetInfo.creationTime > 0 ? assetInfo.creationTime : undefined;
+    } catch {
+        return undefined;
+    }
+}
 
 export default function CameraScreen() {
     const dispatch = useAppDispatch();
@@ -97,9 +132,8 @@ export default function CameraScreen() {
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
-                const exifDateTimeOriginalMs = asset.exif?.DateTimeOriginal
-                    ? new Date(asset.exif.DateTimeOriginal as string).getTime()
-                    : undefined;
+                const exifDateTimeOriginalMs = parseExifDateTimeToMs(asset.exif?.DateTimeOriginal);
+                const creationTimeMs = (await resolvePickedPhotoTimeMs(asset)) ?? Date.now();
 
                 const photo: PhotoSource = {
                     uri: asset.uri,
@@ -108,7 +142,7 @@ export default function CameraScreen() {
                     height: asset.height,
                     source: "camera",
                     assetId: asset.assetId ?? undefined,
-                    creationTimeMs: exifDateTimeOriginalMs ?? Date.now(),
+                    creationTimeMs,
                     exifDateTimeOriginalMs,
                 };
                 photo.decorationSeed = resolveDecorationSeed(photo);
@@ -131,9 +165,8 @@ export default function CameraScreen() {
             if (!result.canceled && result.assets[0]) {
                 const asset = result.assets[0];
                 const previewUri = await createPreviewImage(asset.uri, asset.width, asset.height);
-                const exifDateTimeOriginalMs = asset.exif?.DateTimeOriginal
-                    ? new Date(asset.exif.DateTimeOriginal as string).getTime()
-                    : undefined;
+                const exifDateTimeOriginalMs = parseExifDateTimeToMs(asset.exif?.DateTimeOriginal);
+                const creationTimeMs = (await resolvePickedPhotoTimeMs(asset)) ?? Date.now();
 
                 const photo: PhotoSource = {
                     uri: asset.uri,
@@ -142,7 +175,7 @@ export default function CameraScreen() {
                     height: asset.height,
                     source: "import",
                     assetId: asset.assetId ?? undefined,
-                    creationTimeMs: exifDateTimeOriginalMs ?? Date.now(),
+                    creationTimeMs,
                     exifDateTimeOriginalMs,
                 };
                 photo.decorationSeed = resolveDecorationSeed(photo);

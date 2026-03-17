@@ -60,7 +60,7 @@ export async function saveToAppLibrary(
     const item: AppLibraryItem = {
         id,
         babyIds,
-        createdAtMs: Date.now(),
+        createdAtMs: photoSource.creationTimeMs ?? Date.now(),
         source: photoSource.source,
         originalFileUri: originalDestUri,
         renderedFileUri: destUri,

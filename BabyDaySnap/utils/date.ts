@@ -165,11 +165,11 @@ export function getShotDateISO(
     source: "camera" | "import",
     creationTimeMs?: number,
 ): string {
-    if (source === "camera") {
-        return formatDateISO(new Date());
-    }
     if (creationTimeMs) {
         return msToDateISO(creationTimeMs);
+    }
+    if (source === "camera") {
+        return formatDateISO(new Date());
     }
     // フォールバック: 現在日時
     return formatDateISO(new Date());

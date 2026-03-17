@@ -389,14 +389,15 @@ export default function LibraryGridScreen() {
 
     const headerRightSlot = activeBaby ? (
         <TouchableOpacity
-            style={[styles.headerButton, styles.switchButton, { backgroundColor: theme.light }]}
+            style={styles.switchBadge}
             onPress={() => setShowBabyPicker(true)}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
         >
-            <Text style={[styles.headerButtonText, { color: theme.accent }]}>
+            <View style={[styles.switchBadgeDot, { backgroundColor: theme.accent }]} />
+            <Text style={[styles.switchBadgeText, { color: theme.accent }]}>
                 {i18n.t("camera.switchBabyTitle")}
             </Text>
-            <Ionicons name="chevron-down" size={12} color={theme.accent} />
+            <Ionicons name="chevron-down" size={12} color={theme.accent} style={styles.switchBadgeChevron} />
         </TouchableOpacity>
     ) : null;
 
@@ -568,8 +569,26 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "600",
     },
-    switchButton: {
-        minWidth: 82,
+    switchBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: "#F5F5F5",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    switchBadgeDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    switchBadgeText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    switchBadgeChevron: {
+        marginLeft: 2,
     },
     monthHeader: {
         paddingTop: 8,
