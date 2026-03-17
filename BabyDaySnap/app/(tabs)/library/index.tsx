@@ -1,92 +1,183 @@
-import { useCallback, useState, useRef, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    View,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    Image,
-    StyleSheet,
-    Dimensions,
     Alert,
+    Dimensions,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
     ScrollView,
-    Animated,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
-import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { AppLibraryItem } from "@/types";
-import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
+import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
+import { useActiveBaby, useAppDispatch, useAppState } from "@/context/AppContext";
+import i18n from "@/lib/i18n";
+import type { AppLibraryItem } from "@/types";
+import { calcAgeDays, formatStyledAgeDisplay } from "@/utils/date";
+import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
+
+const MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+] as const;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const NUM_COLUMNS = 3;
+const PAGE_HORIZONTAL_PADDING = 8;
 const GRID_GAP = 2;
-const ITEM_SIZE = (SCREEN_WIDTH - GRID_GAP * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
+const SMALL_TILE_SIZE = (SCREEN_WIDTH - PAGE_HORIZONTAL_PADDING * 2 - GRID_GAP * 2) / 3;
+const HERO_TILE_HEIGHT = Math.round(SCREEN_WIDTH * 1.08);
+const MIXED_TILE_WIDTH = SMALL_TILE_SIZE * 2 + GRID_GAP;
+const MIXED_TILE_HEIGHT = SMALL_TILE_SIZE * 2 + GRID_GAP;
+const LAYOUT_CYCLE_SIZE = 10;
+
+type MonthGroup = {
+    key: string;
+    year: number;
+    month: number;
+    monthName: string;
+    items: AppLibraryItem[];
+    blocks: AppLibraryItem[][];
+    heroAgeLabel: string | null;
+};
 
 export default function LibraryGridScreen() {
     const { library, babies, activeBabyId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
     const activeBaby = useActiveBaby();
+    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [showBabyPicker, setShowBabyPicker] = useState(false);
+    const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
 
-    const pagerRef = useRef<FlatList>(null);
+    const monthPagerRef = useRef<FlatList<MonthGroup>>(null);
 
-    // テーマカラー取得
-    const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
-
-    // アクティブな赤ちゃんのライブラリのみ表示
     const filteredLibrary = useMemo(() => {
-        if (!activeBabyId) return library;
-        return library.filter((item) => item.babyIds.includes(activeBabyId));
-    }, [library, activeBabyId]);
+        const baseLibrary = activeBabyId
+            ? library.filter((item) => item.babyIds.includes(activeBabyId))
+            : library;
 
-    // スワイプで赤ちゃん切り替え
-    const handleBabySwitch = (babyId: string) => {
-        if (babyId !== activeBabyId) {
-            dispatch({ type: "SET_ACTIVE_BABY", payload: babyId });
-            setIsSelectionMode(false);
-            setSelectedIds([]);
+        return [...baseLibrary].sort((a, b) => {
+            if (a.shotDateISO !== b.shotDateISO) {
+                return b.shotDateISO.localeCompare(a.shotDateISO);
+            }
+            return b.createdAtMs - a.createdAtMs;
+        });
+    }, [activeBabyId, library]);
+
+    const monthGroups = useMemo<MonthGroup[]>(() => {
+        const groups = new Map<string, AppLibraryItem[]>();
+
+        for (const item of filteredLibrary) {
+            const [yearPart, monthPart] = item.shotDateISO.split("/");
+            const key = `${yearPart}-${monthPart}`;
+            const existing = groups.get(key);
+            if (existing) {
+                existing.push(item);
+            } else {
+                groups.set(key, [item]);
+            }
         }
-    };
 
-    const toggleSelectionMode = () => {
-        setIsSelectionMode(!isSelectionMode);
-        setSelectedIds([]);
-    };
+        return Array.from(groups.entries())
+            .sort(([leftKey], [rightKey]) => rightKey.localeCompare(leftKey))
+            .map(([key, items]) => {
+                const [year, month] = key.split("-").map(Number);
+                const heroItem = items[0];
+                const heroAgeLabel =
+                    activeBaby?.birthDateISO && heroItem
+                        ? formatStyledAgeDisplay({
+                            ageFormat: "years_months",
+                            ageDays: calcAgeDays(activeBaby.birthDateISO, heroItem.shotDateISO),
+                            birthDateISO: activeBaby.birthDateISO,
+                            shotDateISO: heroItem.shotDateISO,
+                            displayStyle: "current",
+                        })
+                        : null;
 
-    // タブで赤ちゃんが直接変更された場合にページャーをスクロール
+                const blocks: AppLibraryItem[][] = [];
+                for (let index = 0; index < items.length; index += LAYOUT_CYCLE_SIZE) {
+                    blocks.push(items.slice(index, index + LAYOUT_CYCLE_SIZE));
+                }
+
+                return {
+                    key,
+                    year,
+                    month,
+                    monthName: MONTH_NAMES[month - 1] ?? "",
+                    items,
+                    blocks,
+                    heroAgeLabel,
+                };
+            });
+    }, [activeBaby?.birthDateISO, filteredLibrary]);
+
     useEffect(() => {
-        if (!activeBabyId || babies.length === 0 || !pagerRef.current) return;
-        const index = babies.findIndex((b) => b.id === activeBabyId);
-        if (index >= 0) {
-            pagerRef.current.scrollToIndex({ index, animated: true });
+        setIsSelectionMode(false);
+        setSelectedIds([]);
+        setSelectedMonthIndex(0);
+        if (monthPagerRef.current) {
+            monthPagerRef.current.scrollToOffset({ offset: 0, animated: false });
         }
-    }, [activeBabyId, babies]);
+    }, [activeBabyId]);
+
+    useEffect(() => {
+        if (monthGroups.length === 0) {
+            setSelectedMonthIndex(0);
+            return;
+        }
+
+        if (selectedMonthIndex > monthGroups.length - 1) {
+            setSelectedMonthIndex(0);
+        }
+    }, [monthGroups.length, selectedMonthIndex]);
+
+    const currentMonth = monthGroups[selectedMonthIndex] ?? null;
+
+    const toggleSelectionMode = useCallback(() => {
+        setIsSelectionMode((previous) => !previous);
+        setSelectedIds([]);
+    }, []);
 
     const handlePress = useCallback(
         (item: AppLibraryItem) => {
             if (isSelectionMode) {
-                setSelectedIds((prev) =>
-                    prev.includes(item.id)
-                        ? prev.filter((id) => id !== item.id)
-                        : [...prev, item.id],
+                setSelectedIds((previous) =>
+                    previous.includes(item.id)
+                        ? previous.filter((id) => id !== item.id)
+                        : [...previous, item.id],
                 );
-            } else {
-                router.push(`/(tabs)/library/${item.id}`);
+                return;
             }
+
+            router.push(`/(tabs)/library/${item.id}`);
         },
         [isSelectionMode, router],
     );
 
-    const handleDeleteSelected = () => {
+    const handleDeleteSelected = useCallback(() => {
         if (selectedIds.length === 0) return;
+
         Alert.alert(
             i18n.t("library.deleteConfirmTitle"),
             i18n.t("library.deleteConfirmMsg", { count: selectedIds.length }),
@@ -96,7 +187,7 @@ export default function LibraryGridScreen() {
                     text: i18n.t("library.delete"),
                     style: "destructive",
                     onPress: async () => {
-                        const itemsToDelete = library.filter((i) => selectedIds.includes(i.id));
+                        const itemsToDelete = library.filter((item) => selectedIds.includes(item.id));
                         for (const item of itemsToDelete) {
                             await deleteFromAppLibrary(item);
                             dispatch({ type: "LIBRARY_REMOVE", payload: item.id });
@@ -107,12 +198,12 @@ export default function LibraryGridScreen() {
                 },
             ],
         );
-    };
+    }, [dispatch, library, selectedIds]);
 
-    const handleSaveSelected = async () => {
+    const handleSaveSelected = useCallback(async () => {
         if (selectedIds.length === 0) return;
 
-        const itemsToSave = library.filter((i) => selectedIds.includes(i.id));
+        const itemsToSave = library.filter((item) => selectedIds.includes(item.id));
         let successCount = 0;
 
         for (const item of itemsToSave) {
@@ -128,35 +219,189 @@ export default function LibraryGridScreen() {
 
         setIsSelectionMode(false);
         setSelectedIds([]);
-    };
+    }, [library, selectedIds]);
 
-    const renderGridItem = useCallback(
-        ({ item }: { item: AppLibraryItem }) => {
+    const handleSelectBaby = useCallback(
+        (babyId: string) => {
+            dispatch({ type: "SET_ACTIVE_BABY", payload: babyId });
+            setShowBabyPicker(false);
+            setIsSelectionMode(false);
+            setSelectedIds([]);
+        },
+        [dispatch],
+    );
+
+    const scrollToMonth = useCallback((index: number) => {
+        setSelectedMonthIndex(index);
+        monthPagerRef.current?.scrollToIndex({ index, animated: true });
+    }, []);
+
+    const renderPhotoTile = useCallback(
+        (
+            item: AppLibraryItem | undefined,
+            tileStyle: object,
+            options?: {
+                tileKey?: string;
+                showMonthOverlay?: boolean;
+                monthName?: string;
+                year?: number;
+                ageLabel?: string | null;
+            },
+        ) => {
+            if (!item) {
+                return <View key={options?.tileKey} style={[styles.tilePlaceholder, tileStyle]} />;
+            }
+
             const isSelected = selectedIds.includes(item.id);
+
             return (
                 <TouchableOpacity
-                    style={styles.gridItem}
+                    key={options?.tileKey ?? item.id}
+                    style={[styles.photoTile, tileStyle]}
                     onPress={() => handlePress(item)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.92}
                 >
-                    <Image
-                        source={{ uri: item.renderedFileUri }}
-                        style={styles.thumbnail}
-                        resizeMode="cover"
-                    />
-                    {isSelectionMode && (
+                    <Image source={{ uri: item.renderedFileUri }} style={styles.photoImage} resizeMode="cover" />
+                    {options?.showMonthOverlay ? (
+                        <>
+                            <View style={styles.heroShade} />
+                            <View style={styles.heroOverlay}>
+                                <Text style={styles.heroMonth}>{options.monthName}</Text>
+                                <Text style={styles.heroYear}>{options.year}</Text>
+                                {options.ageLabel ? <Text style={styles.heroAge}>{options.ageLabel}</Text> : null}
+                            </View>
+                        </>
+                    ) : null}
+                    {isSelectionMode ? (
                         <View style={[styles.selectionOverlay, isSelected && [styles.selectionOverlayActive, { borderColor: theme.accent }]]}>
                             <Ionicons
                                 name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                                 size={24}
-                                color={isSelected ? theme.accent : "rgba(255,255,255,0.8)"}
+                                color={isSelected ? theme.accent : "rgba(255,255,255,0.9)"}
                             />
                         </View>
-                    )}
+                    ) : null}
                 </TouchableOpacity>
             );
         },
-        [handlePress, isSelectionMode, selectedIds, theme],
+        [handlePress, isSelectionMode, selectedIds, theme.accent],
+    );
+
+    const renderThreeUpRow = useCallback(
+        (items: Array<AppLibraryItem | undefined>, rowKey: string) => (
+            <View style={styles.smallRow} key={rowKey}>
+                {items.map((item, index) =>
+                    renderPhotoTile(
+                        item,
+                        { width: SMALL_TILE_SIZE, height: SMALL_TILE_SIZE },
+                        { tileKey: `${rowKey}-${index}` },
+                    ),
+                )}
+            </View>
+        ),
+        [renderPhotoTile],
+    );
+
+    const renderMixedRow = useCallback(
+        (items: Array<AppLibraryItem | undefined>, rowKey: string) => {
+            const [leftItem, topRightItem, bottomRightItem] = items;
+            const hasAnyItem = items.some(Boolean);
+
+            if (!hasAnyItem) {
+                return null;
+            }
+
+            return (
+                <View style={styles.mixedRow} key={rowKey}>
+                    {renderPhotoTile(leftItem, { width: MIXED_TILE_WIDTH, height: MIXED_TILE_HEIGHT }, { tileKey: `${rowKey}-left` })}
+                    <View style={styles.mixedColumn}>
+                        {renderPhotoTile(topRightItem, { width: SMALL_TILE_SIZE, height: SMALL_TILE_SIZE }, { tileKey: `${rowKey}-top` })}
+                        {renderPhotoTile(bottomRightItem, { width: SMALL_TILE_SIZE, height: SMALL_TILE_SIZE }, { tileKey: `${rowKey}-bottom` })}
+                    </View>
+                </View>
+            );
+        },
+        [renderPhotoTile],
+    );
+
+    const renderMonthBlock = useCallback(
+        ({ item, index, month }: { item: AppLibraryItem[]; index: number; month: MonthGroup }) => {
+            const heroItem = item[0];
+            const topRowItems = [item[1], item[2], item[3]];
+            const mixedRowItems = [item[4], item[5], item[6]];
+            const bottomRowItems = [item[7], item[8], item[9]];
+
+            return (
+                <View style={styles.monthBlock}>
+                    {renderPhotoTile(heroItem, { width: "100%", height: HERO_TILE_HEIGHT }, {
+                        tileKey: `${month.key}-hero-${index}`,
+                        ...(index === 0
+                            ? {
+                                showMonthOverlay: true,
+                                monthName: month.monthName,
+                                year: month.year,
+                                ageLabel: month.heroAgeLabel,
+                            }
+                            : {}),
+                    })}
+                    {topRowItems.some(Boolean) ? renderThreeUpRow(topRowItems, `${month.key}-top-${index}`) : null}
+                    {renderMixedRow(mixedRowItems, `${month.key}-mixed-${index}`)}
+                    {bottomRowItems.some(Boolean) ? renderThreeUpRow(bottomRowItems, `${month.key}-bottom-${index}`) : null}
+                </View>
+            );
+        },
+        [renderMixedRow, renderPhotoTile, renderThreeUpRow],
+    );
+
+    const renderMonthPage = useCallback(
+        ({ item }: { item: MonthGroup }) => (
+            <View style={styles.monthPage}>
+                <FlatList
+                    data={item.blocks}
+                    keyExtractor={(_, index) => `${item.key}-${index}`}
+                    renderItem={({ item: block, index }) => renderMonthBlock({ item: block, index, month: item })}
+                    contentContainerStyle={[
+                        styles.monthPageContent,
+                        isSelectionMode && styles.monthPageContentWithBottomBar,
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                    removeClippedSubviews
+                    initialNumToRender={3}
+                    maxToRenderPerBatch={4}
+                    windowSize={5}
+                />
+            </View>
+        ),
+        [isSelectionMode, renderMonthBlock],
+    );
+
+    const headerRightSlot = (
+        <View style={styles.headerActions}>
+            {filteredLibrary.length > 0 ? (
+                <TouchableOpacity
+                    onPress={toggleSelectionMode}
+                    style={[styles.headerButton, { backgroundColor: theme.light }]}
+                    activeOpacity={0.8}
+                >
+                    <Text style={[styles.headerButtonText, { color: theme.accent }]}>
+                        {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
+                    </Text>
+                </TouchableOpacity>
+            ) : null}
+            {activeBaby ? (
+                <TouchableOpacity
+                    style={styles.babyBadge}
+                    onPress={() => setShowBabyPicker(true)}
+                    activeOpacity={0.8}
+                >
+                    <View style={[styles.babyBadgeDot, { backgroundColor: theme.accent }]} />
+                    <Text style={[styles.babyBadgeText, { color: theme.accent }]} numberOfLines={1}>
+                        {activeBaby.name}
+                    </Text>
+                    <Ionicons name="chevron-down" size={12} color={theme.accent} />
+                </TouchableOpacity>
+            ) : null}
+        </View>
     );
 
     return (
@@ -164,141 +409,142 @@ export default function LibraryGridScreen() {
             <AppHeader
                 title={activeBaby ? activeBaby.name : i18n.t("library.headerTitle")}
                 subtitle={i18n.t("library.headerCount", { count: filteredLibrary.length })}
-                rightSlot={filteredLibrary.length > 0 ? (
-                    <TouchableOpacity onPress={toggleSelectionMode} style={[styles.headerButton, { backgroundColor: theme.light }]}>
-                        <Text style={[styles.headerButtonText, { color: theme.accent }]}>
-                            {isSelectionMode ? i18n.t("library.cancelModeButton") : i18n.t("library.selectModeButton")}
-                        </Text>
-                    </TouchableOpacity>
-                ) : null}
+                rightSlot={headerRightSlot}
             />
             <CreateBannerAd />
             <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* 赤ちゃん切り替えタブ（2人以上の場合のみ） */}
-            {babies.length > 1 && (
-                <View style={styles.babyTabContainer}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.babyTabContent}
-                    >
-                        {babies.map((baby) => {
-                            const isActive = baby.id === activeBabyId;
-                            const babyTheme = getThemePreset(baby.themeColorHex);
-                            return (
+                {babies.length === 0 || monthGroups.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="images-outline" size={64} color="#DDD" />
+                        <Text style={styles.emptyTitle}>{i18n.t("library.emptyTitle")}</Text>
+                        <Text style={styles.emptySubtitle}>{i18n.t("library.emptySubtitle")}</Text>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.monthHeader}>
+                            <Text style={[styles.monthYearLabel, { color: theme.accent }]}>
+                                {currentMonth?.year ?? ""}
+                            </Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.monthTabsContent}
+                            >
+                                {monthGroups.map((month, index) => {
+                                    const isActive = index === selectedMonthIndex;
+                                    return (
+                                        <TouchableOpacity
+                                            key={month.key}
+                                            style={styles.monthTab}
+                                            onPress={() => scrollToMonth(index)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.monthTabText,
+                                                    isActive && { color: theme.accent, fontWeight: "700" },
+                                                ]}
+                                            >
+                                                {month.month}
+                                            </Text>
+                                            <View
+                                                style={[
+                                                    styles.monthTabIndicator,
+                                                    isActive && { backgroundColor: theme.accent },
+                                                ]}
+                                            />
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+
+                        <FlatList
+                            ref={monthPagerRef}
+                            horizontal
+                            pagingEnabled
+                            data={monthGroups}
+                            keyExtractor={(item) => item.key}
+                            renderItem={renderMonthPage}
+                            getItemLayout={(_, index) => ({
+                                length: SCREEN_WIDTH,
+                                offset: SCREEN_WIDTH * index,
+                                index,
+                            })}
+                            onMomentumScrollEnd={(event) => {
+                                const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                                if (index !== selectedMonthIndex) {
+                                    setSelectedMonthIndex(index);
+                                }
+                            }}
+                            showsHorizontalScrollIndicator={false}
+                            onScrollToIndexFailed={() => {
+                                monthPagerRef.current?.scrollToOffset({
+                                    offset: selectedMonthIndex * SCREEN_WIDTH,
+                                    animated: true,
+                                });
+                            }}
+                        />
+
+                        {isSelectionMode ? (
+                            <View style={styles.bottomBar}>
                                 <TouchableOpacity
-                                    key={baby.id}
-                                    style={[
-                                        styles.babyTab,
-                                        isActive && { backgroundColor: babyTheme.accent },
-                                    ]}
-                                    onPress={() => handleBabySwitch(baby.id)}
-                                    activeOpacity={0.7}
+                                    style={[styles.bottomButton, styles.deleteButton, selectedIds.length === 0 && styles.buttonDisabled]}
+                                    onPress={handleDeleteSelected}
+                                    disabled={selectedIds.length === 0}
                                 >
-                                    <View style={[styles.babyDot, { backgroundColor: isActive ? "#FFF" : babyTheme.accent }]} />
-                                    <Text style={[
-                                        styles.babyTabText,
-                                        isActive && { color: "#FFF", fontWeight: "700" },
-                                    ]}>
-                                        {baby.name}
+                                    <Ionicons name="trash-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#FF4444"} />
+                                    <Text style={[styles.buttonText, styles.deleteButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
+                                        {i18n.t("library.deleteButton", { count: selectedIds.length })}
                                     </Text>
                                 </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                </View>
-            )}
-
-            {/* ヘッダー */}
-            {babies.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Ionicons name="images-outline" size={64} color="#DDD" />
-                    <Text style={styles.emptyTitle}>{i18n.t("library.emptyTitle")}</Text>
-                    <Text style={styles.emptySubtitle}>
-                        {i18n.t("library.emptySubtitle")}
-                    </Text>
-                </View>
-            ) : (
-                <View style={styles.listContainer}>
-                    <FlatList
-                        ref={pagerRef}
-                        horizontal
-                        pagingEnabled
-                        showsHorizontalScrollIndicator={false}
-                        data={babies}
-                        keyExtractor={(b) => b.id}
-                        getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-                        onMomentumScrollEnd={(e) => {
-                            const x = e.nativeEvent.contentOffset.x;
-                            const idx = Math.round(x / SCREEN_WIDTH);
-                            if (babies[idx] && babies[idx].id !== activeBabyId) {
-                                dispatch({ type: "SET_ACTIVE_BABY", payload: babies[idx].id });
-                                setIsSelectionMode(false);
-                                setSelectedIds([]);
-                            }
-                        }}
-                        renderItem={({ item: baby }) => {
-                            const babyLibrary = library.filter(i => i.babyIds.includes(baby.id));
-
-                            if (babyLibrary.length === 0) {
-                                return (
-                                    <View style={[{ width: SCREEN_WIDTH }, styles.emptyContainer]}>
-                                        <Ionicons name="images-outline" size={64} color="#DDD" />
-                                        <Text style={styles.emptyTitle}>{i18n.t("library.emptyTitle")}</Text>
-                                        <Text style={styles.emptySubtitle}>
-                                            {i18n.t("library.emptySubtitle")}
-                                        </Text>
-                                    </View>
-                                );
-                            }
-
-                            return (
-                                <View style={{ width: SCREEN_WIDTH }}>
-                                    <FlatList
-                                        data={babyLibrary}
-                                        keyExtractor={(item) => item.id}
-                                        numColumns={NUM_COLUMNS}
-                                        renderItem={renderGridItem}
-                                        contentContainerStyle={styles.gridContainer}
-                                        columnWrapperStyle={styles.columnWrapper}
-                                        showsVerticalScrollIndicator={false}
-                                        windowSize={5}
-                                        removeClippedSubviews={true}
-                                        maxToRenderPerBatch={9}
-                                        initialNumToRender={12}
-                                    />
-                                </View>
-                            );
-                        }}
-                    />
-
-                    {isSelectionMode && (
-                        <View style={styles.bottomBar}>
-                            <TouchableOpacity
-                                style={[styles.bottomButton, styles.deleteButton, selectedIds.length === 0 && styles.buttonDisabled]}
-                                onPress={handleDeleteSelected}
-                                disabled={selectedIds.length === 0}
-                            >
-                                <Ionicons name="trash-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#FF4444"} />
-                                <Text style={[styles.buttonText, styles.deleteButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
-                                    {i18n.t("library.deleteButton", { count: selectedIds.length })}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.bottomButton, styles.saveButton, selectedIds.length === 0 && styles.buttonDisabled]}
-                                onPress={handleSaveSelected}
-                                disabled={selectedIds.length === 0}
-                            >
-                                <Ionicons name="download-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#4CAF50"} />
-                                <Text style={[styles.buttonText, styles.saveButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
-                                    {i18n.t("library.saveButton", { count: selectedIds.length })}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
-            )}
+                                <TouchableOpacity
+                                    style={[styles.bottomButton, styles.saveButton, selectedIds.length === 0 && styles.buttonDisabled]}
+                                    onPress={handleSaveSelected}
+                                    disabled={selectedIds.length === 0}
+                                >
+                                    <Ionicons name="download-outline" size={20} color={selectedIds.length === 0 ? "#CCC" : "#4CAF50"} />
+                                    <Text style={[styles.buttonText, styles.saveButtonText, selectedIds.length === 0 && styles.buttonTextDisabled]}>
+                                        {i18n.t("library.saveButton", { count: selectedIds.length })}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : null}
+                    </>
+                )}
             </View>
+
+            <Modal
+                visible={showBabyPicker}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowBabyPicker(false)}
+            >
+                <Pressable style={styles.modalOverlay} onPress={() => setShowBabyPicker(false)}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>{i18n.t("camera.switchBabyTitle")}</Text>
+                        <ScrollView style={styles.modalList}>
+                            {babies.map((baby) => {
+                                const babyTheme = getThemePreset(baby.themeColorHex);
+                                return (
+                                    <TouchableOpacity
+                                        key={baby.id}
+                                        style={styles.babyOption}
+                                        onPress={() => handleSelectBaby(baby.id)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={[styles.babyOptionDot, { backgroundColor: babyTheme.accent }]} />
+                                        <Text style={styles.babyOptionText}>{baby.name}</Text>
+                                        {activeBabyId === baby.id ? (
+                                            <Ionicons name="checkmark" size={20} color={babyTheme.accent} />
+                                        ) : null}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -311,50 +557,158 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    babyTabContainer: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-    },
-    babyTabContent: {
-        flexDirection: "row",
-        gap: 8,
-    },
-    babyTab: {
+    headerActions: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: "#F0F0F0",
-        gap: 6,
+        gap: 8,
     },
-    babyDot: {
+    headerButton: {
+        minHeight: 36,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        justifyContent: "center",
+    },
+    headerButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    babyBadge: {
+        maxWidth: 120,
+        minHeight: 36,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: "#F5F5F5",
+        paddingHorizontal: 12,
+        borderRadius: 16,
+    },
+    babyBadgeDot: {
         width: 10,
         height: 10,
         borderRadius: 5,
     },
-    babyTabText: {
+    babyBadgeText: {
+        flexShrink: 1,
         fontSize: 14,
+        fontWeight: "600",
+    },
+    monthHeader: {
+        paddingTop: 8,
+        paddingBottom: 6,
+        backgroundColor: "rgba(255,255,255,0.72)",
+    },
+    monthYearLabel: {
+        paddingHorizontal: 16,
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    monthTabsContent: {
+        paddingHorizontal: 12,
+        gap: 18,
+    },
+    monthTab: {
+        alignItems: "center",
+        minWidth: 28,
+    },
+    monthTabText: {
+        fontSize: 18,
         fontWeight: "500",
-        color: "#666",
+        color: "#7E7A7B",
     },
-    gridContainer: {
-        paddingHorizontal: GRID_GAP,
-        paddingBottom: 20,
+    monthTabIndicator: {
+        marginTop: 8,
+        width: "100%",
+        height: 3,
+        borderRadius: 999,
+        backgroundColor: "transparent",
     },
-    columnWrapper: {
-        gap: GRID_GAP,
+    monthPage: {
+        width: SCREEN_WIDTH,
+        flex: 1,
+    },
+    monthPageContent: {
+        paddingHorizontal: PAGE_HORIZONTAL_PADDING,
+        paddingTop: 6,
+        paddingBottom: 24,
+    },
+    monthPageContentWithBottomBar: {
+        paddingBottom: 112,
+    },
+    monthBlock: {
         marginBottom: GRID_GAP,
+        gap: GRID_GAP,
     },
-    gridItem: {
-        width: ITEM_SIZE,
-        height: ITEM_SIZE,
-        borderRadius: 4,
+    photoTile: {
         overflow: "hidden",
+        borderRadius: 6,
+        backgroundColor: "#EDE8EA",
     },
-    thumbnail: {
+    tilePlaceholder: {
+        borderRadius: 6,
+        backgroundColor: "transparent",
+    },
+    photoImage: {
         width: "100%",
         height: "100%",
+    },
+    heroShade: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0,0,0,0.16)",
+    },
+    heroOverlay: {
+        position: "absolute",
+        left: 18,
+        right: 18,
+        bottom: 18,
+    },
+    heroMonth: {
+        color: "#FFF",
+        fontSize: 28,
+        fontWeight: "700",
+        textShadowColor: "rgba(0,0,0,0.3)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    heroYear: {
+        color: "rgba(255,255,255,0.92)",
+        fontSize: 18,
+        fontWeight: "500",
+        marginTop: 2,
+        textShadowColor: "rgba(0,0,0,0.3)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    heroAge: {
+        color: "#FFF",
+        fontSize: 22,
+        fontWeight: "700",
+        marginTop: 14,
+        textShadowColor: "rgba(0,0,0,0.35)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    smallRow: {
+        flexDirection: "row",
+        gap: GRID_GAP,
+    },
+    mixedRow: {
+        flexDirection: "row",
+        gap: GRID_GAP,
+    },
+    mixedColumn: {
+        gap: GRID_GAP,
+    },
+    selectionOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0,0,0,0.2)",
+        justifyContent: "flex-end",
+        alignItems: "flex-end",
+        padding: 6,
+    },
+    selectionOverlayActive: {
+        backgroundColor: "rgba(255,143,163,0.22)",
+        borderWidth: 2,
     },
     emptyContainer: {
         flex: 1,
@@ -375,30 +729,11 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         marginTop: 8,
     },
-    listContainer: {
-        flex: 1,
-    },
-    headerButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-    },
-    headerButtonText: {
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    selectionOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.2)",
-        justifyContent: "flex-end",
-        alignItems: "flex-end",
-        padding: 4,
-    },
-    selectionOverlayActive: {
-        backgroundColor: "rgba(255,143,163,0.2)",
-        borderWidth: 2,
-    },
     bottomBar: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
         flexDirection: "row",
         justifyContent: "space-evenly",
         paddingVertical: 12,
@@ -436,5 +771,53 @@ const styles = StyleSheet.create({
     },
     buttonTextDisabled: {
         color: "#CCC",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.4)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 20,
+    },
+    modalContent: {
+        width: "100%",
+        maxWidth: 320,
+        backgroundColor: "#FFF",
+        borderRadius: 20,
+        padding: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 16,
+        textAlign: "center",
+    },
+    modalList: {
+        maxHeight: 300,
+    },
+    babyOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F0F0F0",
+        gap: 12,
+    },
+    babyOptionDot: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+    },
+    babyOptionText: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
     },
 });
