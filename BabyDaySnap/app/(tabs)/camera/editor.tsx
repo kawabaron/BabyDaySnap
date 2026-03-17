@@ -61,7 +61,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
-type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment" | "save";
+type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment";
 
 function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
     if (keyboardVisible) {
@@ -82,8 +82,6 @@ function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
             return 170;
         case "comment":
             return 156;
-        case "save":
-            return 152;
     }
 }
 
@@ -477,7 +475,30 @@ export default function EditorScreen() {
         }
     };
 
-    const editorIsFocused = useIsFocused();
+    const handleHeaderSavePress = () => {
+        if (saving) return;
+
+        Alert.alert(i18n.t("editor.headerSaveButton"), undefined, [
+            {
+                text: i18n.t("editor.saveToAppButton"),
+                onPress: () => {
+                    void handleSaveToApp();
+                },
+            },
+            {
+                text: i18n.t("editor.saveToiPhoneButton"),
+                onPress: () => {
+                    void handleSaveToPhotos();
+                },
+            },
+            {
+                text: i18n.t("common.cancel"),
+                style: "cancel",
+            },
+        ]);
+    };
+
+    const editorIsFocused = useIsFocused();
 
     // 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｦ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｩ鬩包ｽｨ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｼ髯樊ｻゑｽｽ・ｲ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｫ髣厄ｽｫ繝ｻ・ｶ鬮ｫ・ｱ髦ｮ蜷ｶ繝ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｶ鬲・ｼ夲ｽｽ・ｽ繝ｻ・｢鬮ｫ・ｲ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
     const displayBabyName = activeBabyForEditor?.name || settings.babyName;
@@ -734,7 +755,7 @@ export default function EditorScreen() {
     const panelExpandedHeight = panelExpanded ? activePanelHeight : 0;
     const tabBarReserve = Math.max(tabBarHeight - insets.bottom, 48);
     const previewBottomSpacing = panelExpanded
-        ? (activeTool === "save" || activeTool === "comment" || activeTool === "text" ? 28 : 24)
+        ? (activeTool === "comment" || activeTool === "text" ? 28 : 24)
         : 16;
     const editorDockHeight = toolBarHeight + panelHandleHeight + panelExpandedHeight + 20;
     const previewStageMaxHeight = Math.max(
@@ -796,7 +817,6 @@ export default function EditorScreen() {
         { id: "filter", icon: "color-filter-outline", label: i18n.t("editor.toolsFilter") },
         { id: "text", icon: "color-palette-outline", label: i18n.t("editor.toolsText") },
         { id: "comment", icon: "chatbox-ellipses-outline", label: i18n.t("editor.toolsComment") },
-        { id: "save", icon: "download-outline", label: i18n.t("editor.toolsSave") },
     ];
 
     const renderActiveToolPanel = () => {
@@ -1087,37 +1107,6 @@ export default function EditorScreen() {
                         />
                     </View>
                 );
-            case "save":
-                return (
-                    <View>
-                        <Text style={styles.panelTitle}>{i18n.t("editor.toolsSave")}</Text>
-                        <View style={styles.toolSaveActions}>
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                                onPress={handleSaveToApp}
-                                disabled={saving}
-                            >
-                                {saving ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <>
-                                        <Ionicons name="download-outline" size={20} color="#FFF" />
-                                        <Text style={styles.saveButtonText}>{i18n.t("editor.saveToAppButton")}</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.photoButton, { borderColor: theme.accent }]}
-                                onPress={handleSaveToPhotos}
-                                disabled={saving}
-                            >
-                                <Ionicons name="image-outline" size={20} color={theme.accent} />
-                                <Text style={[styles.photoButtonText, { color: theme.accent }]}>{i18n.t("editor.saveToiPhoneButton")}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                );
         }
     };
 
@@ -1129,7 +1118,7 @@ export default function EditorScreen() {
                 rightSlot={(
                     <TouchableOpacity
                         style={[styles.headerSaveButton, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
-                        onPress={handleSaveToApp}
+                        onPress={handleHeaderSavePress}
                         disabled={saving}
                         activeOpacity={0.85}
                     >
