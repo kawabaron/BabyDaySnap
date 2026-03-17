@@ -43,9 +43,6 @@ function attachInterstitialListeners() {
     interstitial.addAdEventListener(AdEventType.LOADED, () => {
         interstitialLoaded = true;
         interstitialLoading = false;
-        if (__DEV__) {
-            console.log("[ads] interstitial loaded", INTERSTITIAL_UNIT_ID);
-        }
     });
 
     interstitial.addAdEventListener(AdEventType.CLOSED, () => {
@@ -66,7 +63,6 @@ function attachInterstitialListeners() {
         interstitialLoading = false;
         interstitialShowResolver?.(false);
         interstitialShowResolver = null;
-        console.warn("[ads] interstitial failed", error);
     });
 
     listenersAttached = true;
@@ -75,11 +71,7 @@ function attachInterstitialListeners() {
 export async function initializeAds() {
     try {
         await mobileAds().initialize();
-        if (__DEV__) {
-            console.log("[ads] mobile ads initialized");
-        }
     } catch {
-        console.warn("[ads] mobile ads initialize failed");
         return;
     }
 
@@ -100,11 +92,10 @@ export async function showInterstitialAd(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
         interstitialShowResolver = resolve;
 
-        interstitial.show().catch((error) => {
+        interstitial.show().catch(() => {
             interstitialLoaded = false;
             interstitialLoading = false;
             interstitialShowResolver = null;
-            console.warn("[ads] interstitial show failed", error);
             loadInterstitial();
             resolve(false);
         });

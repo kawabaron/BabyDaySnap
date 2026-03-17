@@ -200,14 +200,8 @@ export function CreateBannerAd() {
                                 unitId={CREATE_BANNER_UNIT_ID}
                                 size={CREATE_BANNER_SIZE}
                                 requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                                onAdLoaded={() => {
-                                    if (__DEV__) {
-                                        console.log("[ads] banner loaded", CREATE_BANNER_UNIT_ID);
-                                    }
-                                }}
-                                onAdFailedToLoad={(error) => {
-                                    console.warn("[ads] banner failed", error);
-                                }}
+                                onAdLoaded={() => undefined}
+                                onAdFailedToLoad={() => undefined}
                             />
                         </View>
 
