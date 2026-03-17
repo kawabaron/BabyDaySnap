@@ -22,7 +22,18 @@ let interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
     requestNonPersonalizedAdsOnly: true,
 });
 let interstitialLoaded = false;
+let interstitialLoading = false;
 let listenersAttached = false;
+let interstitialShowResolver: ((value: boolean) => void) | null = null;
+
+function loadInterstitial() {
+    if (interstitialLoaded || interstitialLoading) {
+        return;
+    }
+
+    interstitialLoading = true;
+    interstitial.load();
+}
 
 function attachInterstitialListeners() {
     if (listenersAttached) {
@@ -31,6 +42,7 @@ function attachInterstitialListeners() {
 
     interstitial.addAdEventListener(AdEventType.LOADED, () => {
         interstitialLoaded = true;
+        interstitialLoading = false;
         if (__DEV__) {
             console.log("[ads] interstitial loaded", INTERSTITIAL_UNIT_ID);
         }
@@ -38,16 +50,22 @@ function attachInterstitialListeners() {
 
     interstitial.addAdEventListener(AdEventType.CLOSED, () => {
         interstitialLoaded = false;
+        interstitialLoading = false;
+        interstitialShowResolver?.(true);
+        interstitialShowResolver = null;
         interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
             requestNonPersonalizedAdsOnly: true,
         });
         listenersAttached = false;
         attachInterstitialListeners();
-        interstitial.load();
+        loadInterstitial();
     });
 
     interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
         interstitialLoaded = false;
+        interstitialLoading = false;
+        interstitialShowResolver?.(false);
+        interstitialShowResolver = null;
         console.warn("[ads] interstitial failed", error);
     });
 
@@ -66,14 +84,29 @@ export async function initializeAds() {
     }
 
     attachInterstitialListeners();
+    loadInterstitial();
 }
 
 export async function showInterstitialAd(): Promise<boolean> {
-    if (!interstitialLoaded) {
-        interstitial.load();
+    if (interstitialShowResolver) {
         return false;
     }
 
-    await interstitial.show();
-    return true;
+    if (!interstitialLoaded) {
+        loadInterstitial();
+        return false;
+    }
+
+    return new Promise<boolean>((resolve) => {
+        interstitialShowResolver = resolve;
+
+        interstitial.show().catch((error) => {
+            interstitialLoaded = false;
+            interstitialLoading = false;
+            interstitialShowResolver = null;
+            console.warn("[ads] interstitial show failed", error);
+            loadInterstitial();
+            resolve(false);
+        });
+    });
 }

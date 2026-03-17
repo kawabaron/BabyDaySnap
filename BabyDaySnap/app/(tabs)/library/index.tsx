@@ -20,6 +20,7 @@ import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import type { AppLibraryItem } from "@/types";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
+import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const NUM_COLUMNS = 3;
@@ -174,6 +175,7 @@ export default function LibraryGridScreen() {
                     </TouchableOpacity>
                 ) : null}
             />
+            <CreateBannerAd />
             <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* 赤ちゃん切り替えタブ（2人以上の場合のみ） */}
             {babies.length > 1 && (
