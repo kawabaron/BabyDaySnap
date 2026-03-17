@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     },
     monthHeader: {
         paddingTop: 8,
-        paddingBottom: 6,
+        paddingBottom: 2,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: "rgba(0,0,0,0.04)",
     },
