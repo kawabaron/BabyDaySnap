@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     Animated,
+    InteractionManager,
     Modal,
     Pressable,
     StyleSheet,
@@ -25,6 +26,7 @@ const BANNER_HEIGHT = 54;
 const TEMP_HIDDEN_STORAGE_KEY = "@babydaysnap/create_banner_hidden_date";
 
 type SheetMode = "actions" | "purchase" | null;
+type PendingAction = "temporaryHide" | null;
 
 export function CreateBannerAd() {
     const { settings } = useAppState();
@@ -36,6 +38,8 @@ export function CreateBannerAd() {
     const [sheetMode, setSheetMode] = useState<SheetMode>(null);
     const [hiddenDateKey, setHiddenDateKey] = useState<string | null>(null);
     const [storageReady, setStorageReady] = useState(false);
+    const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+    const [isRunningPendingAction, setIsRunningPendingAction] = useState(false);
 
     const translateY = useRef(new Animated.Value(32)).current;
     const opacity = useRef(new Animated.Value(0)).current;
@@ -105,26 +109,68 @@ export function CreateBannerAd() {
         setSheetMode(null);
     };
 
-    const handleTemporaryHide = async () => {
-        closeSheets();
-
-        const shown = await showInterstitialAd().catch(() => false);
-
-        if (!shown) {
-            Alert.alert(
-                i18n.t("monetization.videoAdUnavailableTitle"),
-                i18n.t("monetization.videoAdUnavailableMessage"),
-            );
+    useEffect(() => {
+        if (pendingAction !== "temporaryHide" || isSheetVisible || isRunningPendingAction) {
             return;
         }
 
-        setHiddenDateKey(todayKey);
-        await AsyncStorage.setItem(TEMP_HIDDEN_STORAGE_KEY, todayKey).catch(() => undefined);
+        let cancelled = false;
+        setIsRunningPendingAction(true);
 
-        Alert.alert(
-            i18n.t("monetization.bannerHiddenTitle"),
-            i18n.t("monetization.bannerHiddenMessage"),
-        );
+        const interactionTask = InteractionManager.runAfterInteractions(() => {
+            setTimeout(async () => {
+                if (cancelled) {
+                    return;
+                }
+
+                const shown = await showInterstitialAd().catch(() => false);
+
+                if (cancelled) {
+                    return;
+                }
+
+                if (!shown) {
+                    setPendingAction(null);
+                    setIsRunningPendingAction(false);
+                    Alert.alert(
+                        i18n.t("monetization.videoAdUnavailableTitle"),
+                        i18n.t("monetization.videoAdUnavailableMessage"),
+                    );
+                    return;
+                }
+
+                setHiddenDateKey(todayKey);
+                await AsyncStorage.setItem(TEMP_HIDDEN_STORAGE_KEY, todayKey).catch(() => undefined);
+
+                setPendingAction(null);
+                setIsRunningPendingAction(false);
+
+                setTimeout(() => {
+                    if (cancelled) {
+                        return;
+                    }
+
+                    Alert.alert(
+                        i18n.t("monetization.bannerHiddenTitle"),
+                        i18n.t("monetization.bannerHiddenMessage"),
+                    );
+                }, 160);
+            }, 220);
+        });
+
+        return () => {
+            cancelled = true;
+            interactionTask.cancel();
+        };
+    }, [isRunningPendingAction, isSheetVisible, pendingAction, todayKey]);
+
+    const handleTemporaryHide = () => {
+        if (isRunningPendingAction) {
+            return;
+        }
+
+        setPendingAction("temporaryHide");
+        closeSheets();
     };
 
     const handlePurchaseAdFree = async () => {
@@ -208,9 +254,11 @@ export function CreateBannerAd() {
                                 <Pressable
                                     accessibilityRole="button"
                                     onPress={handleTemporaryHide}
+                                    disabled={isRunningPendingAction}
                                     style={({ pressed }) => [
                                         styles.optionRow,
                                         pressed && styles.optionRowPressed,
+                                        isRunningPendingAction && styles.optionRowDisabled,
                                     ]}
                                 >
                                     <View style={styles.optionIcon}>
@@ -372,6 +420,9 @@ const styles = StyleSheet.create({
     },
     optionRowPressed: {
         backgroundColor: "rgba(255,255,255,0.06)",
+    },
+    optionRowDisabled: {
+        opacity: 0.45,
     },
     optionIcon: {
         width: 34,
