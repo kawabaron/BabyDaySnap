@@ -420,7 +420,7 @@ export default function LibraryGridScreen() {
                     </View>
                 ) : (
                     <>
-                        <View style={[styles.monthHeader, { backgroundColor: theme.light }]}>
+                        <View style={[styles.monthHeader, { backgroundColor: theme.background }]}>
                             <Text style={[styles.monthYearLabel, { color: theme.accent }]}>
                                 {currentMonth?.year ?? ""}
                             </Text>
