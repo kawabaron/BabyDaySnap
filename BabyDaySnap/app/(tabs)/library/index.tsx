@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     monthYearLabel: {
         fontSize: 18,
         fontWeight: "700",
-        marginBottom: 4,
+        marginBottom: 10,
         textAlign: "center",
     },
     monthTabsContent: {
