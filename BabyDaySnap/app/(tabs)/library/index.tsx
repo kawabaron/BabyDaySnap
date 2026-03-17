@@ -395,7 +395,7 @@ export default function LibraryGridScreen() {
         >
             <View style={[styles.switchBadgeDot, { backgroundColor: theme.accent }]} />
             <Text style={[styles.switchBadgeText, { color: theme.accent }]}>
-                {i18n.t("camera.switchBabyTitle")}
+                {activeBaby.name}
             </Text>
             <Ionicons name="chevron-down" size={12} color={theme.accent} style={styles.switchBadgeChevron} />
         </TouchableOpacity>
@@ -408,7 +408,7 @@ export default function LibraryGridScreen() {
                 subtitle={i18n.t("library.headerCount", { count: filteredLibrary.length })}
                 leftSlot={headerLeftSlot}
                 rightSlot={headerRightSlot}
-                sideWidth={104}
+                sideWidth={124}
             />
             <CreateBannerAd />
             <View style={[styles.container, { backgroundColor: theme.background }]}>
