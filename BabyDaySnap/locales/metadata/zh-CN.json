@@ -1,0 +1,5 @@
+{
+  "NSCameraUsageDescription": "允许访问相机以拍摄宝宝照片。",
+  "NSPhotoLibraryUsageDescription": "允许访问“照片”以导入宝宝照片。",
+  "NSPhotoLibraryAddUsageDescription": "允许访问照片图库以保存编辑后的照片。"
+}

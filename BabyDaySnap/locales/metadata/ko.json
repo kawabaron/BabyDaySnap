@@ -1,0 +1,5 @@
+{
+  "NSCameraUsageDescription": "아기 사진을 찍으려면 카메라 접근을 허용해 주세요.",
+  "NSPhotoLibraryUsageDescription": "아기 사진을 가져오려면 사진 접근을 허용해 주세요.",
+  "NSPhotoLibraryAddUsageDescription": "편집한 사진을 저장하려면 사진 보관함 접근을 허용해 주세요."
+}

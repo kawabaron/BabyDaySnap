@@ -1,0 +1,5 @@
+{
+  "NSCameraUsageDescription": "赤ちゃんの写真を撮るために、カメラへのアクセスを許可してください。",
+  "NSPhotoLibraryUsageDescription": "写真を取り込むために、写真へのアクセスを許可してください。",
+  "NSPhotoLibraryAddUsageDescription": "編集した写真を保存するために、写真ライブラリへのアクセスを許可してください。"
+}

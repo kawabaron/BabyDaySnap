@@ -15,6 +15,7 @@ import {
 import { BannerAd } from "react-native-google-mobile-ads";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useActiveBaby, useAppState } from "@/context/AppContext";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import { showInterstitialAd, CREATE_BANNER_SIZE, CREATE_BANNER_UNIT_ID } from "@/lib/ads";
@@ -30,6 +31,7 @@ type PendingAction = "temporaryHide" | null;
 
 export function CreateBannerAd() {
     const { settings } = useAppState();
+    const { adsReady } = useAdsConsent();
     const activeBaby = useActiveBaby();
     const { productsById, isPurchasing, purchaseAdFree } = useBilling();
     const insets = useSafeAreaInsets();
@@ -189,7 +191,7 @@ export function CreateBannerAd() {
         }
     };
 
-    if (!storageReady || settings.adFreeUnlocked || isHiddenForToday) {
+    if (!adsReady || !storageReady || settings.adFreeUnlocked || isHiddenForToday) {
         return null;
     }
 

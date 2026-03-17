@@ -7,6 +7,16 @@
     "icon": "./assets/images/icon.png",
     "scheme": "bsnap",
     "userInterfaceStyle": "light",
+    "locales": {
+      "de": "./locales/metadata/de.json",
+      "en": "./locales/metadata/en.json",
+      "es": "./locales/metadata/es.json",
+      "fr": "./locales/metadata/fr.json",
+      "ja": "./locales/metadata/ja.json",
+      "ko": "./locales/metadata/ko.json",
+      "pt-BR": "./locales/metadata/pt-BR.json",
+      "zh-CN": "./locales/metadata/zh-CN.json"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -80,7 +90,8 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true
         }
       ],
       "expo-sqlite"

@@ -18,16 +18,32 @@ export const INTERSTITIAL_UNIT_ID =
 
 export const CREATE_BANNER_SIZE = BannerAdSize.BANNER;
 
-let interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
-    requestNonPersonalizedAdsOnly: true,
-});
+let interstitial: InterstitialAd | null = null;
 let interstitialLoaded = false;
 let interstitialLoading = false;
 let listenersAttached = false;
 let interstitialShowResolver: ((value: boolean) => void) | null = null;
+let initializePromise: Promise<boolean> | null = null;
+
+function createInterstitial() {
+    return InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
+        requestNonPersonalizedAdsOnly: true,
+    });
+}
+
+function ensureInterstitial() {
+    if (interstitial) {
+        return;
+    }
+
+    interstitial = createInterstitial();
+    interstitialLoaded = false;
+    interstitialLoading = false;
+    listenersAttached = false;
+}
 
 function loadInterstitial() {
-    if (interstitialLoaded || interstitialLoading) {
+    if (!interstitial || interstitialLoaded || interstitialLoading) {
         return;
     }
 
@@ -36,7 +52,7 @@ function loadInterstitial() {
 }
 
 function attachInterstitialListeners() {
-    if (listenersAttached) {
+    if (!interstitial || listenersAttached) {
         return;
     }
 
@@ -50,15 +66,13 @@ function attachInterstitialListeners() {
         interstitialLoading = false;
         interstitialShowResolver?.(true);
         interstitialShowResolver = null;
-        interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_UNIT_ID, {
-            requestNonPersonalizedAdsOnly: true,
-        });
+        interstitial = createInterstitial();
         listenersAttached = false;
         attachInterstitialListeners();
         loadInterstitial();
     });
 
-    interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
+    interstitial.addAdEventListener(AdEventType.ERROR, () => {
         interstitialLoaded = false;
         interstitialLoading = false;
         interstitialShowResolver?.(false);
@@ -68,19 +82,30 @@ function attachInterstitialListeners() {
     listenersAttached = true;
 }
 
-export async function initializeAds() {
-    try {
-        await mobileAds().initialize();
-    } catch {
-        return;
+export async function initializeAds(): Promise<boolean> {
+    if (initializePromise) {
+        return initializePromise;
     }
 
-    attachInterstitialListeners();
-    loadInterstitial();
+    initializePromise = (async () => {
+        try {
+            await mobileAds().initialize();
+        } catch {
+            initializePromise = null;
+            return false;
+        }
+
+        ensureInterstitial();
+        attachInterstitialListeners();
+        loadInterstitial();
+        return true;
+    })();
+
+    return initializePromise;
 }
 
 export async function showInterstitialAd(): Promise<boolean> {
-    if (interstitialShowResolver) {
+    if (!interstitial || interstitialShowResolver) {
         return false;
     }
 

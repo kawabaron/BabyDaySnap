@@ -1,0 +1,5 @@
+{
+  "NSCameraUsageDescription": "Autorisez l’accès à l’appareil photo pour prendre des photos de votre bébé.",
+  "NSPhotoLibraryUsageDescription": "Autorisez l’accès aux Photos pour importer des photos de votre bébé.",
+  "NSPhotoLibraryAddUsageDescription": "Autorisez l’accès à la photothèque pour enregistrer les photos modifiées."
+}

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { VISIBLE_TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const activeBaby = useActiveBaby();
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+    const { privacyOptionsRequired, openPrivacyOptions } = useAdsConsent();
     const { productsById, isPurchasing, purchaseAdFree, purchaseSeasonPack, restorePurchases } = useBilling();
 
     const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
@@ -175,6 +177,15 @@ export default function SettingsScreen() {
     const openURL = (url: string) => {
         Linking.openURL(url).catch(() => {
             Alert.alert(i18n.t("settings.linkErrorTitle"), i18n.t("settings.linkErrorMsg"));
+        });
+    };
+
+    const handleOpenAdPrivacyChoices = () => {
+        openPrivacyOptions().catch(() => {
+            Alert.alert(
+                i18n.t("settings.adPrivacyErrorTitle"),
+                i18n.t("settings.adPrivacyErrorMessage"),
+            );
         });
     };
 
@@ -722,6 +733,23 @@ export default function SettingsScreen() {
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
 
+                        {privacyOptionsRequired ? (
+                            <>
+                                <View style={styles.divider} />
+
+                                <TouchableOpacity
+                                    style={styles.linkRow}
+                                    onPress={handleOpenAdPrivacyChoices}
+                                >
+                                    <View style={styles.linkLeft}>
+                                        <Ionicons name="options-outline" size={20} color="#888" />
+                                        <Text style={styles.linkText}>{i18n.t("settings.adPrivacyChoicesLink")}</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                                </TouchableOpacity>
+                            </>
+                        ) : null}
+
                         <View style={styles.divider} />
 
                         <TouchableOpacity
@@ -739,7 +767,7 @@ export default function SettingsScreen() {
 
                 {/* アプリバージョン */}
                 <View style={styles.versionContainer}>
-                    <Text style={styles.versionText}>BabyDaySnap v{appVersion}</Text>
+                    <Text style={styles.versionText}>BSnap v{appVersion}</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>

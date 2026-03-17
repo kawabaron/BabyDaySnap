@@ -1,0 +1,5 @@
+{
+  "NSCameraUsageDescription": "Permita o acesso à câmera para tirar fotos do seu bebê.",
+  "NSPhotoLibraryUsageDescription": "Permita o acesso às Fotos para importar fotos do seu bebê.",
+  "NSPhotoLibraryAddUsageDescription": "Permita o acesso à fototeca para salvar fotos editadas."
+}

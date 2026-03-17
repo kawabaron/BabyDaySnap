@@ -122,9 +122,12 @@
         "infoSection": "Information",
         "termsLink": "Terms of Use",
         "privacyLink": "Privacy Policy",
+        "adPrivacyChoicesLink": "Ad Privacy Choices",
         "contactLink": "Contact Us",
         "saveDateSuccessTitle": "Saved",
         "saveDateSuccessMsg": "Birthday updated.",
+        "adPrivacyErrorTitle": "Couldn't open privacy choices",
+        "adPrivacyErrorMessage": "Please try again in a moment.",
         "linkErrorTitle": "Error",
         "linkErrorMsg": "Could not open the link."
     },
