@@ -5,7 +5,6 @@ import {
     Alert,
     Animated,
     InteractionManager,
-    Modal,
     Pressable,
     StyleSheet,
     Text,
@@ -230,12 +229,7 @@ export function CreateBannerAd() {
                 </View>
             </View>
 
-            <Modal
-                animationType="fade"
-                onRequestClose={closeSheets}
-                transparent
-                visible={isSheetVisible}
-            >
+            {isSheetVisible ? (
                 <View style={styles.modalRoot}>
                     <Pressable style={styles.scrim} onPress={closeSheets} />
 
@@ -339,7 +333,7 @@ export function CreateBannerAd() {
                         ) : null}
                     </Animated.View>
                 </View>
-            </Modal>
+            ) : null}
         </>
     );
 }
@@ -386,8 +380,10 @@ const styles = StyleSheet.create({
         opacity: 0.72,
     },
     modalRoot: {
-        flex: 1,
+        ...StyleSheet.absoluteFillObject,
         justifyContent: "flex-end",
+        zIndex: 1000,
+        elevation: 1000,
     },
     scrim: {
         ...StyleSheet.absoluteFillObject,
