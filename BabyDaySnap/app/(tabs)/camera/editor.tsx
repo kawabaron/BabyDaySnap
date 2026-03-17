@@ -135,6 +135,7 @@ export default function EditorScreen() {
     const insets = useSafeAreaInsets();
     const tabBarHeight = useBottomTabBarHeight();
     const formScrollRef = useRef<ScrollView>(null);
+    const commentInputRef = useRef<TextInput>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
     const panelDragStart = useRef(1);
     const activePanelHeight = getToolPanelHeight(activeTool, keyboardVisible);
@@ -1093,16 +1094,18 @@ export default function EditorScreen() {
                     <View>
                         <Text style={styles.panelTitle}>{i18n.t("editor.commentTitle")}</Text>
                         <TextInput
+                            ref={commentInputRef}
                             style={[styles.commentInput, styles.commentComposer, commentFocused && { borderColor: theme.accent, backgroundColor: "#FFF" }]}
                             value={editorOptions.commentText}
                             onChangeText={handleCommentChange}
                             onFocus={() => setCommentFocused(true)}
                             onBlur={() => setCommentFocused(false)}
+                            onSubmitEditing={() => commentInputRef.current?.blur()}
                             placeholder={i18n.t("editor.commentPlaceholder")}
                             placeholderTextColor="#BDBDBD"
                             maxLength={50}
-                            multiline
-                            textAlignVertical="top"
+                            returnKeyType="done"
+                            submitBehavior="blurAndSubmit"
                             selectionColor={theme.accent}
                         />
                     </View>
@@ -1678,7 +1681,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#FAFAFA",
     },
     commentComposer: {
-        minHeight: 104,
+        minHeight: 48,
     },
     toggleRowContainer: {
         flexDirection: "row",

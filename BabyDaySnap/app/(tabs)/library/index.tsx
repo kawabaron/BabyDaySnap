@@ -264,7 +264,6 @@ export default function LibraryGridScreen() {
                     <Image source={{ uri: item.renderedFileUri }} style={styles.photoImage} resizeMode="cover" />
                     {options?.showMonthOverlay ? (
                         <>
-                            <View style={styles.heroShade} />
                             <View style={styles.heroOverlay}>
                                 <Text style={styles.heroMonth}>{options.monthName}</Text>
                                 <Text style={styles.heroYear}>{options.year}</Text>
@@ -657,10 +656,6 @@ const styles = StyleSheet.create({
     photoImage: {
         width: "100%",
         height: "100%",
-    },
-    heroShade: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.16)",
     },
     heroOverlay: {
         position: "absolute",
