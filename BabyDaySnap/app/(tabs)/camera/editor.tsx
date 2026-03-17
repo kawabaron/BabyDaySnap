@@ -65,7 +65,7 @@ type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "commen
 
 function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
     if (keyboardVisible) {
-        if (toolId === "comment") return 198;
+        if (toolId === "comment") return 116;
         if (toolId === "text") return 188;
     }
 
@@ -81,7 +81,7 @@ function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
         case "text":
             return 170;
         case "comment":
-            return 156;
+            return 104;
     }
 }
 
@@ -1675,13 +1675,13 @@ const styles = StyleSheet.create({
         borderColor: "#E0E0E0",
         borderRadius: 12,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 9,
         fontSize: 15,
         color: "#333",
         backgroundColor: "#FAFAFA",
     },
     commentComposer: {
-        minHeight: 48,
+        minHeight: 42,
     },
     toggleRowContainer: {
         flexDirection: "row",
