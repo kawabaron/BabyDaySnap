@@ -1,5 +1,7 @@
 {
-  "NSCameraUsageDescription": "Erlaube den Kamerazugriff, um Fotos deines Babys aufzunehmen.",
-  "NSPhotoLibraryUsageDescription": "Erlaube den Zugriff auf Fotos, um Babyfotos zu importieren.",
-  "NSPhotoLibraryAddUsageDescription": "Erlaube den Zugriff auf die Fotomediathek, um bearbeitete Fotos zu speichern."
+  "ios": {
+    "NSCameraUsageDescription": "Erlaube den Kamerazugriff, um Fotos deines Babys aufzunehmen.",
+    "NSPhotoLibraryUsageDescription": "Erlaube den Zugriff auf Fotos, um Babyfotos zu importieren.",
+    "NSPhotoLibraryAddUsageDescription": "Erlaube den Zugriff auf die Fotomediathek, um bearbeitete Fotos zu speichern."
+  }
 }

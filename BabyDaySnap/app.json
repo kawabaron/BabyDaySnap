@@ -22,6 +22,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.kawabaron.bsnap.app",
       "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Allow camera access to take baby photos.",
         "NSPhotoLibraryUsageDescription": "Allow photo access to import baby photos.",
