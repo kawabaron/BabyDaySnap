@@ -378,7 +378,7 @@ export default function LibraryGridScreen() {
     const headerLeftSlot = filteredLibrary.length > 0 ? (
         <TouchableOpacity
             onPress={toggleSelectionMode}
-            style={[styles.headerButton, { backgroundColor: theme.light }]}
+            style={[styles.headerButton, styles.selectButton, { backgroundColor: theme.light }]}
             activeOpacity={0.8}
         >
             <Text style={[styles.headerButtonText, { color: theme.accent }]}>
@@ -565,8 +565,14 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 6,
     },
+    selectButton: {
+        alignSelf: "flex-start",
+        minHeight: 32,
+        paddingHorizontal: 10,
+        borderRadius: 14,
+    },
     headerButtonText: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: "600",
     },
     switchBadge: {
