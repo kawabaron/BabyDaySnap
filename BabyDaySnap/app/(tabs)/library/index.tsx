@@ -602,18 +602,19 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.72)",
     },
     monthYearLabel: {
-        paddingHorizontal: 16,
         fontSize: 18,
         fontWeight: "700",
         marginBottom: 4,
+        textAlign: "center",
     },
     monthTabsContent: {
-        paddingHorizontal: 12,
-        gap: 18,
+        paddingHorizontal: 18,
+        gap: 22,
     },
     monthTab: {
         alignItems: "center",
-        minWidth: 28,
+        minWidth: 36,
+        paddingHorizontal: 4,
     },
     monthTabText: {
         fontSize: 18,
