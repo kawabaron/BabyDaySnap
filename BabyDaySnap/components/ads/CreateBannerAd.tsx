@@ -162,7 +162,7 @@ export function CreateBannerAd() {
             cancelled = true;
             interactionTask.cancel();
         };
-    }, [isRunningPendingAction, isSheetVisible, pendingAction, todayKey]);
+    }, [isSheetVisible, pendingAction, todayKey]);
 
     const handleTemporaryHide = () => {
         if (isRunningPendingAction) {
