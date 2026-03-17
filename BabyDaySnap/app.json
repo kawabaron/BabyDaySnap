@@ -85,6 +85,7 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
+      "./plugins/withLocalizedIosPermissions",
       "@react-native-community/datetimepicker",
       "expo-localization",
       [
