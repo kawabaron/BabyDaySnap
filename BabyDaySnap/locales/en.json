@@ -5,6 +5,7 @@
         "subtitleAdd": "Please enter the new baby's information",
         "nameLabel": "Name",
         "namePlaceholder": "e.g., Emma",
+        "defaultName": "Emma",
         "birthDateLabel": "Birthday",
         "themeColorLabel": "Theme Color",
         "startButton": "Start",

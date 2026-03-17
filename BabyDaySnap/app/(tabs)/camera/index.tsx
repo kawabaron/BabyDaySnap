@@ -149,7 +149,7 @@ export default function CameraScreen() {
                 navigateToEditor(photo);
             }
         } catch (e) {
-            Alert.alert("Error", i18n.t("camera.captureFailed", { error: e instanceof Error ? e.message : String(e) }));
+            Alert.alert(i18n.t("common.error"), i18n.t("camera.captureFailed", { error: e instanceof Error ? e.message : String(e) }));
         }
     };
 
@@ -182,7 +182,7 @@ export default function CameraScreen() {
                 navigateToEditor(photo);
             }
         } catch {
-            Alert.alert("Error", i18n.t("camera.importFailed"));
+            Alert.alert(i18n.t("common.error"), i18n.t("camera.importFailed"));
         }
     };
 

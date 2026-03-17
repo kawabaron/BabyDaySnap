@@ -104,6 +104,27 @@ export function formatDateDisplay(dateStr: string): string {
     return i18n.t("editor.dateDisplay", { year: y, month: m, day: d });
 }
 
+const monthFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+export function formatMonthName(month: number, style: "long" | "short" = "long"): string {
+    const safeMonth = Math.min(Math.max(month, 1), 12);
+    const cacheKey = `${i18n.locale}:${style}`;
+    const fallbackMonths = style === "short" ? ENGLISH_MONTHS_SHORT : ENGLISH_MONTHS_LONG;
+
+    try {
+        let formatter = monthFormatterCache.get(cacheKey);
+
+        if (!formatter) {
+            formatter = new Intl.DateTimeFormat(i18n.locale, { month: style });
+            monthFormatterCache.set(cacheKey, formatter);
+        }
+
+        return formatter.format(new Date(2024, safeMonth - 1, 1));
+    } catch {
+        return fallbackMonths[safeMonth - 1];
+    }
+}
+
 export function formatStyledDateDisplay(dateStr: string, displayStyle: DisplayStyle): string {
     if (displayStyle === "current") {
         return formatDateDisplay(dateStr);

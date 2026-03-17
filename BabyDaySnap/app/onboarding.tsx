@@ -16,7 +16,7 @@ import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
 import { Ionicons } from "@expo/vector-icons";
 import type { BabyProfile } from "@/types";
-import i18n from "@/lib/i18n";
+import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 
 export default function OnboardingBirthdateScreen() {
     const dispatch = useAppDispatch();
@@ -40,7 +40,7 @@ export default function OnboardingBirthdateScreen() {
 
     const handleStart = () => {
         const iso = formatDateISO(date);
-        const name = babyName.trim() || i18n.t("onboarding.namePlaceholder").replace("例：", "").replace("e.g., ", "");
+        const name = babyName.trim() || i18n.t("onboarding.defaultName");
 
         // BabyProfile を作成
         const baby: BabyProfile = {
@@ -137,7 +137,7 @@ export default function OnboardingBirthdateScreen() {
                             maximumDate={new Date()}
                             minimumDate={new Date(1900, 0, 1)}
                             onChange={onDateChange}
-                            locale="ja"
+                            locale={getCurrentLocaleTag()}
                             style={styles.picker}
                         />
                     )}

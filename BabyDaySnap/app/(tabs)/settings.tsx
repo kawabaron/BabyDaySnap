@@ -26,7 +26,7 @@ import type { TemplateId, FontId, FilterId, BabyProfile, DisplayStyle } from "@/
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
-import i18n from "@/lib/i18n";
+import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { useBilling } from "@/lib/billing";
@@ -258,7 +258,7 @@ export default function SettingsScreen() {
                                                         maximumDate={new Date()}
                                                         minimumDate={new Date(1900, 0, 1)}
                                                         onChange={onDateChange}
-                                                        locale="ja"
+                                                        locale={getCurrentLocaleTag()}
                                                         style={styles.datePicker}
                                                     />
                                                     <TouchableOpacity

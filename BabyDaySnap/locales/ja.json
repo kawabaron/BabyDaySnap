@@ -5,6 +5,7 @@
         "subtitleAdd": "新しい赤ちゃんの情報を入力してください",
         "nameLabel": "名前",
         "namePlaceholder": "例: いろは",
+        "defaultName": "いろは",
         "birthDateLabel": "誕生日",
         "themeColorLabel": "テーマカラー",
         "startButton": "はじめる",

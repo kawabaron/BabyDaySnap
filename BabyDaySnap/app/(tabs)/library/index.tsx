@@ -21,23 +21,8 @@ import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import { useActiveBaby, useAppDispatch, useAppState } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
 import type { AppLibraryItem } from "@/types";
-import { calcAgeDays, formatStyledAgeDisplay } from "@/utils/date";
+import { calcAgeDays, formatMonthName, formatStyledAgeDisplay } from "@/utils/date";
 import { deleteFromAppLibrary, saveToPhotoLibrary } from "@/utils/saveImage";
-
-const MONTH_NAMES = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-] as const;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PAGE_HORIZONTAL_PADDING = 8;
@@ -124,7 +109,7 @@ export default function LibraryGridScreen() {
                     key,
                     year,
                     month,
-                    monthName: MONTH_NAMES[month - 1] ?? "",
+                    monthName: formatMonthName(month),
                     items,
                     blocks,
                     heroAgeLabel,
