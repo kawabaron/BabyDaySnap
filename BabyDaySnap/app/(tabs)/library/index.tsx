@@ -144,9 +144,6 @@ export default function LibraryGridScreen() {
                         style={styles.thumbnail}
                         resizeMode="cover"
                     />
-                    <View style={styles.dateOverlay}>
-                        <Text style={styles.dateOverlayText}>{item.shotDateISO}</Text>
-                    </View>
                     {isSelectionMode && (
                         <View style={[styles.selectionOverlay, isSelected && [styles.selectionOverlayActive, { borderColor: theme.accent }]]}>
                             <Ionicons
@@ -358,20 +355,6 @@ const styles = StyleSheet.create({
     thumbnail: {
         width: "100%",
         height: "100%",
-    },
-    dateOverlay: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        paddingVertical: 2,
-        paddingHorizontal: 4,
-    },
-    dateOverlayText: {
-        color: "#FFF",
-        fontSize: 9,
-        fontWeight: "600",
     },
     emptyContainer: {
         flex: 1,
