@@ -420,7 +420,7 @@ export default function LibraryGridScreen() {
                     </View>
                 ) : (
                     <>
-                        <View style={styles.monthHeader}>
+                        <View style={[styles.monthHeader, { backgroundColor: theme.light }]}>
                             <Text style={[styles.monthYearLabel, { color: theme.accent }]}>
                                 {currentMonth?.year ?? ""}
                             </Text>
@@ -599,7 +599,8 @@ const styles = StyleSheet.create({
     monthHeader: {
         paddingTop: 8,
         paddingBottom: 6,
-        backgroundColor: "rgba(255,255,255,0.72)",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: "rgba(0,0,0,0.04)",
     },
     monthYearLabel: {
         fontSize: 18,
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
     },
     monthTabIndicator: {
         marginTop: 8,
-        width: 28,
+        width: 40,
         height: 3,
         borderRadius: 999,
         backgroundColor: "transparent",
