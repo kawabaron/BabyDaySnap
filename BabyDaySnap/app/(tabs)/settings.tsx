@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { VISIBLE_TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
@@ -31,7 +30,7 @@ import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { useBilling } from "@/lib/billing";
-import { AD_FREE_PRODUCT_ID, VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
+import { VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
@@ -41,14 +40,11 @@ export default function SettingsScreen() {
     const router = useRouter();
     const activeBaby = useActiveBaby();
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
-    const { privacyOptionsRequired, openPrivacyOptions } = useAdsConsent();
-    const { productsById, isPurchasing, purchaseAdFree, purchaseSeasonPack, restorePurchases } = useBilling();
+    const { productsById, isPurchasing, purchaseSeasonPack, restorePurchases } = useBilling();
 
     const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
-
-    const editingBaby = editingBabyId ? babies.find((b) => b.id === editingBabyId) : null;
 
     const handleEditBaby = (baby: BabyProfile) => {
         setEditingBabyId(baby.id);
@@ -180,17 +176,7 @@ export default function SettingsScreen() {
         });
     };
 
-    const handleOpenAdPrivacyChoices = () => {
-        openPrivacyOptions().catch(() => {
-            Alert.alert(
-                i18n.t("settings.adPrivacyErrorTitle"),
-                i18n.t("settings.adPrivacyErrorMessage"),
-            );
-        });
-    };
-
     const appVersion = Constants.expoConfig?.version ?? "1.0.0";
-    const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
 
     return (
         <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -633,34 +619,6 @@ export default function SettingsScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n.t("monetization.sectionTitle")}</Text>
                     <View style={styles.card}>
-                        <View style={styles.purchaseRow}>
-                            <View style={styles.purchaseCopy}>
-                                <Text style={styles.purchaseTitle}>{i18n.t("monetization.adFreeTitle")}</Text>
-                                <Text style={styles.purchaseDescription}>
-                                    {settings.adFreeUnlocked
-                                        ? i18n.t("monetization.adFreeUnlocked")
-                                        : i18n.t("monetization.adFreeDescription")}
-                                </Text>
-                            </View>
-                            <TouchableOpacity
-                                style={[
-                                    styles.purchaseButton,
-                                    { backgroundColor: settings.adFreeUnlocked ? "#E7E7E7" : theme.accent },
-                                ]}
-                                onPress={() => purchaseAdFree()}
-                                activeOpacity={0.8}
-                                disabled={settings.adFreeUnlocked || isPurchasing}
-                            >
-                                <Text style={styles.purchaseButtonText}>
-                                    {settings.adFreeUnlocked
-                                        ? i18n.t("monetization.purchasedBadge")
-                                        : adFreeProduct?.displayPrice ?? i18n.t("monetization.buyNow")}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.divider} />
-
                         {VISIBLE_SEASON_PACKS.map((pack, index) => {
                             const product = productsById[pack.productId];
                             const unlocked = settings.unlockedSeasonPackIds.includes(pack.id);
@@ -694,7 +652,11 @@ export default function SettingsScreen() {
                         })}
 
                         <TouchableOpacity
-                            style={[styles.restoreButton, { borderColor: theme.accent }]}
+                            style={[
+                                styles.restoreButton,
+                                { borderColor: theme.accent },
+                                VISIBLE_SEASON_PACKS.length === 0 && { marginTop: 0 },
+                            ]}
                             onPress={() => restorePurchases()}
                             activeOpacity={0.8}
                             disabled={isPurchasing}
@@ -732,23 +694,6 @@ export default function SettingsScreen() {
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
-
-                        {privacyOptionsRequired ? (
-                            <>
-                                <View style={styles.divider} />
-
-                                <TouchableOpacity
-                                    style={styles.linkRow}
-                                    onPress={handleOpenAdPrivacyChoices}
-                                >
-                                    <View style={styles.linkLeft}>
-                                        <Ionicons name="options-outline" size={20} color="#888" />
-                                        <Text style={styles.linkText}>{i18n.t("settings.adPrivacyChoicesLink")}</Text>
-                                    </View>
-                                    <Ionicons name="chevron-forward" size={18} color="#CCC" />
-                                </TouchableOpacity>
-                            </>
-                        ) : null}
 
                         <View style={styles.divider} />
 

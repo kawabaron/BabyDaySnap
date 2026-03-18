@@ -13,7 +13,7 @@ import Constants from "expo-constants";
 
 import { useAppDispatch } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
-import { AD_FREE_PRODUCT_ID, SEASON_PACKS, getSeasonPackById } from "@/lib/monetization";
+import { SEASON_PACKS, getSeasonPackById } from "@/lib/monetization";
 import type { SeasonPackId } from "@/types";
 
 type BillingProduct = {
@@ -27,7 +27,6 @@ type BillingContextValue = {
     productsById: Record<string, BillingProduct>;
     isReady: boolean;
     isPurchasing: boolean;
-    purchaseAdFree: () => Promise<boolean>;
     purchaseSeasonPack: (packId: SeasonPackId) => Promise<boolean>;
     restorePurchases: () => Promise<void>;
 };
@@ -48,7 +47,6 @@ const BillingContext = createContext<BillingContextValue>({
     productsById: {},
     isReady: false,
     isPurchasing: false,
-    purchaseAdFree: async () => false,
     purchaseSeasonPack: async () => false,
     restorePurchases: async () => undefined,
 });
@@ -69,10 +67,6 @@ function mapProducts(products: any[]): Record<string, BillingProduct> {
 
 function unlockPurchase(dispatch: ReturnType<typeof useAppDispatch>, purchase: any) {
     const productId = purchase?.productId ?? purchase?.id;
-
-    if (productId === AD_FREE_PRODUCT_ID) {
-        dispatch({ type: "SET_AD_FREE_UNLOCKED", payload: true });
-    }
 
     const matchedPack = SEASON_PACKS.find((pack) => pack.productId === productId);
     if (matchedPack) {
@@ -177,10 +171,7 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
                 iapModuleRef.current = iap;
 
                 if (__DEV__) {
-                    console.log("[billing] expected product IDs", [
-                        AD_FREE_PRODUCT_ID,
-                        ...SEASON_PACKS.map((pack) => pack.productId),
-                    ]);
+                    console.log("[billing] expected product IDs", SEASON_PACKS.map((pack) => pack.productId));
                     console.log("[billing] app bundle identifier", Constants.expoConfig?.ios?.bundleIdentifier);
                 }
 
@@ -207,7 +198,7 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
                     );
                 }) ?? null;
 
-                const productIds = [AD_FREE_PRODUCT_ID, ...SEASON_PACKS.map((pack) => pack.productId)];
+                const productIds = SEASON_PACKS.map((pack) => pack.productId);
                 const products = await loadStoreProducts(iap, productIds);
 
                 if (!disposed) {
@@ -297,7 +288,6 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
             productsById,
             isReady,
             isPurchasing,
-            purchaseAdFree: () => handlePurchase(AD_FREE_PRODUCT_ID),
             purchaseSeasonPack: async (packId: SeasonPackId) => {
                 const pack = getSeasonPackById(packId);
                 if (!pack) {

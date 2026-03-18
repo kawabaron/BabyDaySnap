@@ -22,7 +22,6 @@ import type { PhotoSource } from "@/types";
 import { resolveDecorationSeed } from "@/utils/decorativeFrame";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
-import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
 
 function parseExifDateTimeToMs(value: unknown): number | undefined {
     if (typeof value !== "string" || value.trim().length === 0) {
@@ -209,7 +208,6 @@ export default function CameraScreen() {
                     </TouchableOpacity>
                 ) : null}
             />
-            <CreateBannerAd />
             <View style={[styles.content, { backgroundColor: theme.background }]}>
                 {/* ヘッダー */}
                 <View style={styles.headerArea}>

@@ -5,7 +5,6 @@ import { ActivityIndicator, View } from "react-native";
 import { useFonts } from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AdsConsentProvider } from "@/context/AdsConsentContext";
 import { AppProvider, useAppState } from "@/context/AppContext";
 import { BillingProvider } from "@/lib/billing";
 import { FONT_ASSET_MAP } from "@/utils/templates";
@@ -69,13 +68,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AdsConsentProvider>
-        <AppProvider>
-          <BillingProvider>
-            <RootLayoutNav />
-          </BillingProvider>
-        </AppProvider>
-      </AdsConsentProvider>
+      <AppProvider>
+        <BillingProvider>
+          <RootLayoutNav />
+        </BillingProvider>
+      </AppProvider>
     </GestureHandlerRootView>
   );
 }

@@ -11,12 +11,6 @@ type SeasonPackDefinition = {
     isHidden?: boolean;
 };
 
-export const AD_FREE_PRODUCT_ID =
-    Constants.expoConfig?.extra?.monetization?.adFreeProductId ?? "ad_free";
-
-export const INTERSTITIAL_SAVE_INTERVAL = 20;
-export const INTERSTITIAL_DAILY_LIMIT = 1;
-
 export const SEASON_PACKS: SeasonPackDefinition[] = [
     {
         id: "season_pack_spring_2026",
@@ -47,32 +41,4 @@ export function isSeasonPackUnlocked(settings: UserSettings, packId: SeasonPackI
 export function isTemplateUnlocked(settings: UserSettings, templateId: TemplateId): boolean {
     const pack = getSeasonPackByTemplateId(templateId);
     return pack ? isSeasonPackUnlocked(settings, pack.id) : true;
-}
-
-export function getDateKey(date = new Date()): string {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, "0");
-    const day = `${date.getDate()}`.padStart(2, "0");
-    return `${year}-${month}-${day}`;
-}
-
-export function shouldResetInterstitialDailyLimit(settings: UserSettings, dateKey = getDateKey()): boolean {
-    return settings.interstitialDailyBucketDate !== dateKey;
-}
-
-export function shouldShowInterstitial(settings: UserSettings, dateKey = getDateKey()): boolean {
-    if (settings.adFreeUnlocked) {
-        return false;
-    }
-
-    const shownToday =
-        settings.interstitialDailyBucketDate === dateKey
-            ? settings.interstitialShownCountToday
-            : 0;
-
-    if (shownToday >= INTERSTITIAL_DAILY_LIMIT) {
-        return false;
-    }
-
-    return settings.saveSuccessCountTotal > 0 && settings.saveSuccessCountTotal % INTERSTITIAL_SAVE_INTERVAL === 0;
 }

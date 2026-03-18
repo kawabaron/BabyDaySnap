@@ -48,14 +48,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBilling } from "@/lib/billing";
-import {
-    getDateKey,
-    getSeasonPackByTemplateId,
-    isSeasonPackUnlocked,
-    shouldResetInterstitialDailyLimit,
-    shouldShowInterstitial,
-} from "@/lib/monetization";
-import { showInterstitialAd } from "@/lib/ads";
+import { getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -351,31 +344,6 @@ export default function EditorScreen() {
     };
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ隰費ｽｶ陷・ｰ鬮ｫ・ｲ繝ｻ・､髯ｷ・･隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-    const maybeShowSaveInterstitial = useCallback(async (nextSaveSuccessCountTotal: number) => {
-        const dateKey = getDateKey();
-        const nextSettings = {
-            ...settings,
-            saveSuccessCountTotal: nextSaveSuccessCountTotal,
-            interstitialShownCountToday:
-                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialShownCountToday : 0,
-            interstitialDailyBucketDate:
-                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialDailyBucketDate : dateKey,
-        };
-
-        if (shouldResetInterstitialDailyLimit(settings, dateKey)) {
-            dispatch({ type: "RESET_INTERSTITIAL_DAILY_LIMIT", payload: { dateKey } });
-        }
-
-        if (!shouldShowInterstitial(nextSettings, dateKey)) {
-            return;
-        }
-
-        const shown = await showInterstitialAd().catch(() => false);
-        if (shown) {
-            dispatch({ type: "REGISTER_INTERSTITIAL_SHOWN", payload: { dateKey } });
-        }
-    }, [dispatch, settings]);
-
     async function handleSaveToApp() {
         if (!currentPhoto || !computed) return;
         if (targetBabyIds.length === 0) {
@@ -433,7 +401,6 @@ export default function EditorScreen() {
                 {
                     text: "OK",
                     onPress: () => {
-                        void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
                         dispatch({ type: "RESET_EDITOR" });
 
                         router.navigate("/(tabs)/library");
@@ -465,9 +432,7 @@ export default function EditorScreen() {
                 Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"), [
                     {
                         text: "OK",
-                        onPress: () => {
-                            void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
-                        },
+                        onPress: () => undefined,
                     },
                 ]);
             }
