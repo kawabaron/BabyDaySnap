@@ -9,6 +9,7 @@ import React, {
     type ReactNode,
 } from "react";
 import { Alert } from "react-native";
+import Constants from "expo-constants";
 
 import { useAppDispatch } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
@@ -95,6 +96,12 @@ async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
         try {
             const products = await attempt();
             if (Array.isArray(products)) {
+                if (__DEV__) {
+                    console.log(
+                        "[billing] fetched products",
+                        products.map((product) => product?.id ?? product?.productId),
+                    );
+                }
                 return products;
             }
         } catch {
@@ -161,6 +168,14 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
                 const iap = (await import("expo-iap")) as ExpoIapModuleLike;
                 iapModuleRef.current = iap;
 
+                if (__DEV__) {
+                    console.log("[billing] expected product IDs", [
+                        AD_FREE_PRODUCT_ID,
+                        ...SEASON_PACKS.map((pack) => pack.productId),
+                    ]);
+                    console.log("[billing] app bundle identifier", Constants.expoConfig?.ios?.bundleIdentifier);
+                }
+
                 if (iap.initConnection) {
                     await iap.initConnection();
                 }
@@ -215,6 +230,14 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
 
         if (!iap) {
             Alert.alert(i18n.t("common.error"), i18n.t("monetization.billingUnavailable"));
+            return false;
+        }
+
+        if (!productsById[productId]) {
+            Alert.alert(
+                i18n.t("common.error"),
+                `Store product not loaded yet: ${productId}`,
+            );
             return false;
         }
 
