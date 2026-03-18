@@ -6,7 +6,6 @@ import { useFonts } from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AppProvider, useAppState } from "@/context/AppContext";
-import { BillingProvider } from "@/lib/billing";
 import { FONT_ASSET_MAP } from "@/utils/templates";
 import "../global.css";
 import "@/lib/i18n";
@@ -69,9 +68,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
-        <BillingProvider>
-          <RootLayoutNav />
-        </BillingProvider>
+        <RootLayoutNav />
       </AppProvider>
     </GestureHandlerRootView>
   );

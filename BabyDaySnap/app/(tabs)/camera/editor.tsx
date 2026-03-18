@@ -47,8 +47,6 @@ import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBilling } from "@/lib/billing";
-import { getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
@@ -117,7 +115,6 @@ export default function EditorScreen() {
     useActiveBaby();
 
     const { currentPhoto, computed, editorOptions, settings, editingLibraryId, babies, targetBabyIds } = state;
-    const { purchaseSeasonPack } = useBilling();
     const [saving, setSaving] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [commentFocused, setCommentFocused] = useState(false);
@@ -236,26 +233,8 @@ export default function EditorScreen() {
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ鬮ｮ諛ｶ・ｽ・｣郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｦ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ陷ｴ繝ｻ・ｽ・ｽ繝ｻ・ｨ髫ｰ螟ｲ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
     const handleTemplateChange = (id: string) => {
-        const pack = getSeasonPackByTemplateId(id as TemplateId);
-        if (pack && !isSeasonPackUnlocked(settings, pack.id)) {
-            Alert.alert(
-                i18n.t("monetization.lockedTemplateTitle"),
-                i18n.t("monetization.lockedTemplateMessage"),
-                [
-                    { text: i18n.t("common.cancel"), style: "cancel" },
-                    {
-                        text: i18n.t("monetization.buyNow"),
-                        onPress: () => {
-                            purchaseSeasonPack(pack.id).catch(() => undefined);
-                        },
-                    },
-                ],
-            );
-            return;
-        }
-
         const tpl = getTemplateConfig(id);
-        dispatch({
+        dispatch({
             type: "SET_EDITOR_OPTIONS",
             payload: {
                 templateId: id as TemplateId,
@@ -827,15 +806,11 @@ export default function EditorScreen() {
                             contentContainerStyle={styles.templateRow}
                         >
                             {VISIBLE_TEMPLATES.map((t) => {
-                                const pack = getSeasonPackByTemplateId(t.id);
-                                const isLocked = pack ? !isSeasonPackUnlocked(settings, pack.id) : false;
-
                                 return (
                                     <TouchableOpacity
                                         key={t.id}
                                         style={[
                                             styles.templateOption,
-                                            isLocked && styles.lockedTemplateOption,
                                             editorOptions.templateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                                         ]}
                                         onPress={() => handleTemplateChange(t.id)}
@@ -857,11 +832,6 @@ export default function EditorScreen() {
                                                     {t.innerLineColorHex ? <View style={styles.templateNoFrameInnerLine} /> : null}
                                                 </View>
                                             )}
-                                            {isLocked ? (
-                                                <View style={styles.templateLockBadge}>
-                                                    <Ionicons name="lock-closed" size={11} color="#FFF" />
-                                                </View>
-                                            ) : null}
                                         </View>
                                         <Text style={[styles.templateLabel, editorOptions.templateId === t.id && [styles.templateLabelActive, { color: theme.accent }]]}>
                                             {t.label}
@@ -1480,9 +1450,6 @@ const styles = StyleSheet.create({
         borderColor: "#F0F0F0",
         backgroundColor: "#FAFAFA",
     },
-    lockedTemplateOption: {
-        opacity: 0.75,
-    },
     templateOptionActive: {
         borderColor: "#FF8FA3",
         backgroundColor: "#FFF5F7",
@@ -1493,17 +1460,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 6,
-    },
-    templateLockBadge: {
-        position: "absolute",
-        top: -2,
-        right: -2,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#FF8FA3",
     },
     templateNoFrame: {
         width: 52,

@@ -92,11 +92,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "monetization": {
-        "seasonPackSpring2026ProductId": "season_pack_spring_2026"
-      }
     }
   }
 }
