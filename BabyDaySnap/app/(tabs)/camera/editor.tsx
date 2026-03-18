@@ -1327,7 +1327,14 @@ export default function EditorScreen() {
                                         activeOpacity={0.8}
                                     >
                                         <Ionicons name={tool.icon} size={20} color={isActive ? theme.accent : "#777"} />
-                                        <Text style={[styles.toolTabLabel, isActive && { color: theme.accent }]}>{tool.label}</Text>
+                                        <Text
+                                            style={[styles.toolTabLabel, isActive && { color: theme.accent }]}
+                                            numberOfLines={1}
+                                            adjustsFontSizeToFit
+                                            minimumFontScale={0.82}
+                                        >
+                                            {tool.label}
+                                        </Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -1456,6 +1463,8 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: "600",
         color: "#777",
+        width: "100%",
+        textAlign: "center",
     },
     toolBar: {
         backgroundColor: "#FFF",

@@ -85,27 +85,35 @@ async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
         return [];
     }
 
-    const attempts = [
-        () => iap.fetchProducts?.({ skus: productIds, type: "in-app" }),
-        () => iap.getProducts?.({ skus: productIds, type: "inapp" }),
-        () => iap.getProducts?.(productIds),
-        () => iap.getProducts?.({ productIds, type: "inapp" }),
+    const attempts: Array<{ label: string; run: () => Promise<any[] | undefined> }> = [
+        { label: "fetchProducts({ skus, type: in-app })", run: () => iap.fetchProducts?.({ skus: productIds, type: "in-app" }) },
+        { label: "getProducts({ skus, type: inapp })", run: () => iap.getProducts?.({ skus: productIds, type: "inapp" }) },
+        { label: "getProducts(productIds)", run: () => iap.getProducts?.(productIds) },
+        { label: "getProducts({ productIds, type: inapp })", run: () => iap.getProducts?.({ productIds, type: "inapp" }) },
     ];
 
     for (const attempt of attempts) {
         try {
-            const products = await attempt();
+            const products = await attempt.run();
             if (Array.isArray(products)) {
                 if (__DEV__) {
                     console.log(
                         "[billing] fetched products",
                         products.map((product) => product?.id ?? product?.productId),
                     );
+                    console.log("[billing] fetch method", attempt.label, "count", products.length);
                 }
                 return products;
             }
-        } catch {
+        } catch (error: any) {
+            if (__DEV__) {
+                console.warn("[billing] product fetch failed", attempt.label, error?.message ?? error);
+            }
         }
+    }
+
+    if (__DEV__) {
+        console.warn("[billing] no store products were returned");
     }
 
     return [];
