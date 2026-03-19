@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { VISIBLE_TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
@@ -29,6 +30,8 @@ import Constants from "expo-constants";
 import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
+import { useBilling } from "@/lib/billing";
+import { AD_FREE_PRODUCT_ID, VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 
@@ -38,10 +41,14 @@ export default function SettingsScreen() {
     const router = useRouter();
     const activeBaby = useActiveBaby();
     const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+    const { privacyOptionsRequired, openPrivacyOptions } = useAdsConsent();
+    const { productsById, isPurchasing, purchaseAdFree, purchaseSeasonPack, restorePurchases } = useBilling();
 
     const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
+
+    const editingBaby = editingBabyId ? babies.find((b) => b.id === editingBabyId) : null;
 
     const handleEditBaby = (baby: BabyProfile) => {
         setEditingBabyId(baby.id);
@@ -129,6 +136,24 @@ export default function SettingsScreen() {
     };
 
     const handleTemplateChange = (id: string) => {
+        const pack = getSeasonPackByTemplateId(id as TemplateId);
+        if (pack && !isSeasonPackUnlocked(settings, pack.id)) {
+            Alert.alert(
+                i18n.t("monetization.lockedTemplateTitle"),
+                i18n.t("monetization.lockedTemplateMessage"),
+                [
+                    { text: i18n.t("common.cancel"), style: "cancel" },
+                    {
+                        text: i18n.t("monetization.buyNow"),
+                        onPress: () => {
+                            purchaseSeasonPack(pack.id).catch(() => undefined);
+                        },
+                    },
+                ],
+            );
+            return;
+        }
+
         dispatch({
             type: "SET_DEFAULT_PREFS",
             payload: { defaultTemplateId: id as TemplateId },
@@ -155,7 +180,17 @@ export default function SettingsScreen() {
         });
     };
 
+    const handleOpenAdPrivacyChoices = () => {
+        openPrivacyOptions().catch(() => {
+            Alert.alert(
+                i18n.t("settings.adPrivacyErrorTitle"),
+                i18n.t("settings.adPrivacyErrorMessage"),
+            );
+        });
+    };
+
     const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+    const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
 
     return (
         <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -485,11 +520,15 @@ export default function SettingsScreen() {
                         contentContainerStyle={styles.templateRow}
                     >
                         {VISIBLE_TEMPLATES.map((t) => {
+                            const pack = getSeasonPackByTemplateId(t.id);
+                            const isLocked = pack ? !isSeasonPackUnlocked(settings, pack.id) : false;
+
                             return (
                                 <TouchableOpacity
                                     key={t.id}
                                     style={[
                                         styles.templateOption,
+                                        isLocked && styles.lockedTemplateOption,
                                         settings.defaultTemplateId === t.id && [styles.templateOptionActive, { borderColor: theme.accent, backgroundColor: theme.light }],
                                     ]}
                                     onPress={() => handleTemplateChange(t.id)}
@@ -514,6 +553,11 @@ export default function SettingsScreen() {
                                                 <View style={styles.templateInner} />
                                             </View>
                                         )}
+                                        {isLocked ? (
+                                            <View style={styles.templateLockBadge}>
+                                                <Ionicons name="lock-closed" size={11} color="#FFF" />
+                                            </View>
+                                        ) : null}
                                     </View>
                                     <Text
                                         style={[
@@ -585,6 +629,83 @@ export default function SettingsScreen() {
                     </ScrollHintedScrollView>
                 </View>
 
+                {/* リンクセクション */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n.t("monetization.sectionTitle")}</Text>
+                    <View style={styles.card}>
+                        <View style={styles.purchaseRow}>
+                            <View style={styles.purchaseCopy}>
+                                <Text style={styles.purchaseTitle}>{i18n.t("monetization.adFreeTitle")}</Text>
+                                <Text style={styles.purchaseDescription}>
+                                    {settings.adFreeUnlocked
+                                        ? i18n.t("monetization.adFreeUnlocked")
+                                        : i18n.t("monetization.adFreeDescription")}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={[
+                                    styles.purchaseButton,
+                                    { backgroundColor: settings.adFreeUnlocked ? "#E7E7E7" : theme.accent },
+                                ]}
+                                onPress={() => purchaseAdFree()}
+                                activeOpacity={0.8}
+                                disabled={settings.adFreeUnlocked || isPurchasing}
+                            >
+                                <Text style={styles.purchaseButtonText}>
+                                    {settings.adFreeUnlocked
+                                        ? i18n.t("monetization.purchasedBadge")
+                                        : adFreeProduct?.displayPrice ?? i18n.t("monetization.buyNow")}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        {VISIBLE_SEASON_PACKS.map((pack, index) => {
+                            const product = productsById[pack.productId];
+                            const unlocked = settings.unlockedSeasonPackIds.includes(pack.id);
+
+                            return (
+                                <View key={pack.id}>
+                                    {index > 0 ? <View style={styles.divider} /> : null}
+                                    <View style={styles.purchaseRow}>
+                                        <View style={styles.purchaseCopy}>
+                                            <Text style={styles.purchaseTitle}>{i18n.t(pack.titleKey)}</Text>
+                                            <Text style={styles.purchaseDescription}>{i18n.t(pack.descriptionKey)}</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.purchaseButton,
+                                                { backgroundColor: unlocked ? "#E7E7E7" : theme.accent },
+                                            ]}
+                                            onPress={() => purchaseSeasonPack(pack.id)}
+                                            activeOpacity={0.8}
+                                            disabled={unlocked || isPurchasing}
+                                        >
+                                            <Text style={styles.purchaseButtonText}>
+                                                {unlocked
+                                                    ? i18n.t("monetization.purchasedBadge")
+                                                    : product?.displayPrice ?? i18n.t("monetization.buyNow")}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            );
+                        })}
+
+                        <TouchableOpacity
+                            style={[styles.restoreButton, { borderColor: theme.accent }]}
+                            onPress={() => restorePurchases()}
+                            activeOpacity={0.8}
+                            disabled={isPurchasing}
+                        >
+                            <Text style={[styles.restoreButtonText, { color: theme.accent }]}>
+                                {i18n.t("monetization.restoreButton")}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n.t("settings.infoSection")}</Text>
                     <View style={styles.card}>
@@ -611,6 +732,23 @@ export default function SettingsScreen() {
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
+
+                        {privacyOptionsRequired ? (
+                            <>
+                                <View style={styles.divider} />
+
+                                <TouchableOpacity
+                                    style={styles.linkRow}
+                                    onPress={handleOpenAdPrivacyChoices}
+                                >
+                                    <View style={styles.linkLeft}>
+                                        <Ionicons name="options-outline" size={20} color="#888" />
+                                        <Text style={styles.linkText}>{i18n.t("settings.adPrivacyChoicesLink")}</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                                </TouchableOpacity>
+                            </>
+                        ) : null}
 
                         <View style={styles.divider} />
 
@@ -667,6 +805,52 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 1,
+    },
+    purchaseRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        padding: 16,
+    },
+    purchaseCopy: {
+        flex: 1,
+        gap: 4,
+    },
+    purchaseTitle: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#333",
+    },
+    purchaseDescription: {
+        fontSize: 13,
+        lineHeight: 18,
+        color: "#777",
+    },
+    purchaseButton: {
+        minWidth: 92,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 999,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    purchaseButtonText: {
+        color: "#FFF",
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    restoreButton: {
+        margin: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderRadius: 999,
+        paddingVertical: 12,
+    },
+    restoreButtonText: {
+        fontSize: 14,
+        fontWeight: "700",
     },
     // --- 赤ちゃん管理 ---
     babyRow: {
@@ -942,6 +1126,9 @@ const styles = StyleSheet.create({
         borderColor: "#F0F0F0",
         backgroundColor: "#FAFAFA",
     },
+    lockedTemplateOption: {
+        opacity: 0.75,
+    },
     templateOptionActive: {
         borderColor: "#FF8FA3",
         backgroundColor: "#FFF5F7",
@@ -952,6 +1139,17 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 6,
+    },
+    templateLockBadge: {
+        position: "absolute",
+        top: -2,
+        right: -2,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#FF8FA3",
     },
     templateNoFrame: {
         width: 52,

@@ -16,11 +16,12 @@ import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { resolveDecorationSeed } from "@/utils/decorativeFrame";
-import { formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
+import { formatStyledAgeDisplay, formatStyledDateDisplay, msToDateISO } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "@/components/AppHeader";
+import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
 import i18n from "@/lib/i18n";
 import type { AppLibraryItem } from "@/types";
 
@@ -272,6 +273,7 @@ export default function LibraryDetailScreen() {
     return (
         <SafeAreaView style={styles.screen} edges={["top"]}>
             <AppHeader title={i18n.t("common.detail")} onBackPress={() => router.back()} />
+            <CreateBannerAd />
             <FlatList
                 style={styles.container}
                 data={filteredLibrary}

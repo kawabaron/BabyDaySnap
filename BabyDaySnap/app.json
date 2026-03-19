@@ -87,11 +87,27 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-localization",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true
+        }
+      ],
       "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "monetization": {
+        "adFreeProductId": "ad_free",
+        "seasonPackSpring2026ProductId": "season_pack_spring_2026",
+        "createBannerUnitId": "ca-app-pub-3940256099942544/2435281174",
+        "interstitialUnitId": "ca-app-pub-3940256099942544/4411468910"
+      }
     }
   }
 }
