@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AppHeader } from "@/components/AppHeader";
+import { CreateBannerAd } from "@/components/ads/CreateBannerAd";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import { useActiveBaby, useAppDispatch, useAppState } from "@/context/AppContext";
 import i18n from "@/lib/i18n";
@@ -393,6 +394,7 @@ export default function LibraryGridScreen() {
                 rightSlot={headerRightSlot}
                 sideWidth={124}
             />
+            <CreateBannerAd />
             <View style={[styles.container, { backgroundColor: theme.background }]}>
                 {babies.length === 0 || monthGroups.length === 0 ? (
                     <View style={styles.emptyContainer}>
