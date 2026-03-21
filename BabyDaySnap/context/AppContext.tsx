@@ -106,6 +106,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     adFreeUnlocked: action.payload,
                 },
             };
+        case "SET_UNLOCKED_SEASON_PACK_IDS":
+            return {
+                ...state,
+                settings: {
+                    ...state.settings,
+                    unlockedSeasonPackIds: action.payload,
+                },
+            };
         case "UNLOCK_SEASON_PACK":
             return {
                 ...state,
@@ -114,36 +122,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     unlockedSeasonPackIds: state.settings.unlockedSeasonPackIds.includes(action.payload)
                         ? state.settings.unlockedSeasonPackIds
                         : [...state.settings.unlockedSeasonPackIds, action.payload],
-                },
-            };
-        case "REGISTER_SAVE_SUCCESS":
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    saveSuccessCountTotal: state.settings.saveSuccessCountTotal + 1,
-                },
-            };
-        case "REGISTER_INTERSTITIAL_SHOWN":
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    interstitialLastShownDate: action.payload.dateKey,
-                    interstitialDailyBucketDate: action.payload.dateKey,
-                    interstitialShownCountToday:
-                        state.settings.interstitialDailyBucketDate === action.payload.dateKey
-                            ? state.settings.interstitialShownCountToday + 1
-                            : 1,
-                },
-            };
-        case "RESET_INTERSTITIAL_DAILY_LIMIT":
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    interstitialDailyBucketDate: action.payload.dateKey,
-                    interstitialShownCountToday: 0,
                 },
             };
         case "LOAD_BABIES":

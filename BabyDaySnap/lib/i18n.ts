@@ -11,13 +11,14 @@ import ptBR from "../locales/pt-BR.json";
 import zhCN from "../locales/zh-CN.json";
 
 const jaMonetizationOverrides = {
-    adFreeDescription: "各画面のバナー広告と保存時の広告を非表示にします",
+    adFreeDescription: "広告を非表示にします",
     adFreeUnlocked: "この端末では、各画面のバナー広告を非表示にしています",
     adFreeSheetTitle: "各画面のバナー広告を非表示にする",
     adFreeSheetDescription: "一度の購入で、この端末の各画面のバナー広告と保存時の広告を非表示にします",
     watchVideoHideDescription: "今日の残り時間は、各画面のバナー広告を非表示にします",
     removeAdsDescription: "各画面のバナー広告を非表示にする購入画面を開きます",
-    bannerHiddenMessage: "今日の残り時間は、各画面のバナー広告を表示しません"
+    bannerHiddenMessage: "今日の残り時間は、各画面のバナー広告を表示しません",
+    restoreHint: "機種変更や再インストール後に、購入済みの状態をこの端末へ反映するためのボタンです。"
 };
 
 const translations = {

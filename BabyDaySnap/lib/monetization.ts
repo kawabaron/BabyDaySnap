@@ -12,10 +12,7 @@ type SeasonPackDefinition = {
 };
 
 export const AD_FREE_PRODUCT_ID =
-    Constants.expoConfig?.extra?.monetization?.adFreeProductId ?? "ad_free";
-
-export const INTERSTITIAL_SAVE_INTERVAL = 20;
-export const INTERSTITIAL_DAILY_LIMIT = 1;
+    Constants.expoConfig?.extra?.monetization?.adFreeProductId ?? "BSnap_ad_free";
 
 export const SEASON_PACKS: SeasonPackDefinition[] = [
     {
@@ -54,25 +51,4 @@ export function getDateKey(date = new Date()): string {
     const month = `${date.getMonth() + 1}`.padStart(2, "0");
     const day = `${date.getDate()}`.padStart(2, "0");
     return `${year}-${month}-${day}`;
-}
-
-export function shouldResetInterstitialDailyLimit(settings: UserSettings, dateKey = getDateKey()): boolean {
-    return settings.interstitialDailyBucketDate !== dateKey;
-}
-
-export function shouldShowInterstitial(settings: UserSettings, dateKey = getDateKey()): boolean {
-    if (settings.adFreeUnlocked) {
-        return false;
-    }
-
-    const shownToday =
-        settings.interstitialDailyBucketDate === dateKey
-            ? settings.interstitialShownCountToday
-            : 0;
-
-    if (shownToday >= INTERSTITIAL_DAILY_LIMIT) {
-        return false;
-    }
-
-    return settings.saveSuccessCountTotal > 0 && settings.saveSuccessCountTotal % INTERSTITIAL_SAVE_INTERVAL === 0;
 }

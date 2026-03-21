@@ -229,6 +229,7 @@
         "bannerHiddenTitle": "Banner hidden",
         "bannerHiddenMessage": "Banner ads across the app will stay hidden for the rest of today.",
         "restoreButton": "Restore Purchases",
+        "restoreHint": "Use this after reinstalling the app or changing devices to reapply your purchased status on this device.",
         "restoreTitle": "Restored",
         "restoreSuccess": "Your purchases have been restored.",
         "restoreFailed": "Failed to restore purchases: %{message}",

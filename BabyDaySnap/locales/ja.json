@@ -208,9 +208,9 @@
         "saveFailedMessage": "写真ライブラリに保存できませんでした。"
     },
     "monetization": {
-        "sectionTitle": "プレミアムと追加パック",
+        "sectionTitle": "プレミアム",
         "adFreeTitle": "広告を削除",
-        "adFreeDescription": "作成画面のバナー広告と、保存時の広告を非表示にします。",
+        "adFreeDescription": "広告を非表示にします",
         "adFreeUnlocked": "この端末ではすでに広告が非表示です。",
         "adFreeSheetTitle": "作成画面の広告を完全に削除",
         "adFreeSheetDescription": "一度購入すると、この端末の作成画面バナーと節目の保存広告を非表示にできます。",
@@ -225,7 +225,8 @@
         "videoAdUnavailableMessage": "広告の読み込み後に、もう一度お試しください。",
         "bannerHiddenTitle": "広告を非表示にしました",
         "bannerHiddenMessage": "今日の残り時間は、作成画面のバナー広告を表示しません。",
-        "restoreButton": "購入を復元",
+        "restoreButton": "購入状態に復元",
+        "restoreHint": "機種変更や再インストール後に、購入済みの状態をこの端末へ反映するためのボタンです。",
         "restoreTitle": "復元しました",
         "restoreSuccess": "購入情報を復元しました。",
         "restoreFailed": "購入の復元に失敗しました: %{message}",

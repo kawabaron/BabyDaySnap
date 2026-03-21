@@ -156,10 +156,8 @@ export type AppAction =
     | { type: "SET_POLICY_URLS"; payload: PolicyUrls }
     | { type: "SET_LAST_EDITOR_PREFS"; payload: { lastTemplateId: TemplateId; lastDateColorHex: string; lastFontId: FontId } }
     | { type: "SET_AD_FREE_UNLOCKED"; payload: boolean }
+    | { type: "SET_UNLOCKED_SEASON_PACK_IDS"; payload: SeasonPackId[] }
     | { type: "UNLOCK_SEASON_PACK"; payload: SeasonPackId }
-    | { type: "REGISTER_SAVE_SUCCESS" }
-    | { type: "REGISTER_INTERSTITIAL_SHOWN"; payload: { dateKey: string } }
-    | { type: "RESET_INTERSTITIAL_DAILY_LIMIT"; payload: { dateKey: string } }
     // 鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｮ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
     | { type: "SET_PHOTO"; payload: PhotoSource }
     | { type: "SET_COMPUTED"; payload: ComputedInfo }

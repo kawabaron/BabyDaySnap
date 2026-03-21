@@ -49,14 +49,10 @@ import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBilling } from "@/lib/billing";
 import {
-    getDateKey,
     getSeasonPackByTemplateId,
     isSeasonPackUnlocked,
-    shouldResetInterstitialDailyLimit,
-    shouldShowInterstitial,
 } from "@/lib/monetization";
-import { showInterstitialAd } from "@/lib/ads";
-
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
@@ -351,36 +347,11 @@ export default function EditorScreen() {
     };
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｸ隶厄ｽｸ繝ｻ・ｽ繝ｻ・ｹ郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ髯ｷ・ｿ隰費ｽｶ陷・ｰ鬮ｫ・ｲ繝ｻ・､髯ｷ・･隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｮ・ｫ繝ｻ・ｴ髯ｷ・ｿ鬮｢ﾂ繝ｻ・ｾ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-    const maybeShowSaveInterstitial = useCallback(async (nextSaveSuccessCountTotal: number) => {
-        const dateKey = getDateKey();
-        const nextSettings = {
-            ...settings,
-            saveSuccessCountTotal: nextSaveSuccessCountTotal,
-            interstitialShownCountToday:
-                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialShownCountToday : 0,
-            interstitialDailyBucketDate:
-                settings.interstitialDailyBucketDate === dateKey ? settings.interstitialDailyBucketDate : dateKey,
-        };
-
-        if (shouldResetInterstitialDailyLimit(settings, dateKey)) {
-            dispatch({ type: "RESET_INTERSTITIAL_DAILY_LIMIT", payload: { dateKey } });
-        }
-
-        if (!shouldShowInterstitial(nextSettings, dateKey)) {
-            return;
-        }
-
-        const shown = await showInterstitialAd().catch(() => false);
-        if (shown) {
-            dispatch({ type: "REGISTER_INTERSTITIAL_SHOWN", payload: { dateKey } });
-        }
-    }, [dispatch, settings]);
-
     async function handleSaveToApp() {
-        if (!currentPhoto || !computed) return;
-        if (targetBabyIds.length === 0) {
-            Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
-            return;
+        if (!currentPhoto || !computed) return;
+        if (targetBabyIds.length === 0) {
+            Alert.alert(i18n.t("editor.saveTargetTitle"), i18n.t("editor.missingTarget"));
+            return;
         }
         setSaving(true);
         try {
@@ -420,23 +391,21 @@ export default function EditorScreen() {
             } else {
                 dispatch({ type: "LIBRARY_ADD", payload: item });
             }
-            dispatch({
-                type: "SET_LAST_EDITOR_PREFS",
-                payload: {
-                    lastTemplateId: editorOptions.templateId,
-                    lastDateColorHex: editorOptions.dateColorHex,
-                    lastFontId: editorOptions.fontId,
-                },
-            });
-            dispatch({ type: "REGISTER_SAVE_SUCCESS" });
+            dispatch({
+                type: "SET_LAST_EDITOR_PREFS",
+                payload: {
+                    lastTemplateId: editorOptions.templateId,
+                    lastDateColorHex: editorOptions.dateColorHex,
+                    lastFontId: editorOptions.fontId,
+                },
+            });
             Alert.alert(i18n.t("editor.saveAppSuccessTitle"), i18n.t("editor.saveAppSuccessMsg"), [
-                {
-                    text: "OK",
-                    onPress: () => {
-                        void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
+                {
+                    text: "OK",
+                    onPress: () => {
                         dispatch({ type: "RESET_EDITOR" });
-
-                        router.navigate("/(tabs)/library");
+
+                        router.navigate("/(tabs)/library");
 
                         setTimeout(() => {
                             (navigation as any).reset({ index: 0, routes: [{ name: 'index' }] });
@@ -457,20 +426,16 @@ export default function EditorScreen() {
         setSaving(true);
         try {
             const finalUri = await runFinalRender();
-            const success = await saveToPhotoLibrary(finalUri);
+            const success = await saveToPhotoLibrary(finalUri);
             // 鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ繝ｻ・､繝ｻ縺､ﾂ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｴ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｵ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ鬮ｯ・ｷ繝ｻ・ｿ郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬩包ｽｶ闕ｵ諤懊・郢晢ｽｻ繝ｻ・ｱ驛｢・ｧ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ髫ｴ蟷｢・ｽ・ｱ鬮ｮ雜｣・ｽ・ｪ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｮ・ｯ隲橸ｽｺ陞ｻ・ｮ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｮ・｣髮具ｽｻ繝ｻ・｣繝ｻ・ｰ鬮ｮ荵昴・繝ｻ・ｽ繝ｻ・ｯ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｱ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｢鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ
-            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
-            if (success) {
-                dispatch({ type: "REGISTER_SAVE_SUCCESS" });
+            try { await FileSystem.deleteAsync(finalUri, { idempotent: true }); } catch (_) { }
+            if (success) {
                 Alert.alert(i18n.t("editor.savePhotoSuccessTitle"), i18n.t("editor.savePhotoSuccessMsg"), [
                     {
                         text: "OK",
-                        onPress: () => {
-                            void maybeShowSaveInterstitial(settings.saveSuccessCountTotal + 1);
-                        },
                     },
                 ]);
-            }
+            }
         } finally {
             setSaving(false);
         }

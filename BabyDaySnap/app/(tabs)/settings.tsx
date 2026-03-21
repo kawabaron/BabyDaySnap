@@ -189,7 +189,7 @@ export default function SettingsScreen() {
         });
     };
 
-    const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+    const appVersion = Constants.expoConfig?.version ?? "1.1";
     const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
 
     return (
@@ -703,6 +703,15 @@ export default function SettingsScreen() {
                                 {i18n.t("monetization.restoreButton")}
                             </Text>
                         </TouchableOpacity>
+
+                        <View style={styles.restoreHintCard}>
+                            <View style={styles.restoreHintIconWrap}>
+                                <Ionicons name="information-circle-outline" size={16} color="#9AA3AF" />
+                            </View>
+                            <Text style={styles.restoreHint}>
+                                {i18n.t("monetization.restoreHint")}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
@@ -842,6 +851,7 @@ const styles = StyleSheet.create({
     },
     restoreButton: {
         margin: 16,
+        marginBottom: 10,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
@@ -851,6 +861,26 @@ const styles = StyleSheet.create({
     restoreButtonText: {
         fontSize: 14,
         fontWeight: "700",
+    },
+    restoreHintCard: {
+        marginHorizontal: 16,
+        marginBottom: 16,
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 8,
+        borderRadius: 14,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#F6F7F9",
+    },
+    restoreHintIconWrap: {
+        marginTop: 1,
+    },
+    restoreHint: {
+        flex: 1,
+        color: "#7A7A7A",
+        fontSize: 12,
+        lineHeight: 18,
     },
     // --- 赤ちゃん管理 ---
     babyRow: {

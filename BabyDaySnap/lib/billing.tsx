@@ -8,7 +8,7 @@ import React, {
     useState,
     type ReactNode,
 } from "react";
-import { Alert } from "react-native";
+import { Alert, AppState } from "react-native";
 import Constants from "expo-constants";
 
 import { useAppDispatch } from "@/context/AppContext";
@@ -40,8 +40,6 @@ type ExpoIapModuleLike = {
     getAvailablePurchases?: (...args: any[]) => Promise<any[]>;
     requestPurchase?: (...args: any[]) => Promise<unknown>;
     finishTransaction?: (...args: any[]) => Promise<unknown>;
-    purchaseUpdatedListener?: (listener: (purchase: any) => void | Promise<void>) => { remove?: () => void };
-    purchaseErrorListener?: (listener: (error: any) => void) => { remove?: () => void };
 };
 
 const BillingContext = createContext<BillingContextValue>({
@@ -52,6 +50,18 @@ const BillingContext = createContext<BillingContextValue>({
     purchaseSeasonPack: async () => false,
     restorePurchases: async () => undefined,
 });
+
+function debugLog(...args: unknown[]) {
+    if (__DEV__) {
+        console.log("[billing]", ...args);
+    }
+}
+
+function debugWarn(...args: unknown[]) {
+    if (__DEV__) {
+        console.warn("[billing]", ...args);
+    }
+}
 
 function mapProducts(products: any[]): Record<string, BillingProduct> {
     return Object.fromEntries(
@@ -80,8 +90,29 @@ function unlockPurchase(dispatch: ReturnType<typeof useAppDispatch>, purchase: a
     }
 }
 
+function applyPurchasesToState(
+    dispatch: ReturnType<typeof useAppDispatch>,
+    purchases: any[],
+) {
+    const purchasedProductIds = new Set(
+        (Array.isArray(purchases) ? purchases : []).map((purchase) => purchase?.productId ?? purchase?.id).filter(Boolean),
+    );
+
+    dispatch({ type: "SET_AD_FREE_UNLOCKED", payload: purchasedProductIds.has(AD_FREE_PRODUCT_ID) });
+    dispatch({
+        type: "SET_UNLOCKED_SEASON_PACK_IDS",
+        payload: SEASON_PACKS
+            .filter((pack) => purchasedProductIds.has(pack.productId))
+            .map((pack) => pack.id),
+    });
+}
+
 async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
     if (!iap.fetchProducts && !iap.getProducts) {
+        debugWarn("product loading is unavailable", {
+            hasFetchProducts: Boolean(iap.fetchProducts),
+            hasGetProducts: Boolean(iap.getProducts),
+        });
         return [];
     }
 
@@ -94,27 +125,45 @@ async function loadStoreProducts(iap: ExpoIapModuleLike, productIds: string[]) {
 
     for (const attempt of attempts) {
         try {
+            debugLog("trying product fetch", {
+                method: attempt.label,
+                productIds,
+            });
             const products = await attempt.run();
+
             if (Array.isArray(products)) {
-                if (__DEV__) {
-                    console.log(
-                        "[billing] fetched products",
-                        products.map((product) => product?.id ?? product?.productId),
-                    );
-                    console.log("[billing] fetch method", attempt.label, "count", products.length);
-                }
+                debugLog("product fetch returned", {
+                    method: attempt.label,
+                    count: products.length,
+                    products: products.map((product) => ({
+                        id: product?.id ?? product?.productId ?? null,
+                        displayPrice: product?.displayPrice ?? product?.localizedPrice ?? null,
+                        title: product?.displayName ?? product?.title ?? null,
+                    })),
+                });
+            } else {
+                debugWarn("product fetch returned non-array", {
+                    method: attempt.label,
+                    resultType: products === undefined ? "undefined" : typeof products,
+                    result: products ?? null,
+                });
+            }
+
+            if (Array.isArray(products)) {
                 return products;
             }
         } catch (error: any) {
-            if (__DEV__) {
-                console.warn("[billing] product fetch failed", attempt.label, error?.message ?? error);
-            }
+            debugWarn("product fetch failed", {
+                method: attempt.label,
+                message: error?.message ?? String(error),
+                code: error?.code ?? null,
+                domain: error?.domain ?? null,
+                nativeStackIOS: error?.nativeStackIOS ?? null,
+            });
         }
     }
 
-    if (__DEV__) {
-        console.warn("[billing] no store products were returned");
-    }
+    debugWarn("no store products were returned", { productIds });
 
     return [];
 }
@@ -136,7 +185,7 @@ async function requestInAppPurchase(iap: ExpoIapModuleLike, productId: string) {
         },
         type: "in-app",
     };
-    await iap.requestPurchase(requestPayload);
+    return iap.requestPurchase(requestPayload);
 }
 
 async function finishInAppPurchase(iap: ExpoIapModuleLike, purchase: any) {
@@ -158,6 +207,35 @@ async function finishInAppPurchase(iap: ExpoIapModuleLike, purchase: any) {
     }
 }
 
+async function syncAvailablePurchases(
+    iap: ExpoIapModuleLike,
+    dispatch: ReturnType<typeof useAppDispatch>,
+    options?: { reason?: string; showSuccessAlert?: boolean },
+) {
+    if (!iap.getAvailablePurchases) {
+        debugWarn("available purchases sync unavailable", { reason: options?.reason ?? "unknown" });
+        return;
+    }
+
+    const purchases = await iap.getAvailablePurchases({
+        alsoPublishToEventListenerIOS: false,
+        onlyIncludeActiveItemsIOS: true,
+    });
+
+    const normalizedPurchases = Array.isArray(purchases) ? purchases : [];
+    debugLog("available purchases synced", {
+        reason: options?.reason ?? "unknown",
+        count: normalizedPurchases.length,
+        productIds: normalizedPurchases.map((purchase) => purchase?.productId ?? purchase?.id ?? null),
+    });
+
+    applyPurchasesToState(dispatch, normalizedPurchases);
+
+    if (options?.showSuccessAlert) {
+        Alert.alert(i18n.t("monetization.restoreTitle"), i18n.t("monetization.restoreSuccess"));
+    }
+}
+
 function BillingBootstrap({ children }: { children: ReactNode }) {
     const dispatch = useAppDispatch();
     const [productsById, setProductsById] = useState<Record<string, BillingProduct>>({});
@@ -165,8 +243,6 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
     const [isPurchasing, setIsPurchasing] = useState(false);
 
     const iapModuleRef = useRef<ExpoIapModuleLike | null>(null);
-    const purchaseUpdatedSubscriptionRef = useRef<{ remove?: () => void } | null>(null);
-    const purchaseErrorSubscriptionRef = useRef<{ remove?: () => void } | null>(null);
 
     useEffect(() => {
         let disposed = false;
@@ -176,45 +252,53 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
                 const iap = (await import("expo-iap")) as ExpoIapModuleLike;
                 iapModuleRef.current = iap;
 
-                if (__DEV__) {
-                    console.log("[billing] expected product IDs", [
+                debugLog("setup start", {
+                    expectedProductIds: [
                         AD_FREE_PRODUCT_ID,
                         ...SEASON_PACKS.map((pack) => pack.productId),
-                    ]);
-                    console.log("[billing] app bundle identifier", Constants.expoConfig?.ios?.bundleIdentifier);
-                }
+                    ],
+                    bundleIdentifier: Constants.expoConfig?.ios?.bundleIdentifier,
+                    hasInitConnection: Boolean(iap.initConnection),
+                    hasFetchProducts: Boolean(iap.fetchProducts),
+                    hasGetProducts: Boolean(iap.getProducts),
+                    hasRequestPurchase: Boolean(iap.requestPurchase),
+                    hasAvailablePurchases: Boolean(iap.getAvailablePurchases),
+                });
 
                 if (iap.initConnection) {
                     await iap.initConnection();
+                    debugLog("initConnection succeeded");
+                } else {
+                    debugWarn("initConnection is unavailable");
                 }
-
-                purchaseUpdatedSubscriptionRef.current = iap.purchaseUpdatedListener?.(async (purchase: any) => {
-                    unlockPurchase(dispatch, purchase);
-                    await finishInAppPurchase(iap, purchase);
-                    setIsPurchasing(false);
-                }) ?? null;
-
-                purchaseErrorSubscriptionRef.current = iap.purchaseErrorListener?.((error: any) => {
-                    setIsPurchasing(false);
-
-                    if (error?.code === "user-cancelled" || error?.code === "E_USER_CANCELLED") {
-                        return;
-                    }
-
-                    Alert.alert(
-                        i18n.t("common.error"),
-                        i18n.t("monetization.purchaseFailed", { message: error?.message ?? "Unknown error" }),
-                    );
-                }) ?? null;
 
                 const productIds = [AD_FREE_PRODUCT_ID, ...SEASON_PACKS.map((pack) => pack.productId)];
                 const products = await loadStoreProducts(iap, productIds);
 
                 if (!disposed) {
-                    setProductsById(mapProducts(products));
+                    const mappedProducts = mapProducts(products);
+                    debugLog("setting products", {
+                        loadedProductIds: Object.keys(mappedProducts),
+                        isReady: true,
+                    });
+                    setProductsById(mappedProducts);
                     setIsReady(true);
+                    await syncAvailablePurchases(iap, dispatch, { reason: "initial-load" }).catch((error: any) => {
+                        debugWarn("available purchases sync failed", {
+                            reason: "initial-load",
+                            message: error?.message ?? String(error),
+                            code: error?.code ?? null,
+                            domain: error?.domain ?? null,
+                        });
+                    });
                 }
-            } catch {
+            } catch (error: any) {
+                debugWarn("setup failed", {
+                    message: error?.message ?? String(error),
+                    code: error?.code ?? null,
+                    domain: error?.domain ?? null,
+                    nativeStackIOS: error?.nativeStackIOS ?? null,
+                });
                 if (!disposed) {
                     setIsReady(false);
                 }
@@ -223,18 +307,36 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
 
         setupBilling().catch(() => undefined);
 
+        const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+            if (nextState !== "active" || !iapModuleRef.current) {
+                return;
+            }
+
+            syncAvailablePurchases(iapModuleRef.current, dispatch, { reason: "app-active" }).catch((error: any) => {
+                debugWarn("available purchases sync failed", {
+                    reason: "app-active",
+                    message: error?.message ?? String(error),
+                    code: error?.code ?? null,
+                    domain: error?.domain ?? null,
+                });
+            });
+        });
+
         return () => {
             disposed = true;
-            purchaseUpdatedSubscriptionRef.current?.remove?.();
-            purchaseErrorSubscriptionRef.current?.remove?.();
-            purchaseUpdatedSubscriptionRef.current = null;
-            purchaseErrorSubscriptionRef.current = null;
+            appStateSubscription.remove();
             iapModuleRef.current?.endConnection?.().catch?.(() => undefined);
         };
     }, [dispatch]);
 
     const handlePurchase = useCallback(async (productId: string) => {
         const iap = iapModuleRef.current;
+        debugLog("purchase requested", {
+            productId,
+            isReady,
+            availableProductIds: Object.keys(productsById),
+            hasIapModule: Boolean(iap),
+        });
 
         if (!iap) {
             Alert.alert(i18n.t("common.error"), i18n.t("monetization.billingUnavailable"));
@@ -252,10 +354,31 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
         setIsPurchasing(true);
 
         try {
-            await requestInAppPurchase(iap, productId);
+            const purchaseResult = await requestInAppPurchase(iap, productId);
+            const purchase = Array.isArray(purchaseResult) ? purchaseResult[0] : purchaseResult;
+
+            debugLog("requestPurchase dispatched", {
+                productId,
+                returnedProductId: purchase?.productId ?? purchase?.id ?? null,
+                returnedType: Array.isArray(purchaseResult) ? "array" : typeof purchaseResult,
+            });
+
+            if (purchase) {
+                unlockPurchase(dispatch, purchase);
+                await finishInAppPurchase(iap, purchase);
+            }
+
+            setIsPurchasing(false);
             return true;
         } catch (error: any) {
             setIsPurchasing(false);
+            debugWarn("requestPurchase failed", {
+                productId,
+                message: error?.message ?? String(error),
+                code: error?.code ?? null,
+                domain: error?.domain ?? null,
+                nativeStackIOS: error?.nativeStackIOS ?? null,
+            });
 
             if (error?.code !== "user-cancelled" && error?.code !== "E_USER_CANCELLED") {
                 Alert.alert(
@@ -266,7 +389,7 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
 
             return false;
         }
-    }, []);
+    }, [isReady, productsById, dispatch]);
 
     const handleRestore = useCallback(async () => {
         const iap = iapModuleRef.current;
@@ -277,13 +400,10 @@ function BillingBootstrap({ children }: { children: ReactNode }) {
         }
 
         try {
-            const purchases = await iap.getAvailablePurchases();
-
-            (Array.isArray(purchases) ? purchases : []).forEach((purchase) => {
-                unlockPurchase(dispatch, purchase);
+            await syncAvailablePurchases(iap, dispatch, {
+                reason: "manual-restore",
+                showSuccessAlert: true,
             });
-
-            Alert.alert(i18n.t("monetization.restoreTitle"), i18n.t("monetization.restoreSuccess"));
         } catch (error: any) {
             Alert.alert(
                 i18n.t("common.error"),
