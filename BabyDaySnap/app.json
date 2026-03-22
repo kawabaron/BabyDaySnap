@@ -24,6 +24,11 @@
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Allow local network access to connect to the development server during debugging.",
+        "NSBonjourServices": [
+          "_expo._tcp",
+          "_http._tcp"
+        ],
         "NSCameraUsageDescription": "Allow camera access to take baby photos.",
         "NSPhotoLibraryUsageDescription": "Allow photo access to import baby photos.",
         "NSPhotoLibraryAddUsageDescription": "Allow photo library access to save edited photos."
@@ -56,6 +61,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ],
       [
         "expo-splash-screen",
         {

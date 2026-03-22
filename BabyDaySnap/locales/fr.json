@@ -226,6 +226,7 @@
         "bannerHiddenTitle": "Bannière masquée",
         "bannerHiddenMessage": "Les bannières dans toute l'app resteront masquées pour le reste de la journée.",
         "restoreButton": "Restaurer les achats",
+        "restoreHint": "Utilisez ceci après une réinstallation de l'app ou un changement d'appareil pour réappliquer votre statut d'achat sur cet appareil.",
         "restoreTitle": "Restauré",
         "restoreSuccess": "Vos achats ont été restaurés.",
         "restoreFailed": "Échec de la restauration des achats : %{message}",

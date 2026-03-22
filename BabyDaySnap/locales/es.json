@@ -226,6 +226,7 @@
         "bannerHiddenTitle": "Banner oculto",
         "bannerHiddenMessage": "Los banners de toda la app permanecerán ocultos durante el resto del día.",
         "restoreButton": "Restaurar compras",
+        "restoreHint": "Usa esto después de reinstalar la app o cambiar de dispositivo para volver a aplicar tu estado de compra en este dispositivo.",
         "restoreTitle": "Restaurado",
         "restoreSuccess": "Tus compras se han restaurado.",
         "restoreFailed": "No se pudieron restaurar las compras: %{message}",

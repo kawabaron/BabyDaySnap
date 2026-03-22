@@ -226,6 +226,7 @@
         "bannerHiddenTitle": "Banner ausgeblendet",
         "bannerHiddenMessage": "Banner in der ganzen App bleiben für den Rest des Tages ausgeblendet.",
         "restoreButton": "Käufe wiederherstellen",
+        "restoreHint": "Verwende dies nach einer Neuinstallation oder einem Gerätewechsel, um deinen gekauften Status auf diesem Gerät erneut anzuwenden.",
         "restoreTitle": "Wiederhergestellt",
         "restoreSuccess": "Deine Käufe wurden wiederhergestellt.",
         "restoreFailed": "Wiederherstellung fehlgeschlagen: %{message}",

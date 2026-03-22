@@ -14,7 +14,6 @@ import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { useAppDispatch } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay } from "@/utils/date";
 import { THEME_COLOR_PRESETS } from "@/constants/babyTheme";
-import { Ionicons } from "@expo/vector-icons";
 import type { BabyProfile } from "@/types";
 import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 
@@ -134,7 +133,6 @@ export default function OnboardingBirthdateScreen() {
                             value={date}
                             mode="date"
                             display={Platform.OS === "ios" ? "spinner" : "default"}
-                            maximumDate={new Date()}
                             minimumDate={new Date(1900, 0, 1)}
                             onChange={onDateChange}
                             locale={getCurrentLocaleTag()}

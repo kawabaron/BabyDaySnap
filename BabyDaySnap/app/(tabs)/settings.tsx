@@ -48,12 +48,16 @@ export default function SettingsScreen() {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
 
-    const editingBaby = editingBabyId ? babies.find((b) => b.id === editingBabyId) : null;
-
     const handleEditBaby = (baby: BabyProfile) => {
         setEditingBabyId(baby.id);
-        setTempDate(new Date(baby.birthDateISO.replace(/\//g, "-") + "T00:00:00"));
         setShowDatePicker(false);
+    };
+
+    const handleToggleDatePicker = () => {
+        if (!showDatePicker) {
+            setTempDate(new Date());
+        }
+        setShowDatePicker(!showDatePicker);
     };
 
     const handleSaveBabyName = (babyId: string, name: string) => {
@@ -253,7 +257,7 @@ export default function SettingsScreen() {
                                                 <Text style={styles.editLabel}>{i18n.t("settings.editBirthLabel")}</Text>
                                                 <TouchableOpacity
                                                     style={styles.editButton}
-                                                    onPress={() => setShowDatePicker(!showDatePicker)}
+                                                    onPress={handleToggleDatePicker}
                                                 >
                                                     <Text style={[styles.editButtonText, { color: babyTheme.accent }]}>
                                                         {showDatePicker ? i18n.t("settings.editCloseButton") : i18n.t("settings.editChangeButton")}
@@ -266,7 +270,6 @@ export default function SettingsScreen() {
                                                         value={tempDate}
                                                         mode="date"
                                                         display={Platform.OS === "ios" ? "spinner" : "default"}
-                                                        maximumDate={new Date()}
                                                         minimumDate={new Date(1900, 0, 1)}
                                                         onChange={onDateChange}
                                                         locale={getCurrentLocaleTag()}

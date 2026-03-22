@@ -226,6 +226,7 @@
         "bannerHiddenTitle": "横幅已隐藏",
         "bannerHiddenMessage": "在今天剩余时间内，整个应用中的横幅广告都会保持隐藏。",
         "restoreButton": "恢复购买",
+        "restoreHint": "当你重装应用或更换设备后，可使用此按钮在这台设备上重新应用你的已购状态。",
         "restoreTitle": "已恢复",
         "restoreSuccess": "你的购买已恢复。",
         "restoreFailed": "恢复购买失败：%{message}",

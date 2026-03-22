@@ -11,10 +11,10 @@ const monetizationConfig = Constants.expoConfig?.extra?.monetization;
 const isDev = typeof __DEV__ !== "undefined" && __DEV__;
 
 export const CREATE_BANNER_UNIT_ID =
-    monetizationConfig?.createBannerUnitId ?? (isDev ? TestIds.BANNER : TestIds.BANNER);
+    isDev ? TestIds.BANNER : monetizationConfig?.createBannerUnitId ?? TestIds.BANNER;
 
 export const INTERSTITIAL_UNIT_ID =
-    monetizationConfig?.interstitialUnitId ?? (isDev ? TestIds.INTERSTITIAL : TestIds.INTERSTITIAL);
+    isDev ? TestIds.INTERSTITIAL : monetizationConfig?.interstitialUnitId ?? TestIds.INTERSTITIAL;
 
 export const CREATE_BANNER_SIZE = BannerAdSize.BANNER;
 
