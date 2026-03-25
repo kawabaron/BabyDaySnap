@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -16,7 +16,7 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
-import { VISIBLE_TEMPLATES, FONT_OPTIONS } from "@/utils/templates";
+import { VISIBLE_TEMPLATES, getAvailableFontsForCurrentLocale } from "@/utils/templates";
 import {
     DECORATIVE_FRAME_BACKGROUND_COLOR,
     DECORATIVE_FRAME_LINE_COLOR,
@@ -31,9 +31,33 @@ import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { useBilling } from "@/lib/billing";
+import {
+    disableDailyReminderAsync,
+    enableDailyReminderAsync,
+    type DailyReminderSettings,
+    loadDailyReminderSettings,
+    refreshDailyReminderScheduleAsync,
+    requestDailyReminderPermissionAsync,
+    saveDailyReminderTimeAsync,
+} from "@/lib/dailyReminder";
+import { markReminderPrimerAccepted } from "@/lib/engagement";
 import { AD_FREE_PRODUCT_ID, VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, isSeasonPackUnlocked } from "@/lib/monetization";
+import { requestManualReview } from "@/lib/review";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
+
+function createTimeDate(hour: number, minute: number) {
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    return date;
+}
+
+function formatReminderTime(hour: number, minute: number) {
+    return createTimeDate(hour, minute).toLocaleTimeString(getCurrentLocaleTag(), {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
 
 export default function SettingsScreen() {
     const { settings, babies, library } = useAppState();
@@ -47,6 +71,35 @@ export default function SettingsScreen() {
     const [editingBabyId, setEditingBabyId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
+    const [reminderSettings, setReminderSettings] = useState<DailyReminderSettings>({
+        enabled: false,
+        hour: 18,
+        minute: 30,
+        scheduledNotificationId: null,
+        permissionRequestedAtMs: null,
+    });
+    const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
+    const [tempReminderTime, setTempReminderTime] = useState(createTimeDate(18, 30));
+    const availableFonts = getAvailableFontsForCurrentLocale();
+
+    useEffect(() => {
+        let mounted = true;
+
+        loadDailyReminderSettings()
+            .then((loadedSettings) => {
+                if (!mounted) {
+                    return;
+                }
+
+                setReminderSettings(loadedSettings);
+                setTempReminderTime(createTimeDate(loadedSettings.hour, loadedSettings.minute));
+            })
+            .catch(() => undefined);
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const handleEditBaby = (baby: BabyProfile) => {
         setEditingBabyId(baby.id);
@@ -191,6 +244,118 @@ export default function SettingsScreen() {
                 i18n.t("settings.adPrivacyErrorMessage"),
             );
         });
+    };
+
+    const handleManualReview = () => {
+        requestManualReview()
+            .then((opened) => {
+                if (!opened) {
+                    Alert.alert(
+                        i18n.t("settings.reviewUnavailableTitle"),
+                        i18n.t("settings.reviewUnavailableMessage"),
+                    );
+                }
+            })
+            .catch(() => {
+                Alert.alert(
+                    i18n.t("settings.reviewUnavailableTitle"),
+                    i18n.t("settings.reviewUnavailableMessage"),
+                );
+            });
+    };
+
+    const handleSaveReminderTime = (date: Date) => {
+        const nextHour = date.getHours();
+        const nextMinute = date.getMinutes();
+
+        setTempReminderTime(createTimeDate(nextHour, nextMinute));
+
+        saveDailyReminderTimeAsync(nextHour, nextMinute)
+            .then((savedSettings) => {
+                if (!savedSettings.enabled) {
+                    setReminderSettings(savedSettings);
+                    return savedSettings;
+                }
+
+                return refreshDailyReminderScheduleAsync(savedSettings);
+            })
+            .then((scheduledSettings) => {
+                setReminderSettings(scheduledSettings);
+            })
+            .catch(() => undefined);
+    };
+
+    const handleReminderTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (Platform.OS === "android") {
+            setShowReminderTimePicker(false);
+        }
+
+        if (!selectedDate) {
+            return;
+        }
+
+        setTempReminderTime(selectedDate);
+
+        if (Platform.OS === "android") {
+            handleSaveReminderTime(selectedDate);
+        }
+    };
+
+    const handleReminderToggle = (nextValue: boolean) => {
+        if (!nextValue) {
+            disableDailyReminderAsync()
+                .then((nextSettings) => {
+                    setReminderSettings(nextSettings);
+                    setShowReminderTimePicker(false);
+                })
+                .catch(() => undefined);
+            return;
+        }
+
+        Alert.alert(
+            i18n.t("reminder.primerTitle"),
+            i18n.t("reminder.primerMessage"),
+            [
+                { text: i18n.t("common.cancel"), style: "cancel" },
+                {
+                    text: i18n.t("reminder.primerAllow"),
+                    onPress: () => {
+                        requestDailyReminderPermissionAsync()
+                            .then(async (permissionResult) => {
+                                if (!permissionResult.granted) {
+                                    Alert.alert(
+                                        i18n.t("reminder.permissionDeniedTitle"),
+                                        i18n.t("reminder.permissionDeniedMessage"),
+                                        [
+                                            { text: i18n.t("common.cancel"), style: "cancel" },
+                                            {
+                                                text: i18n.t("photoLibrary.openSettings"),
+                                                onPress: () => {
+                                                    Linking.openSettings().catch(() => undefined);
+                                                },
+                                            },
+                                        ],
+                                    );
+                                    return;
+                                }
+
+                                await markReminderPrimerAccepted();
+                                const enabledSettings = await enableDailyReminderAsync(
+                                    reminderSettings.hour,
+                                    reminderSettings.minute,
+                                );
+                                setReminderSettings(enabledSettings);
+                                setTempReminderTime(createTimeDate(enabledSettings.hour, enabledSettings.minute));
+                                Alert.alert(
+                                    i18n.t("reminder.enabledTitle"),
+                                    i18n.t("reminder.enabledMessage"),
+                                );
+                            })
+                            .catch(() => undefined);
+                    },
+                },
+            ],
+        );
     };
 
     const appVersion = Constants.expoConfig?.version ?? "1.1";
@@ -581,7 +746,7 @@ export default function SettingsScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.fontRow}
                     >
-                        {FONT_OPTIONS.map((f) => (
+                        {availableFonts.map((f) => (
                             <TouchableOpacity
                                 key={f.id}
                                 style={[
@@ -719,8 +884,88 @@ export default function SettingsScreen() {
                 </View>
 
                 <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.reminderSection")}</Text>
+                    <View style={styles.card}>
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingTextBlock}>
+                                <Text style={styles.settingTitle}>{i18n.t("settings.dailyReminderLabel")}</Text>
+                                <Text style={styles.settingDescription}>
+                                    {reminderSettings.enabled
+                                        ? i18n.t("settings.dailyReminderEnabledDescription", {
+                                            time: formatReminderTime(reminderSettings.hour, reminderSettings.minute),
+                                        })
+                                        : i18n.t("settings.dailyReminderDisabledDescription")}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={reminderSettings.enabled}
+                                onValueChange={handleReminderToggle}
+                                trackColor={{ false: "#E5E7EB", true: theme.light }}
+                                thumbColor={reminderSettings.enabled ? theme.accent : "#FFFFFF"}
+                            />
+                        </View>
+
+                        {reminderSettings.enabled ? (
+                            <>
+                                <View style={styles.divider} />
+
+                                <TouchableOpacity
+                                    style={styles.linkRow}
+                                    onPress={() => setShowReminderTimePicker((current) => !current)}
+                                >
+                                    <View style={styles.linkLeft}>
+                                        <Ionicons name="time-outline" size={20} color="#888" />
+                                        <Text style={styles.linkText}>{i18n.t("settings.dailyReminderTimeLabel")}</Text>
+                                    </View>
+                                    <Text style={styles.valueText}>
+                                        {formatReminderTime(reminderSettings.hour, reminderSettings.minute)}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {showReminderTimePicker ? (
+                                    <View style={styles.datePickerContainer}>
+                                        <DateTimePicker
+                                            value={tempReminderTime}
+                                            mode="time"
+                                            display={Platform.OS === "ios" ? "spinner" : "default"}
+                                            onChange={handleReminderTimeChange}
+                                            locale={getCurrentLocaleTag()}
+                                        />
+
+                                        {Platform.OS === "ios" ? (
+                                            <TouchableOpacity
+                                                style={[styles.saveDateButton, { backgroundColor: theme.accent }]}
+                                                onPress={() => {
+                                                    handleSaveReminderTime(tempReminderTime);
+                                                    setShowReminderTimePicker(false);
+                                                }}
+                                            >
+                                                <Text style={styles.saveDateButtonText}>{i18n.t("settings.editSaveButton")}</Text>
+                                            </TouchableOpacity>
+                                        ) : null}
+                                    </View>
+                                ) : null}
+                            </>
+                        ) : null}
+                    </View>
+                </View>
+
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n.t("settings.infoSection")}</Text>
                     <View style={styles.card}>
+                        <TouchableOpacity
+                            style={styles.linkRow}
+                            onPress={handleManualReview}
+                        >
+                            <View style={styles.linkLeft}>
+                                <Ionicons name="star-outline" size={20} color="#888" />
+                                <Text style={styles.linkText}>{i18n.t("settings.reviewLink")}</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                        </TouchableOpacity>
+
+                        <View style={styles.divider} />
+
                         <TouchableOpacity
                             style={styles.linkRow}
                             onPress={() => openURL(settings.policyUrls.termsUrl)}
@@ -1017,6 +1262,21 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 12,
     },
+    settingTextBlock: {
+        flex: 1,
+        paddingRight: 16,
+        gap: 4,
+    },
+    settingTitle: {
+        fontSize: 16,
+        color: "#333",
+        fontWeight: "600",
+    },
+    settingDescription: {
+        fontSize: 13,
+        color: "#777",
+        lineHeight: 18,
+    },
     datePickerContainer: {
         borderTopWidth: 1,
         borderTopColor: "#F0F0F0",
@@ -1124,6 +1384,11 @@ const styles = StyleSheet.create({
     linkText: {
         fontSize: 16,
         color: "#333",
+    },
+    valueText: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#888",
     },
     divider: {
         height: 1,

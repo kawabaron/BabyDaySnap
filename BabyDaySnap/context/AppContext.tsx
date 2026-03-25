@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useMemo, type ReactNode } from "react";
 import type { AppState, AppAction, EditorOptions, BabyProfile } from "@/types";
 import { loadSettings, saveSettings, loadLibrary, saveLibrary, loadBabies, saveBabies, DEFAULT_SETTINGS } from "@/utils/storage";
-import { getTemplateConfig, resolveSelectableTemplateId } from "@/utils/templates";
+import { getTemplateConfig, normalizeFontIdForCurrentLocale, resolveSelectableTemplateId } from "@/utils/templates";
 import * as FileSystem from "expo-file-system/legacy";
 
 // --- 鬯ｮ・ｯ陷茨ｽｷ繝ｻ・ｽ繝ｻ・ｻ鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ郢晢ｽｻ隲ｱ繝ｻ繝ｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬯ｮ・ｫ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｷ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ---
@@ -46,7 +46,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 settings: {
                     ...action.payload,
                     defaultTemplateId: resolveSelectableTemplateId(action.payload.defaultTemplateId),
+                    defaultFontId: normalizeFontIdForCurrentLocale(action.payload.defaultFontId),
                     lastTemplateId: resolveSelectableTemplateId(action.payload.lastTemplateId),
+                    lastFontId: normalizeFontIdForCurrentLocale(action.payload.lastFontId),
                 },
             };
         case "SET_ONBOARDED":
@@ -79,7 +81,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "SET_DEFAULT_PREFS":
             return {
                 ...state,
-                settings: { ...state.settings, ...action.payload },
+                settings: {
+                    ...state.settings,
+                    ...action.payload,
+                    defaultFontId: normalizeFontIdForCurrentLocale(action.payload.defaultFontId ?? state.settings.defaultFontId),
+                },
             };
         case "SET_POLICY_URLS":
             return {
@@ -93,7 +99,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     ...state.settings,
                     lastTemplateId: action.payload.lastTemplateId,
                     lastDateColorHex: action.payload.lastDateColorHex,
-                    lastFontId: action.payload.lastFontId,
+                    lastFontId: normalizeFontIdForCurrentLocale(action.payload.lastFontId),
                 },
             };
 
@@ -171,7 +177,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         case "SET_EDITOR_OPTIONS":
             return {
                 ...state,
-                editorOptions: { ...state.editorOptions, ...action.payload },
+                editorOptions: {
+                    ...state.editorOptions,
+                    ...action.payload,
+                    fontId: normalizeFontIdForCurrentLocale(action.payload.fontId ?? state.editorOptions.fontId),
+                },
             };
         case "SET_RENDERED_URI":
             return { ...state, renderedUri: action.payload };
@@ -202,7 +212,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     templateId,
                     dateColorHex: tpl.defaultDateColorHex,
                     commentText: "",
-                    fontId: state.settings.defaultFontId || "font_standard",
+                    fontId: normalizeFontIdForCurrentLocale(state.settings.defaultFontId),
                     filterId: state.settings.defaultFilterId || "filter_none",
                     showDate: state.settings.defaultShowDate,
                     showName: state.settings.defaultShowName,

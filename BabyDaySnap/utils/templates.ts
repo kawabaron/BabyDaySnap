@@ -1,4 +1,4 @@
-import i18n from "@/lib/i18n";
+import i18n, { getCurrentLocaleTag, type SupportedLocale } from "@/lib/i18n";
 import type { ColorOption, FontId, FontOption, TemplateConfig, TemplateId } from "@/types";
 import {
     BERRY_SAKURA_TEMPLATE_ID,
@@ -137,10 +137,38 @@ export const FONT_OPTIONS: FontOption[] = [
     },
 ];
 
+const FONT_STANDARD_ID: FontId = "font_standard";
+const RESTRICTED_FONT_LOCALES = new Set<SupportedLocale>(["ko", "zh-CN"]);
+
 export const FONT_ASSET_MAP = Object.fromEntries(
     FONT_OPTIONS.map((font) => [font.id, font.file]),
 ) as Record<FontId, FontOption["file"]>;
 
 export function getFontConfig(id: FontId): FontOption {
-    return FONT_OPTIONS.find((font) => font.id === id) ?? FONT_OPTIONS[0];
+    return FONT_OPTIONS.find((font) => font.id === normalizeFontIdForCurrentLocale(id)) ?? FONT_OPTIONS[0];
+}
+
+export function normalizeFontIdForLocale(id: FontId | null | undefined, locale: SupportedLocale): FontId {
+    const resolvedId: FontId = FONT_OPTIONS.some((font) => font.id === id) ? (id as FontId) : FONT_STANDARD_ID;
+    if (RESTRICTED_FONT_LOCALES.has(locale) && resolvedId !== FONT_STANDARD_ID) {
+        return FONT_STANDARD_ID;
+    }
+
+    return resolvedId;
+}
+
+export function normalizeFontIdForCurrentLocale(id: FontId | null | undefined): FontId {
+    return normalizeFontIdForLocale(id, getCurrentLocaleTag());
+}
+
+export function getAvailableFontsForLocale(locale: SupportedLocale): FontOption[] {
+    if (RESTRICTED_FONT_LOCALES.has(locale)) {
+        return FONT_OPTIONS.filter((font) => font.id === FONT_STANDARD_ID);
+    }
+
+    return FONT_OPTIONS;
+}
+
+export function getAvailableFontsForCurrentLocale(): FontOption[] {
+    return getAvailableFontsForLocale(getCurrentLocaleTag());
 }

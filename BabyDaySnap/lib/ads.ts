@@ -6,6 +6,7 @@ import {
     TestIds,
     default as mobileAds,
 } from "react-native-google-mobile-ads";
+import { markAdShown } from "@/lib/engagement";
 
 const monetizationConfig = Constants.expoConfig?.extra?.monetization;
 const isDev = typeof __DEV__ !== "undefined" && __DEV__;
@@ -64,6 +65,7 @@ function attachInterstitialListeners() {
     interstitial.addAdEventListener(AdEventType.CLOSED, () => {
         interstitialLoaded = false;
         interstitialLoading = false;
+        void markAdShown();
         interstitialShowResolver?.(true);
         interstitialShowResolver = null;
         interstitial = createInterstitial();
@@ -116,8 +118,9 @@ export async function showInterstitialAd(): Promise<boolean> {
 
     return new Promise<boolean>((resolve) => {
         interstitialShowResolver = resolve;
+        const currentInterstitial = interstitial;
 
-        interstitial.show().catch(() => {
+        currentInterstitial?.show().catch(() => {
             interstitialLoaded = false;
             interstitialLoading = false;
             interstitialShowResolver = null;

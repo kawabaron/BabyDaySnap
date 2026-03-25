@@ -2,13 +2,18 @@ import "expo-dev-client";
 import { useEffect } from "react";
 import { Stack, useGlobalSearchParams, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { useFonts } from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AdsConsentProvider } from "@/context/AdsConsentContext";
 import { AppProvider, useAppState } from "@/context/AppContext";
 import { BillingProvider } from "@/lib/billing";
+import {
+  ensureNotificationPresentationConfigured,
+  refreshDailyReminderScheduleAsync,
+} from "@/lib/dailyReminder";
+import { markSessionBackgrounded, recordAppOpen } from "@/lib/engagement";
 import { FONT_ASSET_MAP } from "@/utils/templates";
 import "../global.css";
 import "@/lib/i18n";
@@ -19,6 +24,37 @@ function RootLayoutNav() {
   const segments = useSegments();
   const searchParams = useGlobalSearchParams();
   const [fontsLoaded] = useFonts(FONT_ASSET_MAP);
+
+  useEffect(() => {
+    let appState = AppState.currentState;
+
+    ensureNotificationPresentationConfigured();
+    void recordAppOpen().then(() => refreshDailyReminderScheduleAsync());
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      const becameActive =
+        appState !== "active" &&
+        nextAppState === "active";
+      const leftForeground =
+        appState === "active" &&
+        nextAppState !== "active";
+
+      appState = nextAppState;
+
+      if (becameActive) {
+        void recordAppOpen().then(() => refreshDailyReminderScheduleAsync());
+      }
+
+      if (leftForeground) {
+        void markSessionBackgrounded();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      void markSessionBackgrounded();
+    };
+  }, []);
 
   useEffect(() => {
     if (loading || !fontsLoaded) {
