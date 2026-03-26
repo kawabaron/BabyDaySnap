@@ -122,7 +122,7 @@ export function ensureNotificationPresentationConfigured() {
         handleNotification: async () => ({
             shouldShowBanner: true,
             shouldShowList: true,
-            shouldPlaySound: false,
+            shouldPlaySound: Platform.OS === "android",
             shouldSetBadge: false,
         }),
     });
