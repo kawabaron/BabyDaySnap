@@ -141,6 +141,7 @@ export type AppState = {
 
     renderedUri: string | null;
     editingLibraryId?: string | null;
+    libraryDetailFocusId: string | null;
     loading: boolean;
     error?: string;
 };
@@ -164,6 +165,7 @@ export type AppAction =
     | { type: "SET_EDITOR_OPTIONS"; payload: Partial<EditorOptions> }
     | { type: "SET_RENDERED_URI"; payload: string | null }
     | { type: "SET_EDITING_LIBRARY_ID"; payload: string | null }
+    | { type: "SET_LIBRARY_DETAIL_FOCUS_ID"; payload: string | null }
     | { type: "RESET_EDITOR" }
     // 鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｩ蟷｢・ｽ・｢髫ｴ蠑ｱ繝ｻ・ゑｽｧ郢晢ｽｻ闕ｳ・ｻ繝ｻ・ｸ繝ｻ・ｷ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｪ
     | { type: "LIBRARY_LOAD"; payload: AppLibraryItem[] }

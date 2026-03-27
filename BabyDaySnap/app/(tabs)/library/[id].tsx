@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
     View,
     Text,
@@ -10,13 +10,16 @@ import {
     Dimensions,
     Share,
     FlatList,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { useAppState, useAppDispatch } from "@/context/AppContext";
 import { getThemePreset } from "@/constants/babyTheme";
 import { saveToPhotoLibrary, deleteFromAppLibrary } from "@/utils/saveImage";
 import { resolveDecorationSeed } from "@/utils/decorativeFrame";
-import { formatStyledAgeDisplay, formatStyledDateDisplay, msToDateISO } from "@/utils/date";
+import { formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
 import { getTemplateConfig } from "@/utils/templates";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,19 +33,61 @@ const IMAGE_WIDTH = SCREEN_WIDTH;
 
 export default function LibraryDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { library, babies, activeBabyId } = useAppState();
+    const { library, babies, activeBabyId, libraryDetailFocusId } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const detailIsFocused = useIsFocused();
+    const flatListRef = useRef<FlatList<AppLibraryItem> | null>(null);
 
     const filteredLibrary = useMemo(() => {
-        if (!activeBabyId) return library;
-        return library.filter((item) => item.babyIds.includes(activeBabyId));
+        const baseLibrary = activeBabyId
+            ? library.filter((item) => item.babyIds.includes(activeBabyId))
+            : library;
+
+        return [...baseLibrary].sort((a, b) => {
+            if (a.shotDateISO !== b.shotDateISO) {
+                return b.shotDateISO.localeCompare(a.shotDateISO);
+            }
+            return b.createdAtMs - a.createdAtMs;
+        });
     }, [library, activeBabyId]);
 
     const initialIndex = useMemo(() => {
         const idx = filteredLibrary.findIndex((i) => i.id === id);
         return idx >= 0 ? idx : 0;
     }, [filteredLibrary, id]);
+
+    const focusedIndex = useMemo(() => {
+        if (!libraryDetailFocusId) {
+            return -1;
+        }
+
+        return filteredLibrary.findIndex((item) => item.id === libraryDetailFocusId);
+    }, [filteredLibrary, libraryDetailFocusId]);
+
+    useEffect(() => {
+        dispatch({ type: "SET_LIBRARY_DETAIL_FOCUS_ID", payload: id });
+    }, [dispatch, id]);
+
+    useEffect(() => {
+        if (!detailIsFocused || focusedIndex < 0) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            flatListRef.current?.scrollToOffset({ offset: SCREEN_WIDTH * focusedIndex, animated: false });
+        });
+    }, [detailIsFocused, focusedIndex]);
+
+    const handleMomentumScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const nextIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+        const nextItem = filteredLibrary[nextIndex];
+        if (!nextItem) {
+            return;
+        }
+
+        dispatch({ type: "SET_LIBRARY_DETAIL_FOCUS_ID", payload: nextItem.id });
+    }, [dispatch, filteredLibrary]);
 
     if (filteredLibrary.length === 0) {
         return (
@@ -156,7 +201,7 @@ export default function LibraryDetailScreen() {
                     {/* 鬨ｾ蛹・ｽｽ・ｻ髯ｷ蜑・ｽｸ讖ｸ・ｽ・､繝ｻ・ｧ鬮ｯ・ｦ繝ｻ・ｨ鬩穂ｼ夲ｽｽ・ｺ */}
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => router.push({ pathname: "/(tabs)/library/viewer", params: { uri: item.renderedFileUri } })}
+                        onPress={() => router.push({ pathname: "/(tabs)/library/viewer", params: { id: item.id, uri: item.renderedFileUri } })}
                         style={[styles.imageContainer, {
                             height: imageHeight,
                             backgroundColor: tpl.hasFrame ? "#FFFFFF" : "#F5F5F5",
@@ -275,6 +320,7 @@ export default function LibraryDetailScreen() {
             <AppHeader title={i18n.t("common.detail")} onBackPress={() => router.back()} />
             <CreateBannerAd />
             <FlatList
+                ref={flatListRef}
                 style={styles.container}
                 data={filteredLibrary}
                 keyExtractor={(i) => i.id}
@@ -284,6 +330,7 @@ export default function LibraryDetailScreen() {
                 initialScrollIndex={initialIndex}
                 getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
                 renderItem={renderItem}
+                onMomentumScrollEnd={handleMomentumScrollEnd}
                 windowSize={3}
                 maxToRenderPerBatch={3}
             />
