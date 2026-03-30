@@ -74,6 +74,7 @@ export async function saveToAppLibrary(
         templateId: editorOptions.templateId,
         dateColorHex: editorOptions.dateColorHex,
         commentText: editorOptions.commentText,
+        compactEmptyCommentSpace: editorOptions.compactEmptyCommentSpace ?? false,
         fontId: editorOptions.fontId,
         isBold: editorOptions.isBold,
         filterId: editorOptions.filterId,
@@ -82,6 +83,7 @@ export async function saveToAppLibrary(
         showAge: editorOptions.showAge,
         ageFormat: editorOptions.ageFormat,
         displayStyle: editorOptions.displayStyle,
+        textPosition: editorOptions.textPosition ?? "bottom_right",
     };
 
     return item;

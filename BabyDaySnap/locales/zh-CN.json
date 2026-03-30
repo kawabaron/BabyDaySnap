@@ -44,8 +44,16 @@
         "toolsComment": "备注",
         "toolsSave": "保存",
         "dateColorTitle": "文字颜色",
+        "compactEmptyCommentSpaceLabel": "评论为空时压缩留白",
         "colorLabel": "文字颜色",
         "boldLabel": "加粗",
+        "textPositionTitle": "文字位置",
+        "textPosition": {
+            "top_left": "左上",
+            "top_right": "右上",
+            "bottom_left": "左下",
+            "bottom_right": "右下"
+        },
         "textVisibilityTitle": "显示项目",
         "displayStyleTitle": "显示样式",
         "dateLabel": "日期",

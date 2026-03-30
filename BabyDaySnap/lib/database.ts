@@ -9,7 +9,7 @@ import {
 } from "@/lib/persistence";
 
 const DATABASE_NAME = "babydaysnap.db";
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 6;
 const META_LEGACY_MIGRATED_AT = "legacy_asyncstorage_migrated_at";
 const META_STORAGE_BACKEND = "storage_backend";
 
@@ -27,8 +27,11 @@ CREATE TABLE IF NOT EXISTS app_settings (
     birth_date_iso TEXT,
     baby_name TEXT NOT NULL DEFAULT '',
     default_template_id TEXT NOT NULL,
+    default_text_position TEXT NOT NULL DEFAULT 'bottom_right',
     default_font_id TEXT NOT NULL,
+    default_is_bold INTEGER NOT NULL DEFAULT 0,
     default_filter_id TEXT NOT NULL,
+    default_compact_empty_comment_space INTEGER NOT NULL DEFAULT 0,
     default_show_date INTEGER NOT NULL DEFAULT 1,
     default_show_name INTEGER NOT NULL DEFAULT 1,
     default_show_age INTEGER NOT NULL DEFAULT 1,
@@ -74,6 +77,7 @@ CREATE TABLE IF NOT EXISTS library_items (
     template_id TEXT NOT NULL,
     date_color_hex TEXT NOT NULL,
     comment_text TEXT NOT NULL,
+    compact_empty_comment_space INTEGER NOT NULL DEFAULT 0,
     font_id TEXT NOT NULL,
     is_bold INTEGER NOT NULL DEFAULT 0,
     filter_id TEXT NOT NULL,
@@ -82,6 +86,7 @@ CREATE TABLE IF NOT EXISTS library_items (
     show_age INTEGER NOT NULL,
     age_format TEXT NOT NULL,
     display_style TEXT NOT NULL,
+    text_position TEXT NOT NULL DEFAULT 'bottom_right',
     is_favorite INTEGER NOT NULL DEFAULT 0,
     created_at_ms INTEGER NOT NULL,
     position INTEGER NOT NULL
@@ -147,8 +152,11 @@ type SettingsRow = {
     birth_date_iso: string | null;
     baby_name: string;
     default_template_id: UserSettings["defaultTemplateId"];
+    default_text_position: UserSettings["defaultTextPosition"];
     default_font_id: UserSettings["defaultFontId"];
+    default_is_bold: number;
     default_filter_id: UserSettings["defaultFilterId"];
+    default_compact_empty_comment_space: number;
     default_show_date: number;
     default_show_name: number;
     default_show_age: number;
@@ -192,6 +200,7 @@ type LibraryItemRow = {
     template_id: AppLibraryItem["templateId"];
     date_color_hex: string;
     comment_text: string;
+    compact_empty_comment_space: number;
     font_id: AppLibraryItem["fontId"];
     is_bold: number;
     filter_id: AppLibraryItem["filterId"];
@@ -200,6 +209,7 @@ type LibraryItemRow = {
     show_age: number;
     age_format: AppLibraryItem["ageFormat"];
     display_style: AppLibraryItem["displayStyle"];
+    text_position: AppLibraryItem["textPosition"];
     created_at_ms: number;
 };
 
@@ -272,8 +282,11 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             birth_date_iso,
             baby_name,
             default_template_id,
+            default_text_position,
             default_font_id,
+            default_is_bold,
             default_filter_id,
+            default_compact_empty_comment_space,
             default_show_date,
             default_show_name,
             default_show_age,
@@ -291,14 +304,17 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             interstitial_last_shown_date,
             interstitial_shown_count_today,
             interstitial_daily_bucket_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             has_onboarded = excluded.has_onboarded,
             birth_date_iso = excluded.birth_date_iso,
             baby_name = excluded.baby_name,
             default_template_id = excluded.default_template_id,
+            default_text_position = excluded.default_text_position,
             default_font_id = excluded.default_font_id,
+            default_is_bold = excluded.default_is_bold,
             default_filter_id = excluded.default_filter_id,
+            default_compact_empty_comment_space = excluded.default_compact_empty_comment_space,
             default_show_date = excluded.default_show_date,
             default_show_name = excluded.default_show_name,
             default_show_age = excluded.default_show_age,
@@ -321,8 +337,11 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
         settings.birthDateISO,
         settings.babyName,
         settings.defaultTemplateId,
+        settings.defaultTextPosition,
         settings.defaultFontId,
+        boolToInt(settings.defaultIsBold),
         settings.defaultFilterId,
+        boolToInt(settings.defaultCompactEmptyCommentSpace),
         boolToInt(settings.defaultShowDate),
         boolToInt(settings.defaultShowName),
         boolToInt(settings.defaultShowAge),
@@ -402,6 +421,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 template_id,
                 date_color_hex,
                 comment_text,
+                compact_empty_comment_space,
                 font_id,
                 is_bold,
                 filter_id,
@@ -410,9 +430,10 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 show_age,
                 age_format,
                 display_style,
+                text_position,
                 created_at_ms,
                 position
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 source = excluded.source,
                 original_file_uri = excluded.original_file_uri,
@@ -427,6 +448,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 template_id = excluded.template_id,
                 date_color_hex = excluded.date_color_hex,
                 comment_text = excluded.comment_text,
+                compact_empty_comment_space = excluded.compact_empty_comment_space,
                 font_id = excluded.font_id,
                 is_bold = excluded.is_bold,
                 filter_id = excluded.filter_id,
@@ -435,6 +457,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 show_age = excluded.show_age,
                 age_format = excluded.age_format,
                 display_style = excluded.display_style,
+                text_position = excluded.text_position,
                 created_at_ms = excluded.created_at_ms,
                 position = excluded.position`,
             item.id,
@@ -451,6 +474,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
             item.templateId,
             item.dateColorHex,
             item.commentText,
+            boolToInt(item.compactEmptyCommentSpace),
             item.fontId,
             boolToInt(item.isBold),
             item.filterId,
@@ -459,6 +483,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
             boolToInt(item.showAge),
             item.ageFormat,
             item.displayStyle,
+            item.textPosition,
             item.createdAtMs,
             index
         );
@@ -566,6 +591,33 @@ async function migrateSchemaIfNeeded(db: SQLiteDatabase): Promise<void> {
             currentVersion = 3;
         }
 
+        if (currentVersion < 4) {
+            await db.execAsync(
+                "ALTER TABLE library_items ADD COLUMN text_position TEXT NOT NULL DEFAULT 'bottom_right';"
+            );
+            currentVersion = 4;
+        }
+
+        if (currentVersion < 5) {
+            await db.execAsync(
+                "ALTER TABLE library_items ADD COLUMN compact_empty_comment_space INTEGER NOT NULL DEFAULT 0;"
+            );
+            currentVersion = 5;
+        }
+
+        if (currentVersion < 6) {
+            await db.execAsync(
+                "ALTER TABLE app_settings ADD COLUMN default_text_position TEXT NOT NULL DEFAULT 'bottom_right';"
+            );
+            await db.execAsync(
+                "ALTER TABLE app_settings ADD COLUMN default_is_bold INTEGER NOT NULL DEFAULT 0;"
+            );
+            await db.execAsync(
+                "ALTER TABLE app_settings ADD COLUMN default_compact_empty_comment_space INTEGER NOT NULL DEFAULT 0;"
+            );
+            currentVersion = 6;
+        }
+
         await db.execAsync(`PRAGMA user_version = ${currentVersion}`);
     });
 }
@@ -602,8 +654,11 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             birth_date_iso,
             baby_name,
             default_template_id,
+            default_text_position,
             default_font_id,
+            default_is_bold,
             default_filter_id,
+            default_compact_empty_comment_space,
             default_show_date,
             default_show_name,
             default_show_age,
@@ -634,8 +689,11 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
         birthDateISO: row.birth_date_iso,
         babyName: row.baby_name,
         defaultTemplateId: row.default_template_id,
+        defaultTextPosition: row.default_text_position,
         defaultFontId: row.default_font_id,
+        defaultIsBold: intToBool(row.default_is_bold),
         defaultFilterId: row.default_filter_id,
+        defaultCompactEmptyCommentSpace: intToBool(row.default_compact_empty_comment_space),
         defaultShowDate: intToBool(row.default_show_date),
         defaultShowName: intToBool(row.default_show_name),
         defaultShowAge: intToBool(row.default_show_age),
@@ -722,6 +780,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
                 template_id,
                 date_color_hex,
                 comment_text,
+                compact_empty_comment_space,
                 font_id,
                 is_bold,
                 filter_id,
@@ -730,6 +789,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
                 show_age,
                 age_format,
                 display_style,
+                text_position,
                 created_at_ms
             FROM library_items
             ORDER BY position ASC`
@@ -768,6 +828,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
             templateId: row.template_id,
             dateColorHex: row.date_color_hex,
             commentText: row.comment_text,
+            compactEmptyCommentSpace: intToBool(row.compact_empty_comment_space),
             fontId: row.font_id,
             isBold: intToBool(row.is_bold),
             filterId: row.filter_id,
@@ -776,6 +837,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
             showAge: intToBool(row.show_age),
             ageFormat: row.age_format,
             displayStyle: row.display_style,
+            textPosition: row.text_position,
             createdAtMs: row.created_at_ms,
         })
     );

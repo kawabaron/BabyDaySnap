@@ -12,6 +12,7 @@ const initialEditorOptions: EditorOptions = {
     templateId: "tpl_noframe_full",
     dateColorHex: "#FFFFFF",
     commentText: "",
+    compactEmptyCommentSpace: false,
     fontId: "font_standard",
     isBold: false,
     filterId: "filter_none",
@@ -20,6 +21,7 @@ const initialEditorOptions: EditorOptions = {
     showAge: true,
     ageFormat: "days",
     displayStyle: "current",
+    textPosition: "bottom_right",
 };
 
 const initialState: AppState = {
@@ -216,14 +218,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
                     templateId,
                     dateColorHex: tpl.defaultDateColorHex,
                     commentText: "",
+                    compactEmptyCommentSpace: state.settings.defaultCompactEmptyCommentSpace,
                     fontId: normalizeFontIdForCurrentLocale(state.settings.defaultFontId),
-                    isBold: false,
+                    isBold: state.settings.defaultIsBold,
                     filterId: state.settings.defaultFilterId || "filter_none",
                     showDate: state.settings.defaultShowDate,
                     showName: state.settings.defaultShowName,
                     showAge: state.settings.defaultShowAge,
                     ageFormat: state.settings.defaultAgeFormat || "days",
                     displayStyle: state.settings.defaultDisplayStyle || "current",
+                    textPosition: state.settings.defaultTextPosition || "bottom_right",
                 },
                 renderedUri: null,
                 editingLibraryId: null,

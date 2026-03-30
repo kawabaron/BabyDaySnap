@@ -44,8 +44,16 @@
         "toolsComment": "Commentaire",
         "toolsSave": "Enregistrer",
         "dateColorTitle": "Couleur du texte",
+        "compactEmptyCommentSpaceLabel": "Reduire l'espace si le commentaire est vide",
         "colorLabel": "Couleur du texte",
         "boldLabel": "Gras",
+        "textPositionTitle": "Position du texte",
+        "textPosition": {
+            "top_left": "En haut a gauche",
+            "top_right": "En haut a droite",
+            "bottom_left": "En bas a gauche",
+            "bottom_right": "En bas a droite"
+        },
         "textVisibilityTitle": "Éléments visibles",
         "displayStyleTitle": "Style d'affichage",
         "dateLabel": "Date",

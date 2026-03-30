@@ -16,14 +16,14 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import { useAdsConsent } from "@/context/AdsConsentContext";
 import { useAppState, useAppDispatch, useActiveBaby } from "@/context/AppContext";
 import { formatDateISO, formatDateDisplay, formatStyledAgeDisplay, formatStyledDateDisplay } from "@/utils/date";
-import { VISIBLE_TEMPLATES, getAvailableFontsForCurrentLocale } from "@/utils/templates";
+import { VISIBLE_TEMPLATES, getAvailableFontsForCurrentLocale, getTemplateConfig } from "@/utils/templates";
 import {
     DECORATIVE_FRAME_BACKGROUND_COLOR,
     DECORATIVE_FRAME_LINE_COLOR,
 } from "@/utils/decorativeFrame";
 import { FILTER_OPTIONS } from "@/utils/filters";
 import { THEME_COLOR_PRESETS, getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId, FilterId, BabyProfile, DisplayStyle } from "@/types";
+import type { TemplateId, FontId, FilterId, BabyProfile, DisplayStyle, TextPosition } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
@@ -45,6 +45,7 @@ import { AD_FREE_PRODUCT_ID, VISIBLE_SEASON_PACKS, getSeasonPackByTemplateId, is
 import { requestManualReview } from "@/lib/review";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
+const TEXT_POSITION_OPTIONS: TextPosition[] = ["top_left", "top_right", "bottom_left", "bottom_right"];
 
 function createTimeDate(hour: number, minute: number) {
     const date = new Date();
@@ -81,6 +82,7 @@ export default function SettingsScreen() {
     const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
     const [tempReminderTime, setTempReminderTime] = useState(createTimeDate(18, 30));
     const availableFonts = getAvailableFontsForCurrentLocale();
+    const defaultTemplateHasFrame = getTemplateConfig(settings.defaultTemplateId).hasFrame;
 
     useEffect(() => {
         let mounted = true;
@@ -740,6 +742,36 @@ export default function SettingsScreen() {
                         })}
                     </ScrollHintedScrollView>
 
+                    {defaultTemplateHasFrame ? (
+                        <TouchableOpacity
+                            style={styles.checkboxRow}
+                            onPress={() =>
+                                dispatch({
+                                    type: "SET_DEFAULT_PREFS",
+                                    payload: {
+                                        defaultCompactEmptyCommentSpace: !settings.defaultCompactEmptyCommentSpace,
+                                    },
+                                })
+                            }
+                            activeOpacity={0.8}
+                        >
+                            <View
+                                style={[
+                                    styles.checkboxBox,
+                                    settings.defaultCompactEmptyCommentSpace && {
+                                        backgroundColor: theme.accent,
+                                        borderColor: theme.accent,
+                                    },
+                                ]}
+                            >
+                                {settings.defaultCompactEmptyCommentSpace ? (
+                                    <Ionicons name="checkmark" size={14} color="#FFF" />
+                                ) : null}
+                            </View>
+                            <Text style={styles.checkboxLabel}>{i18n.t("editor.compactEmptyCommentSpaceLabel")}</Text>
+                        </TouchableOpacity>
+                    ) : null}
+
                     <Text style={styles.subTitle}>{i18n.t("settings.fontSubtitle")}</Text>
                     <ScrollHintedScrollView
                         direction="horizontal"
@@ -768,6 +800,49 @@ export default function SettingsScreen() {
                             </TouchableOpacity>
                         ))}
                     </ScrollHintedScrollView>
+
+                    <Text style={styles.subTitle}>{i18n.t("editor.textPositionTitle")}</Text>
+                    <View style={styles.textPositionGrid}>
+                        {TEXT_POSITION_OPTIONS.map((position) => {
+                            const isActive = settings.defaultTextPosition === position;
+                            return (
+                                <TouchableOpacity
+                                    key={position}
+                                    style={[
+                                        styles.textPositionButton,
+                                        isActive && [styles.textPositionButtonActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                    ]}
+                                    onPress={() =>
+                                        dispatch({
+                                            type: "SET_DEFAULT_PREFS",
+                                            payload: { defaultTextPosition: position },
+                                        })
+                                    }
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[styles.textPositionButtonText, isActive && { color: theme.accent }]}>
+                                        {i18n.t(`editor.textPosition.${position}`)}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.checkboxRow}
+                        onPress={() =>
+                            dispatch({
+                                type: "SET_DEFAULT_PREFS",
+                                payload: { defaultIsBold: !settings.defaultIsBold },
+                            })
+                        }
+                        activeOpacity={0.8}
+                    >
+                        <View style={[styles.checkboxBox, settings.defaultIsBold && { backgroundColor: theme.accent, borderColor: theme.accent }]}>
+                            {settings.defaultIsBold ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
+                        </View>
+                        <Text style={styles.checkboxLabel}>{i18n.t("editor.boldLabel")}</Text>
+                    </TouchableOpacity>
 
                     <Text style={styles.subTitle}>{i18n.t("editor.filterTitle")}</Text>
                     <ScrollHintedScrollView
@@ -1565,5 +1640,59 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#666",
         fontWeight: "500",
+    },
+    checkboxRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 10,
+        minHeight: 44,
+        paddingVertical: 8,
+        paddingRight: 12,
+    },
+    checkboxBox: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: "#D7D7D7",
+        backgroundColor: "#FFF",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    checkboxLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#555",
+    },
+    textPositionGrid: {
+        flexDirection: "row",
+        flexWrap: "nowrap",
+        gap: 6,
+        marginBottom: 12,
+    },
+    textPositionButton: {
+        flex: 1,
+        minWidth: 0,
+        paddingHorizontal: 8,
+        paddingVertical: 9,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#E9E3DE",
+        backgroundColor: "#FFF",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    textPositionButtonActive: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    textPositionButtonText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#555",
     },
 });

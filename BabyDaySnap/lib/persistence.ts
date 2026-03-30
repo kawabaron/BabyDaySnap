@@ -11,8 +11,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
     birthDateISO: null,
     babyName: "",
     defaultTemplateId: "tpl_noframe_full",
+    defaultTextPosition: "bottom_right",
     defaultFontId: "font_standard",
+    defaultIsBold: false,
     defaultFilterId: "filter_none",
+    defaultCompactEmptyCommentSpace: false,
     defaultShowDate: true,
     defaultShowName: true,
     defaultShowAge: true,
@@ -56,6 +59,7 @@ export function normalizeLibraryItem(item: AppLibraryItem): AppLibraryItem {
         ...item,
         babyIds: item.babyIds || [],
         commentText: item.commentText || "",
+        compactEmptyCommentSpace: item.compactEmptyCommentSpace ?? false,
         fontId: item.fontId || "font_standard",
         isBold: item.isBold ?? false,
         filterId: normalizeFilterId(item.filterId),
@@ -64,5 +68,6 @@ export function normalizeLibraryItem(item: AppLibraryItem): AppLibraryItem {
         showAge: item.showAge ?? true,
         ageFormat: item.ageFormat || "days",
         displayStyle: item.displayStyle || "current",
+        textPosition: item.textPosition || "bottom_right",
     };
 }

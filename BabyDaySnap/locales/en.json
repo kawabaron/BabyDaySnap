@@ -44,8 +44,16 @@
         "toolsComment": "Comment",
         "toolsSave": "Save",
         "dateColorTitle": "Date Color",
+        "compactEmptyCommentSpaceLabel": "Tighten space when comment is empty",
         "colorLabel": "Text Color",
         "boldLabel": "Bold",
+        "textPositionTitle": "Text Position",
+        "textPosition": {
+            "top_left": "Top Left",
+            "top_right": "Top Right",
+            "bottom_left": "Bottom Left",
+            "bottom_right": "Bottom Right"
+        },
         "textVisibilityTitle": "Printed Text",
         "displayStyleTitle": "Display Style",
         "dateLabel": "Date",

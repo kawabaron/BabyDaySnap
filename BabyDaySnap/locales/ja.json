@@ -44,8 +44,16 @@
         "toolsComment": "コメント",
         "toolsSave": "保存",
         "dateColorTitle": "文字色",
+        "compactEmptyCommentSpaceLabel": "コメント未入力時は余白を詰める",
         "colorLabel": "文字色",
         "boldLabel": "太字",
+        "textPositionTitle": "印字位置",
+        "textPosition": {
+            "top_left": "左上",
+            "top_right": "右上",
+            "bottom_left": "左下",
+            "bottom_right": "右下"
+        },
         "textVisibilityTitle": "表示項目",
         "displayStyleTitle": "\u8868\u8a18\u30b9\u30bf\u30a4\u30eb",
         "dateLabel": "日付",

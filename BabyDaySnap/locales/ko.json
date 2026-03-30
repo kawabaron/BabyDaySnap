@@ -44,8 +44,16 @@
         "toolsComment": "메모",
         "toolsSave": "저장",
         "dateColorTitle": "텍스트 색상",
+        "compactEmptyCommentSpaceLabel": "댓글이 없을 때 여백 줄이기",
         "colorLabel": "텍스트 색상",
         "boldLabel": "굵게",
+        "textPositionTitle": "텍스트 위치",
+        "textPosition": {
+            "top_left": "왼쪽 위",
+            "top_right": "오른쪽 위",
+            "bottom_left": "왼쪽 아래",
+            "bottom_right": "오른쪽 아래"
+        },
         "textVisibilityTitle": "표시 항목",
         "displayStyleTitle": "표시 스타일",
         "dateLabel": "날짜",

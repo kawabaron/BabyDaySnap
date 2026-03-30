@@ -16,13 +16,11 @@ import {
     getFramedPhotoRect,
     type Rect,
 } from "./decorativeFrame";
-import type { TemplateId, ComputedInfo, EditorOptions, FontId, FilterId } from "@/types";
+import type { TemplateId, ComputedInfo, EditorOptions, FontId, FilterId, TextPosition } from "@/types";
 
 const MARGIN_RATIO = 0.04;
 const FONT_SIZE_DATE_RATIO = 0.04;
 const FONT_SIZE_COMMENT_RATIO = 0.038;
-const INSET_RATIO = 0.06; // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｫ雎ｬ・ｹ鬯ｯ・･繝ｻ・ｴ驍ｵ・ｺ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｯ・ｯ闔ｨ諛後・郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｭ鬮ｯ貊捺ｱ壹・・ｽ繝ｻ・ｱ驛｢譎｢・ｽ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣髯ｷ・ｴ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｳ髫ｶ髮｣・ｽ・｣郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ髯昴・・ｽ・ｰ鬯ｮ・｢繝ｻ・ｧ郢晢ｽｻ繝ｻ・ｲ鬮ｯ諛ｶ・ｽ・ｮ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ髢ｧ・ｴ陟募干繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ
-const BOTTOM_INSET_RATIO = 0.18; // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ・つ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｼ陞滂ｽｲ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・｣驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｩ髯ｷ莨夲ｽｽ・ｱ郢晢ｽｻ闔会ｽ｣郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｯ繝ｻ・ｨ郢晢ｽｻ繝ｻ・ｾ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陟・§・ｾ蜉ｱ繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ驛｢譎｢・ｽ・ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ繝ｻ・､・ｧ霑夲ｽ｡鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｳ髫ｶ髮｣・ｽ・｣郢晢ｽｻ繝ｻ・ｰ驛｢譎｢・ｽ・ｻ髯昴・・ｽ・ｰ鬯ｮ・｢繝ｻ・ｧ郢晢ｽｻ繝ｻ・ｲ鬮ｯ諛ｶ・ｽ・ｮ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ髢ｧ・ｴ陟募干繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｫ
 
 const INNER_LINE_INSET_RATIO = 0.05;
 const INNER_LINE_WIDTH_RATIO = 0.003;
@@ -200,8 +198,30 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
         }
 
         // 鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｵ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ髯懷雀迴ｾ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｰ鬯ｮ・ｯ繝ｻ・ｷ繝ｻ縺､ﾂ鬮ｫ・ｲ繝ｻ・､髫ｲ蟶帷樟郢晢ｽｻ
-        drawPhoto(canvas, skImage, canvasW, canvasH, editorOptions.templateId, tpl.hasFrame, imageWidth, imageHeight);
-        drawFilterOverlay(canvas, canvasW, canvasH, editorOptions.filterId, editorOptions.templateId, tpl.hasFrame);
+        drawPhoto(
+            canvas,
+            skImage,
+            canvasW,
+            canvasH,
+            editorOptions.templateId,
+            tpl.hasFrame,
+            editorOptions.textPosition ?? "bottom_right",
+            optionsHasComment(editorOptions),
+            editorOptions.compactEmptyCommentSpace ?? false,
+            imageWidth,
+            imageHeight,
+        );
+        drawFilterOverlay(
+            canvas,
+            canvasW,
+            canvasH,
+            editorOptions.filterId,
+            editorOptions.templateId,
+            tpl.hasFrame,
+            editorOptions.textPosition ?? "bottom_right",
+            optionsHasComment(editorOptions),
+            editorOptions.compactEmptyCommentSpace ?? false,
+        );
         if (hasDecorations) {
             drawDecorations(
                 canvas,
@@ -209,9 +229,21 @@ export async function renderCompositeImage(params: RenderParams): Promise<string
                 getBerrySakuraPlacements(canvasW, canvasH, {
                     seed: `${editorOptions.templateId}:${BERRY_SAKURA_LAYOUT_SEED}`,
                     hasComment: optionsHasComment(editorOptions),
+                    textPosition: editorOptions.textPosition ?? "bottom_right",
+                    compactEmptyCommentSpace: editorOptions.compactEmptyCommentSpace ?? false,
                 }),
             );
-            drawPhotoOutline(canvas, getFramedPhotoRect(canvasW, canvasH), tpl.photoLineColorHex);
+            drawPhotoOutline(
+                canvas,
+                getFramedPhotoRect(
+                    canvasW,
+                    canvasH,
+                    editorOptions.textPosition ?? "bottom_right",
+                    optionsHasComment(editorOptions),
+                    editorOptions.compactEmptyCommentSpace ?? false,
+                ),
+                tpl.photoLineColorHex,
+            );
         }
 
         // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ・つ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｹ隴会ｽｦ繝ｻ・ｽ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ鬮ｯ譎｢・ｽ・ｶ髫ｰ・ｨ鬲托ｽｴ・つ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ
@@ -361,6 +393,9 @@ function drawPhoto(
     canvasH: number,
     templateId: TemplateId,
     hasFrame: boolean,
+    textPosition: TextPosition,
+    hasComment: boolean,
+    compactEmptyCommentSpace: boolean,
     origW: number,
     origH: number,
 ) {
@@ -370,14 +405,11 @@ function drawPhoto(
         const dstRect = Skia.XYWHRect(0, 0, canvasW, canvasH);
         canvas.drawImageRect(image, srcRect, dstRect, Skia.Paint());
     } else {
-        const shortSide = Math.min(canvasW, canvasH);
-        const inset = shortSide * INSET_RATIO;
-        const bottomInset = shortSide * BOTTOM_INSET_RATIO;
-
-        const containerW = canvasW - inset * 2;
-        const containerH = canvasH - inset - bottomInset;
-        const containerX = inset;
-        const containerY = inset;
+        const photoRect = getFramedPhotoRect(canvasW, canvasH, textPosition, hasComment, compactEmptyCommentSpace);
+        const containerW = photoRect.width;
+        const containerH = photoRect.height;
+        const containerX = photoRect.x;
+        const containerY = photoRect.y;
 
         if (templateId === "tpl_frame_full") {
             const contain = getContainRect(origW, origH, containerW, containerH);
@@ -408,6 +440,18 @@ function drawText(
     innerLineColorHex?: string,
 ) {
     const shortSide = Math.min(canvasW, canvasH);
+    const textPosition: TextPosition = options.textPosition ?? "bottom_right";
+    const isTextLeft = textPosition.endsWith("left");
+    const isTextTop = textPosition.startsWith("top");
+    const framedPhotoRect = hasFrame
+        ? getFramedPhotoRect(
+            canvasW,
+            canvasH,
+            textPosition,
+            options.commentText.trim().length > 0,
+            options.compactEmptyCommentSpace ?? false,
+        )
+        : null;
     const baseDateFontSize = shortSide * FONT_SIZE_DATE_RATIO * (isMultiBaby ? 0.75 : 1);
     const baseCommentFontSize = shortSide * FONT_SIZE_COMMENT_RATIO;
     const baseMargin = shortSide * (hasFrame ? 0.08 : 0.04);
@@ -416,6 +460,7 @@ function drawText(
         : 0;
     const margin = Math.max(baseMargin, innerLineTextInset);
     const gap = shortSide * 0.015;
+    const topTextMargin = hasFrame && isTextTop ? shortSide * 0.03 : margin;
 
     const dateText = dateTextLine1;
     const hasDateText = dateText.length > 0;
@@ -443,34 +488,37 @@ function drawText(
     const commentFont = Skia.Font(typeface || undefined, commentFontSize);
     // 鬯ｯ・ｮ繝ｻ・ｯ髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｷ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蛹・ｽｽ・ｶ鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・ｹ髯晢ｽｷ郢晢ｽｻ闔鬘費ｽｹ譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｴ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ
     const dateWidth = hasDateText ? dateFont.measureText(dateText).width : 0;
-    const dateX = canvasW - margin - dateWidth;
+    const dateX = isTextLeft ? margin : canvasW - margin - dateWidth;
 
     let dateY = 0;
     let commentY = 0;
 
-    if (hasFrame) {
-        // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｫ雎ｬ・ｹ鬯ｯ・･繝ｻ・ｴ驍ｵ・ｺ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ 鬯ｯ・ｮ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｷ郢晢ｽｻ邵ｺ・､・つ鬯ｮ・ｯ繝ｻ・ｷ郢晢ｽｻ繝ｻ・･鬮｣蛹・ｽｽ・ｵ髫ｴ莨夲ｽｽ・ｦ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ驍ｵ・ｺ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｮ・ｴ隰・∞・ｽ・ｽ繝ｻ・｢鬮ｫ・ｴ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｦ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｮ髯具ｽｹ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｨ髯槭ｅ繝ｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｫ・ｰ隰疲ｻゑｽｽ・･郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩搾ｽｵ繝ｻ・ｺ髯区ｻゑｽｽ・｡郢晢ｽｻ繝ｻ・ｫ鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・･郢晢ｽｻ繝ｻ・｢鬮ｯ・ｷ繝ｻ・ｿ鬮ｯ蜈ｷ・ｽ・ｾ郢晢ｽｻ繝ｻ・ｬ髣費ｽｨ隲帛ｾ後・驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｩ髯ｷ莨夲ｽｽ・ｱ郢晢ｽｻ闔会ｽ｣郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ
-        const bottomInset = shortSide * 0.18; // renderImage鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・ｯ髫ｶ蜴・ｽｽ・ｸ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｮ・ｯ隶厄ｽｸ繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ陋滂ｽ･郢晢ｽｻ
-        const photoBottom = canvasH - bottomInset;
+    if (isTextTop || hasFrame) {
+        const topTextY = isTextTop
+            ? topTextMargin
+            : (framedPhotoRect ? framedPhotoRect.y + framedPhotoRect.height + gap : margin);
 
-        dateY = photoBottom + gap + dateFontSize; // text baseline
-        if (hasComment) {
-            commentY = dateY + gap + commentFontSize;
+        if (hasDateText) {
+            dateY = topTextY + dateFontSize;
+            if (hasComment) {
+                commentY = dateY + gap + commentFontSize;
+            }
+        } else if (hasComment) {
+            commentY = topTextY + gap + commentFontSize;
         }
-    } else {
-        // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ遶擾ｽｫ雎ｬ・ｹ鬯ｯ・･繝ｻ・ｴ驍ｵ・ｺ陷会ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｪ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｣鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陝・ｅ繝ｻ驛｢譎｢・ｽ・ｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ譎｢・ｽ・ｶ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬯ｯ・ｮ繝ｻ・｣髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｳ鬯ｮ・ｴ隰・∞・ｽ・ｽ繝ｻ・｢鬮ｫ・ｴ闔ｨ螟ｲ・ｽ・ｽ繝ｻ・ｦ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｯ・ｮ繝ｻ・ｮ髯具ｽｹ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｨ髯槭ｅ繝ｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｸ鬮ｫ・ｰ隰疲ｻゑｽｽ・･郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｲ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬩搾ｽｵ繝ｻ・ｺ髯区ｻゑｽｽ・｡郢晢ｽｻ繝ｻ・ｫ鬯ｯ繝ｻ豎壹・・ｽ繝ｻ・･郢晢ｽｻ繝ｻ・｢鬮ｯ・ｷ繝ｻ・ｿ鬮ｯ蜈ｷ・ｽ・ｾ郢晢ｽｻ郢晢ｽｻ隲・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｯ繝ｻ・ｩ髯ｷ莨夲ｽｽ・ｱ郢晢ｽｻ闔会ｽ｣郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ
-        if (hasComment) {
-            commentY = canvasH - margin;
+    } else if (hasComment) {
+        commentY = canvasH - margin;
+        if (hasDateText) {
             dateY = commentY - commentFontSize - gap;
-        } else {
-            dateY = canvasH - margin;
         }
+    } else if (hasDateText) {
+        dateY = canvasH - margin;
     }
 
     if (hasComment) {
         // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・｡鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隲・ｹ繝ｻ・ｹ隴会ｽｦ繝ｻ・ｽ繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｱ鬮ｯ譎｢・ｽ・ｶ髫ｰ・ｨ鬲托ｽｴ・つ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｻ
         const commentWidth = commentFont.measureText(options.commentText).width;
-        const commentX = canvasW - margin - commentWidth;
+        const commentX = isTextLeft ? margin : canvasW - margin - commentWidth;
 
         if (hasStroke) {
             const strokePaint = Skia.Paint();
@@ -544,6 +592,9 @@ function drawFilterOverlay(
     filterId: FilterId,
     templateId: TemplateId,
     hasFrame: boolean,
+    textPosition: TextPosition,
+    hasComment: boolean,
+    compactEmptyCommentSpace: boolean,
 ) {
     const overlay = getFilterOverlay(filterId);
     if (!overlay) return;
@@ -557,16 +608,14 @@ function drawFilterOverlay(
         return;
     }
 
-    const shortSide = Math.min(canvasW, canvasH);
-    const inset = shortSide * INSET_RATIO;
-    const bottomInset = shortSide * BOTTOM_INSET_RATIO;
-    const containerW = canvasW - inset * 2;
-    const containerH = canvasH - inset - bottomInset;
+    const photoRect = getFramedPhotoRect(canvasW, canvasH, textPosition, hasComment, compactEmptyCommentSpace);
+    const containerW = photoRect.width;
+    const containerH = photoRect.height;
 
     if (templateId === "tpl_frame_full") {
-        canvas.drawRect(Skia.XYWHRect(inset, inset, containerW, containerH), paint);
+        canvas.drawRect(Skia.XYWHRect(photoRect.x, photoRect.y, containerW, containerH), paint);
         return;
     }
 
-    canvas.drawRect(Skia.XYWHRect(inset, inset, containerW, containerH), paint);
+    canvas.drawRect(Skia.XYWHRect(photoRect.x, photoRect.y, containerW, containerH), paint);
 }

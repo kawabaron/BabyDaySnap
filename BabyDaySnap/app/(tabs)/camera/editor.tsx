@@ -44,7 +44,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import type { TemplateId, FontId, DisplayStyle } from "@/types";
+import type { TemplateId, FontId, DisplayStyle, TextPosition } from "@/types";
 import i18n from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
@@ -61,26 +61,27 @@ import { schedulePostSavePrompts } from "@/lib/postSavePrompts";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_WIDTH = SCREEN_WIDTH - 32;
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
+const TEXT_POSITION_OPTIONS: TextPosition[] = ["top_left", "top_right", "bottom_left", "bottom_right"];
 
 type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "comment";
 
-function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
+function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean, templateHasFrame: boolean) {
     if (keyboardVisible) {
         if (toolId === "comment") return 116;
-        if (toolId === "text") return 152;
+        if (toolId === "text") return 176;
     }
 
     switch (toolId) {
         case "target":
             return 104;
         case "template":
-            return 142;
+            return templateHasFrame ? 190 : 142;
         case "font":
             return 184;
         case "filter":
             return 98;
         case "text":
-            return 124;
+            return 196;
         case "comment":
             return 104;
     }
@@ -180,7 +181,11 @@ export default function EditorScreen() {
     const commentInputRef = useRef<TextInput>(null);
     const toolPanelAnimation = useRef(new Animated.Value(1)).current;
     const panelDragStart = useRef(1);
-    const activePanelHeight = getToolPanelHeight(activeTool, keyboardVisible);
+    const activePanelHeight = getToolPanelHeight(
+        activeTool,
+        keyboardVisible,
+        getTemplateConfig(editorOptions.templateId).hasFrame,
+    );
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ隰ｫ・ｾ繝ｻ・ｽ繝ｻ・ｴ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｭ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｯ・ｷ繝ｻ・･郢晢ｽｻ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ: 鬯ｯ・ｯ繝ｻ・ｮ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｮ繝ｻ・ｦ郢晢ｽｻ繝ｻ・ｪ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｮ・ｴ陷ｿ蜴・ｽｽ・ｺ繝ｻ・ｷ郢晢ｽｻ繝ｻ・､髫ｰ・ｦ繝ｻ・ｰ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ遶擾ｽｵ繝ｻ・ｺ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､郢晢ｽｻ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｳ・ｻ郢晢ｽｻ髫ｶ謐ｺ・ｺ蛟･繝ｻ髣包ｽｳ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｷ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｹ鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｮ繝ｻ・｣鬮ｮ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・｣郢晢ｽｻ繝ｻ・ｰ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｯ・ｯ繝ｻ・ｯ郢晢ｽｻ繝ｻ・ｩ鬮ｯ蜈ｷ・ｽ・ｹ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｸ鬯ｯ・ｮ繝ｻ・ｫ郢晢ｽｻ繝ｻ・ｰ鬮ｯ讖ｸ・ｽ・｢郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｨ鬯ｯ・ｮ繝ｻ・ｮ驕ｶ荳橸ｽ｣・ｹ郢晢ｽｻ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｯ鬯ｯ・ｩ隰ｳ・ｾ繝ｻ・ｽ繝ｻ・ｵ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｫ繝ｻ・ｴ髫ｰ・ｫ繝ｻ・ｾ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｴ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｧ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｼ
     const theme = useMemo(() => {
@@ -802,33 +807,35 @@ export default function EditorScreen() {
     const previewWidth = previewBaseWidth * previewScale;
     const previewHeight = naturalPreviewHeight * previewScale;
     const activeFilter = getFilterOption(editorOptions.filterId);
+    const selectedTextPosition = editorOptions.textPosition ?? "bottom_right";
+    const hasCommentText = editorOptions.commentText.trim().length > 0;
 
     const shortSide = Math.min(previewWidth, previewHeight);
-    const previewPhotoRect = tpl.decorationPreset === "berry_sakura"
-        ? getFramedPhotoRect(previewWidth, previewHeight)
+    const previewPhotoRect = tpl.hasFrame
+        ? getFramedPhotoRect(
+            previewWidth,
+            previewHeight,
+            selectedTextPosition,
+            hasCommentText,
+            editorOptions.compactEmptyCommentSpace,
+        )
         : null;
     const isMultiBaby = targetBabyIds.length > 1;
     const dateFontSize = shortSide * 0.04 * (isMultiBaby ? 0.75 : 1);
     const commentFontSize = shortSide * 0.038;
     const margin = shortSide * (tpl.hasFrame ? 0.06 : 0.04);
     const gap = shortSide * 0.015;
-    const inset = shortSide * 0.06;
-    const bottomInset = shortSide * 0.18;
 
     const previewPhotoW = previewPhotoRect
         ? previewPhotoRect.width
-        : tpl.hasFrame
-            ? previewWidth - inset * 2
-            : previewWidth;
+        : previewWidth;
 
     const previewPhotoH = previewPhotoRect
         ? previewPhotoRect.height
-        : tpl.hasFrame
-            ? previewHeight - inset - bottomInset
-            : previewHeight;
+        : previewHeight;
 
-    const previewPhotoX = previewPhotoRect ? previewPhotoRect.x : tpl.hasFrame ? inset : 0;
-    const previewPhotoY = previewPhotoRect ? previewPhotoRect.y : tpl.hasFrame ? inset : 0;
+    const previewPhotoX = previewPhotoRect ? previewPhotoRect.x : 0;
+    const previewPhotoY = previewPhotoRect ? previewPhotoRect.y : 0;
     const previewInnerLineInset = tpl.innerLineColorHex ? shortSide * 0.05 : 0;
     const previewInnerLineWidth = tpl.innerLineColorHex ? Math.max(1, shortSide * 0.003) : 0;
     const previewPhotoOutlineWidth = Math.max(1, shortSide * DECORATIVE_FRAME_LINE_WIDTH_RATIO);
@@ -836,7 +843,9 @@ export default function EditorScreen() {
     const previewDecorationPlacements = tpl.decorationPreset === "berry_sakura"
         ? getBerrySakuraPlacements(previewWidth, previewHeight, {
             seed: `${editorOptions.templateId}:${BERRY_SAKURA_LAYOUT_SEED}`,
-            hasComment: editorOptions.commentText.trim().length > 0,
+            hasComment: hasCommentText,
+            textPosition: selectedTextPosition,
+            compactEmptyCommentSpace: editorOptions.compactEmptyCommentSpace,
         })
         : [];
     const previewTextMargin = tpl.innerLineColorHex
@@ -846,6 +855,12 @@ export default function EditorScreen() {
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
     const previewResizeMode = editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
+    const isPreviewTextLeft = selectedTextPosition.endsWith("left");
+    const isPreviewTextTop = selectedTextPosition.startsWith("top");
+    const previewTextAlignment: "left" | "right" = isPreviewTextLeft ? "left" : "right";
+    const previewTopTextInset = tpl.hasFrame && isPreviewTextTop
+        ? shortSide * 0.03
+        : previewTextMargin;
     const toolTabs: { id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
         { id: "template", icon: "copy-outline", label: i18n.t("editor.toolsTemplate") },
@@ -940,6 +955,38 @@ export default function EditorScreen() {
                                 );
                             })}
                         </ScrollHintedScrollView>
+                        {tpl.hasFrame ? (
+                            <TouchableOpacity
+                                style={[
+                                    styles.checkboxRow,
+                                    styles.panelTitleSpaced,
+                                    hasCommentText && styles.checkboxRowDisabled,
+                                ]}
+                                onPress={() => dispatch({
+                                    type: "SET_EDITOR_OPTIONS",
+                                    payload: { compactEmptyCommentSpace: !editorOptions.compactEmptyCommentSpace },
+                                })}
+                                activeOpacity={hasCommentText ? 1 : 0.8}
+                                disabled={hasCommentText}
+                            >
+                                <View
+                                    style={[
+                                        styles.checkboxBox,
+                                        editorOptions.compactEmptyCommentSpace && {
+                                            backgroundColor: theme.accent,
+                                            borderColor: theme.accent,
+                                        },
+                                    ]}
+                                >
+                                    {editorOptions.compactEmptyCommentSpace ? (
+                                        <Ionicons name="checkmark" size={14} color="#FFF" />
+                                    ) : null}
+                                </View>
+                                <Text style={[styles.checkboxLabel, hasCommentText && styles.checkboxLabelDisabled]}>
+                                    {i18n.t("editor.compactEmptyCommentSpaceLabel")}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 );
             case "font":
@@ -1048,6 +1095,27 @@ export default function EditorScreen() {
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.toolScrollContent}
                     >
+                        <Text style={styles.panelTitle}>{i18n.t("editor.textPositionTitle")}</Text>
+                        <View style={styles.textPositionGrid}>
+                            {TEXT_POSITION_OPTIONS.map((position) => {
+                                const isActive = selectedTextPosition === position;
+                                return (
+                                    <TouchableOpacity
+                                        key={position}
+                                        style={[
+                                            styles.textPositionButton,
+                                            isActive && [styles.textPositionButtonActive, { borderColor: theme.accent, backgroundColor: theme.light }],
+                                        ]}
+                                        onPress={() => dispatch({ type: "SET_EDITOR_OPTIONS", payload: { textPosition: position } })}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[styles.textPositionButtonText, isActive && { color: theme.accent }]}>
+                                            {i18n.t(`editor.textPosition.${position}`)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                         <Text style={styles.panelTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
                         <View style={styles.toggleRowContainer}>
                             <View style={styles.toggleItem}>
@@ -1272,9 +1340,13 @@ export default function EditorScreen() {
                             <View
                                 style={{
                                     position: "absolute",
-                                    right: previewTextMargin,
-                                    ...(tpl.hasFrame ? { top: previewPhotoY + previewPhotoH + gap } : { bottom: previewTextMargin }),
-                                    alignItems: "flex-end",
+                                    ...(isPreviewTextLeft ? { left: previewTextMargin } : { right: previewTextMargin }),
+                                    ...(isPreviewTextTop
+                                        ? { top: previewTopTextInset }
+                                        : tpl.hasFrame
+                                            ? { top: previewPhotoY + previewPhotoH + gap }
+                                            : { bottom: previewTextMargin }),
+                                    alignItems: isPreviewTextLeft ? "flex-start" : "flex-end",
                                 }}
                             >
                                 {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
@@ -1287,7 +1359,7 @@ export default function EditorScreen() {
                                             textShadowOffset: { width: 1, height: 1 },
                                             textShadowRadius: 1,
                                             width: previewMaxWidth,
-                                            textAlign: "right",
+                                            textAlign: previewTextAlignment,
                                         }}
                                         isBold={editorOptions.isBold}
                                     >
@@ -1305,7 +1377,7 @@ export default function EditorScreen() {
                                                 textShadowOffset: { width: 1, height: 1 },
                                                 textShadowRadius: 1,
                                                 width: previewMaxWidth,
-                                                textAlign: "right",
+                                                textAlign: previewTextAlignment,
                                             }}
                                             isBold={editorOptions.isBold}
                                         >
@@ -1743,6 +1815,9 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingRight: 12,
     },
+    checkboxRowDisabled: {
+        opacity: 0.45,
+    },
     checkboxBox: {
         width: 28,
         height: 28,
@@ -1757,6 +1832,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "600",
         color: "#555",
+    },
+    checkboxLabelDisabled: {
+        color: "#8D8D8D",
     },
     commentInput: {
         borderWidth: 1,
@@ -1777,6 +1855,36 @@ const styles = StyleSheet.create({
         flexWrap: "wrap",
         gap: 8,
         paddingVertical: 2,
+    },
+    textPositionGrid: {
+        flexDirection: "row",
+        flexWrap: "nowrap",
+        gap: 6,
+        marginBottom: 14,
+    },
+    textPositionButton: {
+        flex: 1,
+        minWidth: 0,
+        paddingHorizontal: 8,
+        paddingVertical: 9,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#E9E3DE",
+        backgroundColor: "#FFF",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    textPositionButtonActive: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    textPositionButtonText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#555",
     },
     toggleItem: {
         flexDirection: "row",

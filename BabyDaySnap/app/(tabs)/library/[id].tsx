@@ -145,6 +145,7 @@ export default function LibraryDetailScreen() {
                 templateId: item.templateId,
                 dateColorHex: item.dateColorHex,
                 commentText: item.commentText,
+                compactEmptyCommentSpace: (item as any).compactEmptyCommentSpace ?? false,
                 fontId: (item as any).fontId || "font_standard",
                 isBold: (item as any).isBold ?? false,
                 filterId: item.filterId,
@@ -153,6 +154,7 @@ export default function LibraryDetailScreen() {
                 showAge: (item as any).showAge ?? true,
                 ageFormat: (item as any).ageFormat || "days",
                 displayStyle: (item as any).displayStyle || "current",
+                textPosition: (item as any).textPosition || "bottom_right",
             },
         });
 

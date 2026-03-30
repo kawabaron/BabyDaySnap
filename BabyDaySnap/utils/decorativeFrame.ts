@@ -1,3 +1,5 @@
+import type { TextPosition } from "@/types";
+
 export const BERRY_SAKURA_TEMPLATE_ID = "tpl_frame_berry_sakura" as const;
 export const BERRY_SAKURA_LAYOUT_SEED = "berry_sakura_layout_v1";
 
@@ -78,6 +80,23 @@ const DECORATIVE_SPRITES: DecorationSprite[] = [
 
 const FRAME_INSET_RATIO = 0.06;
 const FRAME_BOTTOM_INSET_RATIO = 0.18;
+const FRAME_COMPACT_EMPTY_COMMENT_INSET_RATIO = 0.11;
+
+function isTopTextPosition(textPosition: TextPosition) {
+    return textPosition.startsWith("top");
+}
+
+function isLeftTextPosition(textPosition: TextPosition) {
+    return textPosition.endsWith("left");
+}
+
+function getFrameTextInsetRatio(hasComment: boolean, compactEmptyCommentSpace: boolean) {
+    if (!hasComment && compactEmptyCommentSpace) {
+        return FRAME_COMPACT_EMPTY_COMMENT_INSET_RATIO;
+    }
+
+    return FRAME_BOTTOM_INSET_RATIO;
+}
 
 const ANCHORS: Anchor[] = [
     { xRatio: 0.05, yRatio: 0.035, minSizeRatio: 0.12, maxSizeRatio: 0.18, baseRotation: -14, rotationJitter: 12, jitterRatio: 0.02 },
@@ -166,28 +185,56 @@ export function resolveDecorationSeed(source: DecorationSeedSource) {
     ].join(":");
 }
 
-export function getFramedPhotoRect(canvasW: number, canvasH: number): Rect {
+export function getFramedPhotoRect(
+    canvasW: number,
+    canvasH: number,
+    textPosition: TextPosition = "bottom_right",
+    hasComment: boolean = true,
+    compactEmptyCommentSpace: boolean = false,
+): Rect {
     const shortSide = Math.min(canvasW, canvasH);
     const inset = shortSide * FRAME_INSET_RATIO;
-    const bottomInset = shortSide * FRAME_BOTTOM_INSET_RATIO;
+    const textInset = shortSide * getFrameTextInsetRatio(hasComment, compactEmptyCommentSpace);
+    const topInset = isTopTextPosition(textPosition) ? textInset : inset;
+    const bottomInset = isTopTextPosition(textPosition) ? inset : textInset;
 
     return {
         x: inset,
-        y: inset,
+        y: topInset,
         width: canvasW - inset * 2,
-        height: canvasH - inset - bottomInset,
+        height: canvasH - topInset - bottomInset,
     };
 }
 
-export function getFramedTextSafeRect(canvasW: number, canvasH: number, hasComment: boolean): Rect {
-    const photoRect = getFramedPhotoRect(canvasW, canvasH);
+export function getFramedTextSafeRect(
+    canvasW: number,
+    canvasH: number,
+    hasComment: boolean,
+    textPosition: TextPosition = "bottom_right",
+    compactEmptyCommentSpace: boolean = false,
+): Rect {
+    const photoRect = getFramedPhotoRect(canvasW, canvasH, textPosition, hasComment, compactEmptyCommentSpace);
     const shortSide = Math.min(canvasW, canvasH);
     const gap = shortSide * 0.015;
     const textHeight = shortSide * (hasComment ? 0.11 : 0.065);
+    const textX = isLeftTextPosition(textPosition) ? canvasW * 0.04 : canvasW * 0.35;
+
+    if (isTopTextPosition(textPosition)) {
+        const top = shortSide * 0.02;
+        const bottom = Math.max(top + textHeight, photoRect.y - gap * 0.5);
+
+        return {
+            x: textX,
+            y: top,
+            width: canvasW * 0.61,
+            height: bottom - top,
+        };
+    }
+
     const top = photoRect.y + photoRect.height + gap * 0.5;
 
     return {
-        x: canvasW * 0.35,
+        x: textX,
         y: top,
         width: canvasW * 0.61,
         height: Math.max(textHeight, canvasH - top - shortSide * 0.02),
@@ -197,12 +244,20 @@ export function getFramedTextSafeRect(canvasW: number, canvasH: number, hasComme
 export function getBerrySakuraPlacements(
     canvasW: number,
     canvasH: number,
-    options: { seed: string; hasComment: boolean },
+    options: { seed: string; hasComment: boolean; textPosition?: TextPosition; compactEmptyCommentSpace?: boolean },
 ): DecorationPlacement[] {
     const rng = createRng(options.seed);
     const shortSide = Math.min(canvasW, canvasH);
-    const photoSafeRect = expandRect(getFramedPhotoRect(canvasW, canvasH), -shortSide * 0.01);
-    const textSafeRect = expandRect(getFramedTextSafeRect(canvasW, canvasH, options.hasComment), shortSide * 0.02);
+    const textPosition = options.textPosition ?? "bottom_right";
+    const compactEmptyCommentSpace = options.compactEmptyCommentSpace ?? false;
+    const photoSafeRect = expandRect(
+        getFramedPhotoRect(canvasW, canvasH, textPosition, options.hasComment, compactEmptyCommentSpace),
+        -shortSide * 0.01,
+    );
+    const textSafeRect = expandRect(
+        getFramedTextSafeRect(canvasW, canvasH, options.hasComment, textPosition, compactEmptyCommentSpace),
+        shortSide * 0.02,
+    );
     const placements: DecorationPlacement[] = [];
 
     for (let index = 0; index < ANCHORS.length; index += 1) {

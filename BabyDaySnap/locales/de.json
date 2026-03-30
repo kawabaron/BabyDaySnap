@@ -44,8 +44,16 @@
         "toolsComment": "Kommentar",
         "toolsSave": "Speichern",
         "dateColorTitle": "Textfarbe",
+        "compactEmptyCommentSpaceLabel": "Leerraum verringern, wenn kein Kommentar vorhanden ist",
         "colorLabel": "Textfarbe",
         "boldLabel": "Fett",
+        "textPositionTitle": "Textposition",
+        "textPosition": {
+            "top_left": "Oben links",
+            "top_right": "Oben rechts",
+            "bottom_left": "Unten links",
+            "bottom_right": "Unten rechts"
+        },
         "textVisibilityTitle": "Sichtbare Elemente",
         "displayStyleTitle": "Anzeigestil",
         "dateLabel": "Datum",
