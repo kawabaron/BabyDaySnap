@@ -9,7 +9,7 @@ import {
 } from "@/lib/persistence";
 
 const DATABASE_NAME = "babydaysnap.db";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const META_LEGACY_MIGRATED_AT = "legacy_asyncstorage_migrated_at";
 const META_STORAGE_BACKEND = "storage_backend";
 
@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS library_items (
     date_color_hex TEXT NOT NULL,
     comment_text TEXT NOT NULL,
     font_id TEXT NOT NULL,
+    is_bold INTEGER NOT NULL DEFAULT 0,
     filter_id TEXT NOT NULL,
     show_date INTEGER NOT NULL,
     show_name INTEGER NOT NULL,
@@ -192,6 +193,7 @@ type LibraryItemRow = {
     date_color_hex: string;
     comment_text: string;
     font_id: AppLibraryItem["fontId"];
+    is_bold: number;
     filter_id: AppLibraryItem["filterId"];
     show_date: number;
     show_name: number;
@@ -401,6 +403,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 date_color_hex,
                 comment_text,
                 font_id,
+                is_bold,
                 filter_id,
                 show_date,
                 show_name,
@@ -409,7 +412,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 display_style,
                 created_at_ms,
                 position
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 source = excluded.source,
                 original_file_uri = excluded.original_file_uri,
@@ -425,6 +428,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
                 date_color_hex = excluded.date_color_hex,
                 comment_text = excluded.comment_text,
                 font_id = excluded.font_id,
+                is_bold = excluded.is_bold,
                 filter_id = excluded.filter_id,
                 show_date = excluded.show_date,
                 show_name = excluded.show_name,
@@ -448,6 +452,7 @@ async function replaceLibraryRows(executor: SqlExecutor, library: AppLibraryItem
             item.dateColorHex,
             item.commentText,
             item.fontId,
+            boolToInt(item.isBold),
             item.filterId,
             boolToInt(item.showDate),
             boolToInt(item.showName),
@@ -552,6 +557,13 @@ async function migrateSchemaIfNeeded(db: SQLiteDatabase): Promise<void> {
                 "CREATE INDEX IF NOT EXISTS idx_library_items_is_favorite ON library_items(is_favorite);"
             );
             currentVersion = 2;
+        }
+
+        if (currentVersion < 3) {
+            await db.execAsync(
+                "ALTER TABLE library_items ADD COLUMN is_bold INTEGER NOT NULL DEFAULT 0;"
+            );
+            currentVersion = 3;
         }
 
         await db.execAsync(`PRAGMA user_version = ${currentVersion}`);
@@ -711,6 +723,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
                 date_color_hex,
                 comment_text,
                 font_id,
+                is_bold,
                 filter_id,
                 show_date,
                 show_name,
@@ -756,6 +769,7 @@ export async function loadLibraryFromDatabase(): Promise<AppLibraryItem[]> {
             dateColorHex: row.date_color_hex,
             commentText: row.comment_text,
             fontId: row.font_id,
+            isBold: intToBool(row.is_bold),
             filterId: row.filter_id,
             showDate: intToBool(row.show_date),
             showName: intToBool(row.show_name),

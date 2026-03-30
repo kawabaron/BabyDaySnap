@@ -44,6 +44,8 @@
         "toolsComment": "메모",
         "toolsSave": "저장",
         "dateColorTitle": "텍스트 색상",
+        "colorLabel": "텍스트 색상",
+        "boldLabel": "굵게",
         "textVisibilityTitle": "표시 항목",
         "displayStyleTitle": "표시 스타일",
         "dateLabel": "날짜",

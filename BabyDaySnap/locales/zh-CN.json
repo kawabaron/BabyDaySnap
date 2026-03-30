@@ -44,6 +44,8 @@
         "toolsComment": "备注",
         "toolsSave": "保存",
         "dateColorTitle": "文字颜色",
+        "colorLabel": "文字颜色",
+        "boldLabel": "加粗",
         "textVisibilityTitle": "显示项目",
         "displayStyleTitle": "显示样式",
         "dateLabel": "日期",

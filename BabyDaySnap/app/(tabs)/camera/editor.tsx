@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {
-    View,
-    Text,
+import {
+    View,
+    Text,
     TouchableOpacity,
     TextInput,
     ScrollView,
@@ -17,7 +17,9 @@ import {
     Animated,
     PanResponder,
     type LayoutChangeEvent,
-} from "react-native";
+    type StyleProp,
+    type TextStyle,
+} from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -65,7 +67,7 @@ type EditorToolId = "target" | "template" | "font" | "filter" | "text" | "commen
 function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
     if (keyboardVisible) {
         if (toolId === "comment") return 116;
-        if (toolId === "text") return 188;
+        if (toolId === "text") return 152;
     }
 
     switch (toolId) {
@@ -74,11 +76,11 @@ function getToolPanelHeight(toolId: EditorToolId, keyboardVisible: boolean) {
         case "template":
             return 142;
         case "font":
-            return 98;
+            return 184;
         case "filter":
             return 98;
         case "text":
-            return 170;
+            return 124;
         case "comment":
             return 104;
     }
@@ -112,6 +114,47 @@ function SpriteSheetDecoration({ placement }: { placement: DecorationPlacement }
                 }}
                 resizeMode="stretch"
             />
+        </View>
+    );
+}
+
+function PreviewText({
+    children,
+    style,
+    isBold,
+}: {
+    children: string;
+    style: StyleProp<TextStyle>;
+    isBold: boolean;
+}) {
+    const flattenedStyle = StyleSheet.flatten(style) ?? {};
+    const fontSize = typeof flattenedStyle.fontSize === "number" ? flattenedStyle.fontSize : 16;
+    const boldOffset = isBold ? Math.max(0.8, fontSize * 0.04) : 0;
+
+    return (
+        <View style={{ position: "relative" }}>
+            {isBold ? (
+                <Text
+                    style={[
+                        style,
+                        {
+                            position: "absolute",
+                            left: boldOffset,
+                            top: boldOffset,
+                            textShadowColor: "transparent",
+                            textShadowOffset: { width: 0, height: 0 },
+                            textShadowRadius: 0,
+                        },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                >
+                    {children}
+                </Text>
+            ) : null}
+            <Text style={style} numberOfLines={1} adjustsFontSizeToFit>
+                {children}
+            </Text>
         </View>
     );
 }
@@ -272,12 +315,19 @@ export default function EditorScreen() {
     };
 
     // 鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ陟托ｽｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬮ｫ・ｴ郢晢ｽｻ隰ｳ・ｨ郢晢ｽｻ繝ｻ・ｰ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ髮懶ｽ｣繝ｻ・ｽ繝ｻ・｢驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｽ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｳ鬯ｯ・ｩ陝ｷ・｢繝ｻ・ｽ繝ｻ・｢鬮ｫ・ｴ闕ｵ蜉ｱ繝ｻ郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・･鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｯ・ｨ繝ｻ・ｾ髯具ｽｹ郢晢ｽｻ繝ｻ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｻ鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
-    const handleFontChange = (id: FontId) => {
-        dispatch({
-            type: "SET_EDITOR_OPTIONS",
-            payload: { fontId: id },
-        });
-    };
+    const handleFontChange = (id: FontId) => {
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { fontId: id },
+        });
+    };
+
+    const handleBoldToggle = (isBold: boolean) => {
+        dispatch({
+            type: "SET_EDITOR_OPTIONS",
+            payload: { isBold },
+        });
+    };
 
     // 鬯ｮ・ｮ髮懶ｽ｣繝ｻ・ｽ繝ｻ・ｼ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｶ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｲ鬯ｯ・ｮ繝ｻ・ｯ髫ｶ轣假ｽ･繝ｻ・ｽ・ｽ繝ｻ・ｺ郢晢ｽｻ繝ｻ・ｽ鬮ｯ蜈ｷ・ｽ・ｻ郢晢ｽｻ繝ｻ・､鬯ｮ・ｯ隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｲ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
     const handleColorChange = (hex: string) => {
@@ -420,7 +470,8 @@ export default function EditorScreen() {
                     },
                 },
             ]);
-        } catch {
+        } catch (error) {
+            console.error("handleSaveToApp failed", error);
             await markSaveFailure();
             Alert.alert(i18n.t("common.error"), i18n.t("editor.saveFailed"));
         } finally {
@@ -451,7 +502,8 @@ export default function EditorScreen() {
             } else {
                 await markSaveFailure();
             }
-        } catch {
+        } catch (error) {
+            console.error("handleSaveToPhotos failed", error);
             await markSaveFailure();
             Alert.alert(i18n.t("common.error"), i18n.t("editor.saveFailed"));
         } finally {
@@ -794,7 +846,7 @@ export default function EditorScreen() {
     const previewDateFontSize = dateFontSize;
     const previewCommentFontSize = commentFontSize;
     const previewResizeMode = editorOptions.templateId === "tpl_frame_full" ? "contain" : "cover";
-    const toolTabs: Array<{ id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
+    const toolTabs: { id: EditorToolId; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
         { id: "target", icon: "people-outline", label: i18n.t("editor.toolsTarget") },
         { id: "template", icon: "copy-outline", label: i18n.t("editor.toolsTemplate") },
         { id: "font", icon: "text-outline", label: i18n.t("editor.toolsFont") },
@@ -892,7 +944,12 @@ export default function EditorScreen() {
                 );
             case "font":
                 return (
-                    <View>
+                    <ScrollHintedScrollView
+                        containerStyle={styles.toolScrollView}
+                        direction="vertical"
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.toolScrollContent}
+                    >
                         <Text style={styles.panelTitle}>{i18n.t("editor.fontTitle")}</Text>
                         <ScrollHintedScrollView
                             direction="horizontal"
@@ -914,7 +971,46 @@ export default function EditorScreen() {
                                 </TouchableOpacity>
                             ))}
                         </ScrollHintedScrollView>
-                    </View>
+
+                        <TouchableOpacity
+                            style={[styles.checkboxRow, styles.panelTitleSpaced]}
+                            onPress={() => handleBoldToggle(!editorOptions.isBold)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.checkboxBox, editorOptions.isBold && { backgroundColor: theme.accent, borderColor: theme.accent }]}>
+                                {editorOptions.isBold ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
+                            </View>
+                            <Text style={styles.checkboxLabel}>{i18n.t("editor.boldLabel")}</Text>
+                        </TouchableOpacity>
+
+                        <Text style={[styles.sectionLabel, styles.panelTitleSpaced]}>{i18n.t("editor.colorLabel")}</Text>
+                        <ScrollHintedScrollView
+                            direction="horizontal"
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.colorRow}
+                        >
+                            {COLOR_PALETTE.map((c) => (
+                                <TouchableOpacity
+                                    key={c.hex}
+                                    style={[
+                                        styles.colorCircle,
+                                        { backgroundColor: c.hex },
+                                        c.hex === "#FFFFFF" && styles.colorCircleWhite,
+                                        editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
+                                    ]}
+                                    onPress={() => handleColorChange(c.hex)}
+                                >
+                                    {editorOptions.dateColorHex === c.hex && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={18}
+                                            color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
+                                        />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollHintedScrollView>
+                    </ScrollHintedScrollView>
                 );
             case "filter":
                 return (
@@ -952,35 +1048,7 @@ export default function EditorScreen() {
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={styles.toolScrollContent}
                     >
-                        <Text style={styles.panelTitle}>{i18n.t("editor.dateColorTitle")}</Text>
-                        <ScrollHintedScrollView
-                            direction="horizontal"
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.colorRow}
-                        >
-                            {COLOR_PALETTE.map((c) => (
-                                <TouchableOpacity
-                                    key={c.hex}
-                                    style={[
-                                        styles.colorCircle,
-                                        { backgroundColor: c.hex },
-                                        c.hex === "#FFFFFF" && styles.colorCircleWhite,
-                                        editorOptions.dateColorHex === c.hex && [styles.colorCircleSelected, { borderColor: theme.accent }],
-                                    ]}
-                                    onPress={() => handleColorChange(c.hex)}
-                                >
-                                    {editorOptions.dateColorHex === c.hex && (
-                                        <Ionicons
-                                            name="checkmark"
-                                            size={18}
-                                            color={c.hex === "#FFFFFF" || c.hex === "#FFEB3B" ? "#333" : "#FFF"}
-                                        />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollHintedScrollView>
-
-                        <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{i18n.t("editor.textVisibilityTitle")}</Text>
+                        <Text style={styles.panelTitle}>{i18n.t("editor.textVisibilityTitle")}</Text>
                         <View style={styles.toggleRowContainer}>
                             <View style={styles.toggleItem}>
                                 <Text style={styles.toggleLabel}>{i18n.t("editor.dateLabel")}</Text>
@@ -1158,6 +1226,7 @@ export default function EditorScreen() {
                                     source={{ uri: currentPhoto.previewUri || currentPhoto.uri }}
                                     style={{ width: "100%", height: "100%" }}
                                     resizeMode={previewResizeMode}
+                                    blurRadius={activeFilter.previewBlurRadius ?? 0}
                                 />
                                 {activeFilter.opacity > 0 && (
                                     <View style={[StyleSheet.absoluteFill, { backgroundColor: activeFilter.color, opacity: activeFilter.opacity }]} />
@@ -1209,43 +1278,40 @@ export default function EditorScreen() {
                                 }}
                             >
                                 {(editorOptions.showDate || editorOptions.showName || editorOptions.showAge) && (
-                                    <Text
+                                    <PreviewText
                                         style={{
                                             fontFamily: editorOptions.fontId,
                                             fontSize: previewDateFontSize,
                                             color: editorOptions.dateColorHex,
-                                            fontWeight: "bold",
                                             textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
                                             textShadowOffset: { width: 1, height: 1 },
                                             textShadowRadius: 1,
                                             width: previewMaxWidth,
                                             textAlign: "right",
                                         }}
-                                        numberOfLines={1}
-                                        adjustsFontSizeToFit
+                                        isBold={editorOptions.isBold}
                                     >
                                         {formattedDateTextLine1}
-                                    </Text>
+                                    </PreviewText>
                                 )}
                                 {editorOptions.commentText ? (
-                                    <Text
-                                        style={{
-                                            fontFamily: editorOptions.fontId,
-                                            fontSize: previewCommentFontSize,
-                                            color: editorOptions.dateColorHex,
-                                            fontWeight: "bold",
-                                            marginTop: gap,
-                                            textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
-                                            textShadowOffset: { width: 1, height: 1 },
-                                            textShadowRadius: 1,
-                                            width: previewMaxWidth,
-                                            textAlign: "right",
-                                        }}
-                                        numberOfLines={1}
-                                        adjustsFontSizeToFit
-                                    >
-                                        {editorOptions.commentText}
-                                    </Text>
+                                    <View style={{ marginTop: gap }}>
+                                        <PreviewText
+                                            style={{
+                                                fontFamily: editorOptions.fontId,
+                                                fontSize: previewCommentFontSize,
+                                                color: editorOptions.dateColorHex,
+                                                textShadowColor: tpl.hasTextStroke ? "#000" : "transparent",
+                                                textShadowOffset: { width: 1, height: 1 },
+                                                textShadowRadius: 1,
+                                                width: previewMaxWidth,
+                                                textAlign: "right",
+                                            }}
+                                            isBold={editorOptions.isBold}
+                                        >
+                                            {editorOptions.commentText}
+                                        </PreviewText>
+                                    </View>
                                 ) : null}
                             </View>
 
@@ -1424,6 +1490,12 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: "#2B2628",
         marginBottom: 8,
+    },
+    sectionLabel: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#666",
+        marginBottom: 6,
     },
     panelTitleSpaced: {
         marginTop: 14,
@@ -1661,6 +1733,30 @@ const styles = StyleSheet.create({
     colorCircleSelected: {
         borderWidth: 3,
         borderColor: "#FF8FA3",
+    },
+    checkboxRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 10,
+        minHeight: 44,
+        paddingVertical: 8,
+        paddingRight: 12,
+    },
+    checkboxBox: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: "#D7D7D7",
+        backgroundColor: "#FFF",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    checkboxLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#555",
     },
     commentInput: {
         borderWidth: 1,

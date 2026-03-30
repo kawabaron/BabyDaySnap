@@ -5,6 +5,7 @@ export type FilterOption = {
     labelKey: string;
     color: string;
     opacity: number;
+    previewBlurRadius?: number;
 };
 
 export const FILTER_OPTIONS: FilterOption[] = [

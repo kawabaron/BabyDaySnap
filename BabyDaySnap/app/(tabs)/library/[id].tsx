@@ -146,6 +146,7 @@ export default function LibraryDetailScreen() {
                 dateColorHex: item.dateColorHex,
                 commentText: item.commentText,
                 fontId: (item as any).fontId || "font_standard",
+                isBold: (item as any).isBold ?? false,
                 filterId: item.filterId,
                 showDate: (item as any).showDate ?? true,
                 showName: (item as any).showName ?? true,

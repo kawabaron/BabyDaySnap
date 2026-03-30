@@ -44,6 +44,8 @@
         "toolsComment": "コメント",
         "toolsSave": "保存",
         "dateColorTitle": "文字色",
+        "colorLabel": "文字色",
+        "boldLabel": "太字",
         "textVisibilityTitle": "表示項目",
         "displayStyleTitle": "\u8868\u8a18\u30b9\u30bf\u30a4\u30eb",
         "dateLabel": "日付",

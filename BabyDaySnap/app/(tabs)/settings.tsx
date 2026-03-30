@@ -358,7 +358,7 @@ export default function SettingsScreen() {
         );
     };
 
-    const appVersion = Constants.expoConfig?.version ?? "1.11";
+    const appVersion = Constants.expoConfig?.version ?? "1.12";
     const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
 
     return (

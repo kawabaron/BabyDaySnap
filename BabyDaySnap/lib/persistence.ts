@@ -34,10 +34,15 @@ export const DEFAULT_SETTINGS: UserSettings = {
     interstitialDailyBucketDate: null,
 };
 
+function normalizeFilterId(filterId?: string | null): UserSettings["defaultFilterId"] {
+    return filterId === "filter_retro" || !filterId ? "filter_none" : filterId as UserSettings["defaultFilterId"];
+}
+
 export function normalizeSettings(settings?: Partial<UserSettings> | null): UserSettings {
     return {
         ...DEFAULT_SETTINGS,
         ...(settings ?? {}),
+        defaultFilterId: normalizeFilterId(settings?.defaultFilterId),
         policyUrls: {
             ...DEFAULT_SETTINGS.policyUrls,
             ...(settings?.policyUrls ?? {}),
@@ -52,7 +57,8 @@ export function normalizeLibraryItem(item: AppLibraryItem): AppLibraryItem {
         babyIds: item.babyIds || [],
         commentText: item.commentText || "",
         fontId: item.fontId || "font_standard",
-        filterId: item.filterId || "filter_none",
+        isBold: item.isBold ?? false,
+        filterId: normalizeFilterId(item.filterId),
         showDate: item.showDate ?? true,
         showName: item.showName ?? true,
         showAge: item.showAge ?? true,

@@ -44,6 +44,8 @@
         "toolsComment": "Kommentar",
         "toolsSave": "Speichern",
         "dateColorTitle": "Textfarbe",
+        "colorLabel": "Textfarbe",
+        "boldLabel": "Fett",
         "textVisibilityTitle": "Sichtbare Elemente",
         "displayStyleTitle": "Anzeigestil",
         "dateLabel": "Datum",

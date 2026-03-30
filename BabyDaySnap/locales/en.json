@@ -44,6 +44,8 @@
         "toolsComment": "Comment",
         "toolsSave": "Save",
         "dateColorTitle": "Date Color",
+        "colorLabel": "Text Color",
+        "boldLabel": "Bold",
         "textVisibilityTitle": "Printed Text",
         "displayStyleTitle": "Display Style",
         "dateLabel": "Date",

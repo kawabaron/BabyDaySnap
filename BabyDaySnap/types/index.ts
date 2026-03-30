@@ -61,6 +61,7 @@ export type EditorOptions = {
     dateColorHex: string;
     commentText: string;
     fontId: FontId;
+    isBold: boolean;
     filterId: FilterId;
     showDate: boolean;
     showName: boolean;
@@ -87,6 +88,7 @@ export type AppLibraryItem = {
     dateColorHex: string;
     commentText: string;
     fontId: FontId;
+    isBold: boolean;
     filterId: FilterId;
     showDate: boolean;
     showName: boolean;
