@@ -9,7 +9,7 @@ import {
 } from "@/lib/persistence";
 
 const DATABASE_NAME = "babydaysnap.db";
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const META_LEGACY_MIGRATED_AT = "legacy_asyncstorage_migrated_at";
 const META_STORAGE_BACKEND = "storage_backend";
 
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
     has_onboarded INTEGER NOT NULL DEFAULT 0,
     birth_date_iso TEXT,
     baby_name TEXT NOT NULL DEFAULT '',
+    preferred_locale TEXT,
     default_template_id TEXT NOT NULL,
     default_text_position TEXT NOT NULL DEFAULT 'bottom_right',
     default_font_id TEXT NOT NULL,
@@ -151,6 +152,7 @@ type SettingsRow = {
     has_onboarded: number;
     birth_date_iso: string | null;
     baby_name: string;
+    preferred_locale: UserSettings["preferredLocale"];
     default_template_id: UserSettings["defaultTemplateId"];
     default_text_position: UserSettings["defaultTextPosition"];
     default_font_id: UserSettings["defaultFontId"];
@@ -281,6 +283,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             has_onboarded,
             birth_date_iso,
             baby_name,
+            preferred_locale,
             default_template_id,
             default_text_position,
             default_font_id,
@@ -304,11 +307,12 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             interstitial_last_shown_date,
             interstitial_shown_count_today,
             interstitial_daily_bucket_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             has_onboarded = excluded.has_onboarded,
             birth_date_iso = excluded.birth_date_iso,
             baby_name = excluded.baby_name,
+            preferred_locale = excluded.preferred_locale,
             default_template_id = excluded.default_template_id,
             default_text_position = excluded.default_text_position,
             default_font_id = excluded.default_font_id,
@@ -336,6 +340,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
         boolToInt(settings.hasOnboarded),
         settings.birthDateISO,
         settings.babyName,
+        settings.preferredLocale,
         settings.defaultTemplateId,
         settings.defaultTextPosition,
         settings.defaultFontId,
@@ -618,6 +623,13 @@ async function migrateSchemaIfNeeded(db: SQLiteDatabase): Promise<void> {
             currentVersion = 6;
         }
 
+        if (currentVersion < 7) {
+            await db.execAsync(
+                "ALTER TABLE app_settings ADD COLUMN preferred_locale TEXT;"
+            );
+            currentVersion = 7;
+        }
+
         await db.execAsync(`PRAGMA user_version = ${currentVersion}`);
     });
 }
@@ -653,6 +665,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             has_onboarded,
             birth_date_iso,
             baby_name,
+            preferred_locale,
             default_template_id,
             default_text_position,
             default_font_id,
@@ -688,6 +701,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
         hasOnboarded: intToBool(row.has_onboarded),
         birthDateISO: row.birth_date_iso,
         babyName: row.baby_name,
+        preferredLocale: row.preferred_locale,
         defaultTemplateId: row.default_template_id,
         defaultTextPosition: row.default_text_position,
         defaultFontId: row.default_font_id,
