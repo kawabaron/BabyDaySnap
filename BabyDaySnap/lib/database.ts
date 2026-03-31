@@ -9,7 +9,7 @@ import {
 } from "@/lib/persistence";
 
 const DATABASE_NAME = "babydaysnap.db";
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const META_LEGACY_MIGRATED_AT = "legacy_asyncstorage_migrated_at";
 const META_STORAGE_BACKEND = "storage_backend";
 
@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
     policy_terms_url TEXT NOT NULL,
     policy_privacy_url TEXT NOT NULL,
     policy_contact_url TEXT NOT NULL,
+    policy_commerce_url TEXT NOT NULL,
     ad_free_unlocked INTEGER NOT NULL DEFAULT 0,
     unlocked_season_pack_ids_json TEXT NOT NULL DEFAULT '[]',
     tool_order_json TEXT NOT NULL DEFAULT '{}',
@@ -168,6 +169,7 @@ type SettingsRow = {
     policy_terms_url: string;
     policy_privacy_url: string;
     policy_contact_url: string;
+    policy_commerce_url: string;
     ad_free_unlocked: number;
     unlocked_season_pack_ids_json: string;
     save_success_count_total: number;
@@ -298,13 +300,14 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             policy_terms_url,
             policy_privacy_url,
             policy_contact_url,
+            policy_commerce_url,
             ad_free_unlocked,
             unlocked_season_pack_ids_json,
             save_success_count_total,
             interstitial_last_shown_date,
             interstitial_shown_count_today,
             interstitial_daily_bucket_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             has_onboarded = excluded.has_onboarded,
             birth_date_iso = excluded.birth_date_iso,
@@ -326,6 +329,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             policy_terms_url = excluded.policy_terms_url,
             policy_privacy_url = excluded.policy_privacy_url,
             policy_contact_url = excluded.policy_contact_url,
+            policy_commerce_url = excluded.policy_commerce_url,
             ad_free_unlocked = excluded.ad_free_unlocked,
             unlocked_season_pack_ids_json = excluded.unlocked_season_pack_ids_json,
             save_success_count_total = excluded.save_success_count_total,
@@ -353,6 +357,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
         settings.policyUrls.termsUrl,
         settings.policyUrls.privacyUrl,
         settings.policyUrls.contactUrl,
+        settings.policyUrls.commerceUrl,
         boolToInt(settings.adFreeUnlocked),
         JSON.stringify(settings.unlockedSeasonPackIds),
         settings.saveSuccessCountTotal,
@@ -618,6 +623,13 @@ async function migrateSchemaIfNeeded(db: SQLiteDatabase): Promise<void> {
             currentVersion = 6;
         }
 
+        if (currentVersion < 7) {
+            await db.execAsync(
+                `ALTER TABLE app_settings ADD COLUMN policy_commerce_url TEXT NOT NULL DEFAULT '${DEFAULT_SETTINGS.policyUrls.commerceUrl}';`
+            );
+            currentVersion = 7;
+        }
+
         await db.execAsync(`PRAGMA user_version = ${currentVersion}`);
     });
 }
@@ -670,6 +682,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             policy_terms_url,
             policy_privacy_url,
             policy_contact_url,
+            policy_commerce_url,
             ad_free_unlocked,
             unlocked_season_pack_ids_json,
             save_success_count_total,
@@ -706,6 +719,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             termsUrl: row.policy_terms_url,
             privacyUrl: row.policy_privacy_url,
             contactUrl: row.policy_contact_url,
+            commerceUrl: row.policy_commerce_url,
         },
         adFreeUnlocked: intToBool(row.ad_free_unlocked),
         unlockedSeasonPackIds: parseJson(

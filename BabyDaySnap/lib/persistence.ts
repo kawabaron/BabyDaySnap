@@ -28,6 +28,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
         termsUrl: "https://kawabaron.github.io/BabyDaySnap/terms.html",
         privacyUrl: "https://kawabaron.github.io/BabyDaySnap/privacy.html",
         contactUrl: "https://kawabaron.github.io/BabyDaySnap/contact.html",
+        commerceUrl: "https://kawabaron.github.io/BabyDaySnap/commerce.html",
     },
     adFreeUnlocked: false,
     unlockedSeasonPackIds: [],
