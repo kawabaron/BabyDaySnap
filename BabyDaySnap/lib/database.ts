@@ -9,7 +9,7 @@ import {
 } from "@/lib/persistence";
 
 const DATABASE_NAME = "babydaysnap.db";
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const META_LEGACY_MIGRATED_AT = "legacy_asyncstorage_migrated_at";
 const META_STORAGE_BACKEND = "storage_backend";
 
@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
     policy_terms_url TEXT NOT NULL,
     policy_privacy_url TEXT NOT NULL,
     policy_contact_url TEXT NOT NULL,
+    policy_commerce_url TEXT NOT NULL,
     ad_free_unlocked INTEGER NOT NULL DEFAULT 0,
     unlocked_season_pack_ids_json TEXT NOT NULL DEFAULT '[]',
     tool_order_json TEXT NOT NULL DEFAULT '{}',
@@ -170,6 +171,7 @@ type SettingsRow = {
     policy_terms_url: string;
     policy_privacy_url: string;
     policy_contact_url: string;
+    policy_commerce_url: string;
     ad_free_unlocked: number;
     unlocked_season_pack_ids_json: string;
     save_success_count_total: number;
@@ -276,6 +278,11 @@ async function getMetaValue(executor: SqlExecutor, key: string): Promise<string 
     return row?.value ?? null;
 }
 
+async function hasColumn(executor: SqlExecutor, tableName: string, columnName: string): Promise<boolean> {
+    const rows = await executor.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
+    return rows.some((row) => row.name === columnName);
+}
+
 async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): Promise<void> {
     await executor.runAsync(
         `INSERT INTO app_settings (
@@ -301,6 +308,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             policy_terms_url,
             policy_privacy_url,
             policy_contact_url,
+            policy_commerce_url,
             ad_free_unlocked,
             unlocked_season_pack_ids_json,
             save_success_count_total,
@@ -330,6 +338,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
             policy_terms_url = excluded.policy_terms_url,
             policy_privacy_url = excluded.policy_privacy_url,
             policy_contact_url = excluded.policy_contact_url,
+            policy_commerce_url = excluded.policy_commerce_url,
             ad_free_unlocked = excluded.ad_free_unlocked,
             unlocked_season_pack_ids_json = excluded.unlocked_season_pack_ids_json,
             save_success_count_total = excluded.save_success_count_total,
@@ -358,6 +367,7 @@ async function writeSettingsRow(executor: SqlExecutor, settings: UserSettings): 
         settings.policyUrls.termsUrl,
         settings.policyUrls.privacyUrl,
         settings.policyUrls.contactUrl,
+        settings.policyUrls.commerceUrl,
         boolToInt(settings.adFreeUnlocked),
         JSON.stringify(settings.unlockedSeasonPackIds),
         settings.saveSuccessCountTotal,
@@ -623,11 +633,20 @@ async function migrateSchemaIfNeeded(db: SQLiteDatabase): Promise<void> {
             currentVersion = 6;
         }
 
-        if (currentVersion < 7) {
-            await db.execAsync(
-                "ALTER TABLE app_settings ADD COLUMN preferred_locale TEXT;"
-            );
-            currentVersion = 7;
+        if (currentVersion < 8) {
+            if (!(await hasColumn(db, "app_settings", "policy_commerce_url"))) {
+                await db.execAsync(
+                    `ALTER TABLE app_settings ADD COLUMN policy_commerce_url TEXT NOT NULL DEFAULT '${DEFAULT_SETTINGS.policyUrls.commerceUrl}';`
+                );
+            }
+
+            if (!(await hasColumn(db, "app_settings", "preferred_locale"))) {
+                await db.execAsync(
+                    "ALTER TABLE app_settings ADD COLUMN preferred_locale TEXT;"
+                );
+            }
+
+            currentVersion = 8;
         }
 
         await db.execAsync(`PRAGMA user_version = ${currentVersion}`);
@@ -683,6 +702,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             policy_terms_url,
             policy_privacy_url,
             policy_contact_url,
+            policy_commerce_url,
             ad_free_unlocked,
             unlocked_season_pack_ids_json,
             save_success_count_total,
@@ -720,6 +740,7 @@ export async function loadSettingsFromDatabase(): Promise<UserSettings> {
             termsUrl: row.policy_terms_url,
             privacyUrl: row.policy_privacy_url,
             contactUrl: row.policy_contact_url,
+            commerceUrl: row.policy_commerce_url,
         },
         adFreeUnlocked: intToBool(row.ad_free_unlocked),
         unlockedSeasonPackIds: parseJson(

@@ -110,6 +110,7 @@ export type PolicyUrls = {
     termsUrl: string;
     privacyUrl: string;
     contactUrl: string;
+    commerceUrl: string;
 };
 
 export type UserSettings = {

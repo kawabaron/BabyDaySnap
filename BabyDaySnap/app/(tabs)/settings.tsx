@@ -1136,6 +1136,19 @@ export default function SettingsScreen() {
                             <Ionicons name="chevron-forward" size={18} color="#CCC" />
                         </TouchableOpacity>
 
+                        <View style={styles.divider} />
+
+                        <TouchableOpacity
+                            style={styles.linkRow}
+                            onPress={() => openURL(settings.policyUrls.commerceUrl)}
+                        >
+                            <View style={styles.linkLeft}>
+                                <Ionicons name="receipt-outline" size={20} color="#888" />
+                                <Text style={styles.linkText}>{i18n.t("settings.commerceLink")}</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CCC" />
+                        </TouchableOpacity>
+
                         {privacyOptionsRequired ? (
                             <>
                                 <View style={styles.divider} />
