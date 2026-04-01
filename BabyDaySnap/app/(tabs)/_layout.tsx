@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useActiveBaby } from "@/context/AppContext";
+import { useActiveBaby, useAppState } from "@/context/AppContext";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
 import i18n from "@/lib/i18n";
 
 export default function TabsLayout() {
+  const { settings } = useAppState();
   const activeBaby = useActiveBaby();
   const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
+  void settings.preferredLocale;
 
   return (
     <Tabs

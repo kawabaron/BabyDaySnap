@@ -1,3 +1,5 @@
+import type { SupportedLocale } from "@/lib/i18n";
+
 // ============================================================
 // BabyDaySnap - 鬯ｮ・ｯ隲幢ｽｷ鬮ｮﾂ髯ｷ螟ｲ・ｽ・ｱ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｮ鬮ｯ讓奇ｽｺ蛛・ｽｽ莉｣繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｾ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｩ
 // ============================================================
@@ -115,6 +117,7 @@ export type UserSettings = {
     hasOnboarded: boolean;
     birthDateISO: string | null;
     babyName: string;
+    preferredLocale: SupportedLocale | null;
     defaultTemplateId: TemplateId;
     defaultTextPosition: TextPosition;
     defaultFontId: FontId;
@@ -163,6 +166,7 @@ export type AppAction =
     | { type: "SET_ONBOARDED"; payload: boolean }
     | { type: "SET_BIRTHDATE"; payload: string }
     | { type: "SET_BABY_NAME"; payload: string }
+    | { type: "SET_PREFERRED_LOCALE"; payload: SupportedLocale | null }
     | { type: "SET_DEFAULT_TOGGLES"; payload: { defaultShowDate: boolean; defaultShowName: boolean; defaultShowAge: boolean; defaultAgeFormat: AgeFormat; defaultDisplayStyle: DisplayStyle } }
     | { type: "SET_DEFAULT_PREFS"; payload: {
         defaultTemplateId?: TemplateId;

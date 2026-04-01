@@ -27,7 +27,7 @@ import type { TemplateId, FontId, FilterId, BabyProfile, DisplayStyle, TextPosit
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
-import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
+import i18n, { SUPPORTED_LOCALES, getCurrentLocaleTag, type SupportedLocale } from "@/lib/i18n";
 import { AppHeader } from "@/components/AppHeader";
 import { ScrollHintedScrollView } from "@/components/ScrollHintedScrollView";
 import { useBilling } from "@/lib/billing";
@@ -46,6 +46,16 @@ import { requestManualReview } from "@/lib/review";
 
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 const TEXT_POSITION_OPTIONS: TextPosition[] = ["top_left", "top_right", "bottom_left", "bottom_right"];
+const LANGUAGE_LABELS: Record<SupportedLocale, string> = {
+    en: "English",
+    ja: "日本語",
+    es: "Español",
+    "pt-BR": "Português (Brasil)",
+    fr: "Français",
+    de: "Deutsch",
+    ko: "한국어",
+    "zh-CN": "简体中文",
+};
 
 function createTimeDate(hour: number, minute: number) {
     const date = new Date();
@@ -264,6 +274,10 @@ export default function SettingsScreen() {
                     i18n.t("settings.reviewUnavailableMessage"),
                 );
             });
+    };
+
+    const handlePreferredLocaleChange = (locale: SupportedLocale | null) => {
+        dispatch({ type: "SET_PREFERRED_LOCALE", payload: locale });
     };
 
     const handleSaveReminderTime = (date: Date) => {
@@ -1026,6 +1040,63 @@ export default function SettingsScreen() {
                 </View>
 
                 <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{i18n.t("settings.appLanguageSection")}</Text>
+                    <View style={styles.card}>
+                        <View style={styles.languageHeader}>
+                            <Text style={styles.settingTitle}>{i18n.t("settings.appLanguageLabel")}</Text>
+                            <Text style={styles.settingDescription}>{i18n.t("settings.appLanguageDescription")}</Text>
+                        </View>
+
+                        <View style={styles.languageOptionWrap}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.languageOption,
+                                    settings.preferredLocale === null && styles.languageOptionActive,
+                                    settings.preferredLocale === null && { borderColor: theme.accent, backgroundColor: `${theme.accent}12` },
+                                ]}
+                                onPress={() => handlePreferredLocaleChange(null)}
+                                activeOpacity={0.8}
+                            >
+                                <Text
+                                    style={[
+                                        styles.languageOptionLabel,
+                                        settings.preferredLocale === null && { color: theme.accent },
+                                    ]}
+                                >
+                                    {i18n.t("settings.appLanguageUseDevice")}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {SUPPORTED_LOCALES.map((locale) => {
+                                const isActive = settings.preferredLocale === locale;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={locale}
+                                        style={[
+                                            styles.languageOption,
+                                            isActive && styles.languageOptionActive,
+                                            isActive && { borderColor: theme.accent, backgroundColor: `${theme.accent}12` },
+                                        ]}
+                                        onPress={() => handlePreferredLocaleChange(locale)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.languageOptionLabel,
+                                                isActive && { color: theme.accent },
+                                            ]}
+                                        >
+                                            {LANGUAGE_LABELS[locale]}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{i18n.t("settings.infoSection")}</Text>
                     <View style={styles.card}>
                         <TouchableOpacity
@@ -1364,6 +1435,41 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: "#777",
         lineHeight: 18,
+    },
+    languageHeader: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        gap: 4,
+    },
+    languageOptionWrap: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+        padding: 16,
+        paddingTop: 14,
+    },
+    languageOption: {
+        minWidth: 108,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "#E5E5EA",
+        backgroundColor: "#FFF",
+        paddingHorizontal: 14,
+        paddingVertical: 11,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    languageOptionActive: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    languageOptionLabel: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#555",
     },
     datePickerContainer: {
         borderTopWidth: 1,

@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     hasOnboarded: false,
     birthDateISO: null,
     babyName: "",
+    preferredLocale: null,
     defaultTemplateId: "tpl_noframe_full",
     defaultTextPosition: "bottom_right",
     defaultFontId: "font_standard",
@@ -42,10 +43,30 @@ function normalizeFilterId(filterId?: string | null): UserSettings["defaultFilte
     return filterId === "filter_retro" || !filterId ? "filter_none" : filterId as UserSettings["defaultFilterId"];
 }
 
+const SUPPORTED_LOCALE_VALUES = new Set<NonNullable<UserSettings["preferredLocale"]>>([
+    "en",
+    "ja",
+    "es",
+    "pt-BR",
+    "fr",
+    "de",
+    "ko",
+    "zh-CN",
+]);
+
+function normalizePreferredLocale(preferredLocale?: UserSettings["preferredLocale"] | null): UserSettings["preferredLocale"] {
+    if (!preferredLocale || !SUPPORTED_LOCALE_VALUES.has(preferredLocale)) {
+        return null;
+    }
+
+    return preferredLocale;
+}
+
 export function normalizeSettings(settings?: Partial<UserSettings> | null): UserSettings {
     return {
         ...DEFAULT_SETTINGS,
         ...(settings ?? {}),
+        preferredLocale: normalizePreferredLocale(settings?.preferredLocale),
         defaultFilterId: normalizeFilterId(settings?.defaultFilterId),
         policyUrls: {
             ...DEFAULT_SETTINGS.policyUrls,

@@ -59,6 +59,7 @@ const translations = {
 } as const;
 
 export type SupportedLocale = keyof typeof translations;
+export const SUPPORTED_LOCALES = Object.freeze(Object.keys(translations) as SupportedLocale[]);
 
 const FALLBACK_LOCALE: SupportedLocale = "en";
 const LOCALE_PREFIXES: Record<string, SupportedLocale> = {
@@ -100,9 +101,19 @@ function matchSupportedLocale(localeTag?: string | null): SupportedLocale | null
 
 const i18n = new I18n(translations);
 
-i18n.locale = resolveSupportedLocale();
 i18n.enableFallback = true;
 i18n.defaultLocale = FALLBACK_LOCALE;
+
+export function applyPreferredLocale(preferredLocale?: SupportedLocale | null): SupportedLocale {
+    const resolvedLocale = preferredLocale
+        ? (matchSupportedLocale(preferredLocale) ?? resolveSupportedLocale())
+        : resolveSupportedLocale();
+
+    i18n.locale = resolvedLocale;
+    return resolvedLocale;
+}
+
+applyPreferredLocale();
 
 export function getCurrentLocaleTag(): SupportedLocale {
     return matchSupportedLocale(i18n.locale) ?? FALLBACK_LOCALE;
