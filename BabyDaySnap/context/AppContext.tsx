@@ -276,7 +276,21 @@ const AppDispatchContext = createContext<React.Dispatch<AppAction>>(() => { });
 
 // --- Provider ---
 export function AppProvider({ children }: { children: ReactNode }) {
-    const [state, dispatch] = useReducer(appReducer, initialState);
+    const [state, baseDispatch] = useReducer(appReducer, initialState);
+    const dispatch = useMemo<React.Dispatch<AppAction>>(
+        () => (action) => {
+            if (action.type === "SET_PREFERRED_LOCALE") {
+                applyPreferredLocale(action.payload);
+            }
+
+            if (action.type === "LOAD_SETTINGS") {
+                applyPreferredLocale(action.payload.preferredLocale);
+            }
+
+            baseDispatch(action);
+        },
+        [baseDispatch],
+    );
 
     // 鬯ｮ・ｫ闖ｫ・ｶ髫ｱ阮吶・繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｷ鬯ｮ・ｯ繝ｻ・ｷ髫ｶ荳ｻ・･繝ｻ・ｽ・ｽ繝ｻ・｢髴難ｽ｣陋滂ｽ･郢晢ｽｻ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｫ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ鬯ｩ蟷｢・ｽ・｢郢晢ｽｻ繝ｻ・ｧ驛｢譎｢・ｽ・ｻ郢晢ｽｻ繝ｻ・ｿ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｭ鬯ｩ蟷｢・ｽ・｢髫ｴ雜｣・ｽ・｢郢晢ｽｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｼ鬯ｩ蟷｢・ｽ・｢髫ｴ謫ｾ・ｽ・ｴ驛｢譎｢・ｽ・ｻ
     useEffect(() => {
@@ -326,10 +340,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             saveSettings(state.settings);
         }
     }, [state.settings, state.loading]);
-
-    useEffect(() => {
-        applyPreferredLocale(state.settings.preferredLocale);
-    }, [state.settings.preferredLocale]);
 
     // library 鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬮ｫ・ｰ騾搾ｽｲ繝ｻ・ｻ郢ｧ謇假ｽｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・､鬯ｨ・ｾ陋ｹ繝ｻ・ｽ・ｽ繝ｻ・ｻ鬮ｯ譎｢・ｽ・ｲ郢晢ｽｻ繝ｻ・ｩ鬯ｩ謳ｾ・ｽ・ｵ郢晢ｽｻ繝ｻ・ｺ鬯ｮ・ｴ鬩帙・・ｽ・ｲ繝ｻ・ｻ郢晢ｽｻ繝ｻ・ｽ髫ｶ蜻ｵ・ｶ・｣繝ｻ・ｽ繝ｻ・ｸ郢晢ｽｻ繝ｻ・ｺ鬮ｮ荵昴・遶乗ｧｭ繝ｻ繝ｻ・ｽ鬮ｯ蜈ｷ・ｽ・ｾ髫ｴ荳橸ｽｼ・ｱ郢晢ｽｻ郢晢ｽｻ繝ｻ・ｪ鬯ｮ・ｯ繝ｻ・ｷ髯ｷ・･繝ｻ・ｲ郢晢ｽｻ繝ｻ・ｩ驛｢・ｧ隰・∞・ｽ・ｽ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｿ鬮ｫ・ｴ陷ｿ髢・ｾ蜉ｱ繝ｻ繝ｻ・ｽ郢晢ｽｻ繝ｻ・ｭ鬩幢ｽ｢隴趣ｽ｢繝ｻ・ｽ繝ｻ・ｻ
     useEffect(() => {

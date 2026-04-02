@@ -138,7 +138,7 @@ export const FONT_OPTIONS: FontOption[] = [
 ];
 
 const FONT_STANDARD_ID: FontId = "font_standard";
-const RESTRICTED_FONT_LOCALES = new Set<SupportedLocale>(["ko", "zh-CN"]);
+const RESTRICTED_FONT_LOCALES = new Set<SupportedLocale>(["ko", "zh-CN", "zh-TW"]);
 
 export const FONT_ASSET_MAP = Object.fromEntries(
     FONT_OPTIONS.map((font) => [font.id, font.file]),

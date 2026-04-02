@@ -148,7 +148,11 @@
         "reviewUnavailableTitle": "Bewertung konnte nicht geöffnet werden",
         "reviewUnavailableMessage": "Der Bewertungsbildschirm ist in dieser Umgebung nicht verfügbar.",
         "linkErrorTitle": "Fehler",
-        "linkErrorMsg": "Der Link konnte nicht geöffnet werden."
+        "linkErrorMsg": "Der Link konnte nicht geöffnet werden.",
+        "commerceLink": "Rechtliche Hinweise",
+        "adPrivacyChoicesLink": "Datenschutzoptionen für Werbung",
+        "adPrivacyErrorTitle": "Datenschutzoptionen konnten nicht geöffnet werden",
+        "adPrivacyErrorMessage": "Bitte versuche es gleich noch einmal."
     },
     "common": {
         "error": "Fehler",

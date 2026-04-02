@@ -44,22 +44,39 @@ function normalizeFilterId(filterId?: string | null): UserSettings["defaultFilte
 }
 
 const SUPPORTED_LOCALE_VALUES = new Set<NonNullable<UserSettings["preferredLocale"]>>([
-    "en",
     "ja",
-    "es",
-    "pt-BR",
-    "fr",
-    "de",
     "ko",
     "zh-CN",
+    "zh-TW",
+    "en-US",
+    "en-GB",
+    "en-AU",
+    "en-CA",
+    "fr",
+    "it",
+    "de",
+    "es-ES",
+    "es-MX",
+    "pt-PT",
+    "pt-BR",
 ]);
 
-function normalizePreferredLocale(preferredLocale?: UserSettings["preferredLocale"] | null): UserSettings["preferredLocale"] {
-    if (!preferredLocale || !SUPPORTED_LOCALE_VALUES.has(preferredLocale)) {
+const LEGACY_LOCALE_MIGRATIONS: Record<string, NonNullable<UserSettings["preferredLocale"]>> = {
+    en: "en-US",
+    es: "es-ES",
+};
+
+function normalizePreferredLocale(preferredLocale?: string | null): UserSettings["preferredLocale"] {
+    if (!preferredLocale) {
         return null;
     }
 
-    return preferredLocale;
+    const migratedLocale = LEGACY_LOCALE_MIGRATIONS[preferredLocale] ?? preferredLocale;
+    if (!SUPPORTED_LOCALE_VALUES.has(migratedLocale as NonNullable<UserSettings["preferredLocale"]>)) {
+        return null;
+    }
+
+    return migratedLocale as UserSettings["preferredLocale"];
 }
 
 export function normalizeSettings(settings?: Partial<UserSettings> | null): UserSettings {

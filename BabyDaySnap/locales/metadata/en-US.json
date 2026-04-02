@@ -1,0 +1,7 @@
+{
+    "ios": {
+        "NSCameraUsageDescription": "Allow camera access to take baby photos.",
+        "NSPhotoLibraryUsageDescription": "Allow photo access to import baby photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow photo library access to save edited photos."
+    }
+}

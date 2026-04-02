@@ -148,7 +148,11 @@
         "reviewUnavailableTitle": "Impossible d'ouvrir l'évaluation",
         "reviewUnavailableMessage": "L'écran d'évaluation n'est pas disponible dans cet environnement.",
         "linkErrorTitle": "Erreur",
-        "linkErrorMsg": "Impossible d'ouvrir le lien."
+        "linkErrorMsg": "Impossible d'ouvrir le lien.",
+        "commerceLink": "Mentions légales",
+        "adPrivacyChoicesLink": "Choix de confidentialité des annonces",
+        "adPrivacyErrorTitle": "Impossible d'ouvrir les choix de confidentialité",
+        "adPrivacyErrorMessage": "Réessayez dans un instant."
     },
     "common": {
         "error": "Erreur",

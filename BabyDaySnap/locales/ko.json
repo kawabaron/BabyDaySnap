@@ -148,7 +148,11 @@
         "reviewUnavailableTitle": "리뷰 화면을 열 수 없어요",
         "reviewUnavailableMessage": "이 환경에서는 리뷰 화면을 열 수 없습니다.",
         "linkErrorTitle": "오류",
-        "linkErrorMsg": "링크를 열 수 없습니다."
+        "linkErrorMsg": "링크를 열 수 없습니다.",
+        "commerceLink": "법적 고지",
+        "adPrivacyChoicesLink": "광고 개인정보 선택",
+        "adPrivacyErrorTitle": "개인정보 선택을 열 수 없어요",
+        "adPrivacyErrorMessage": "잠시 후 다시 시도해 주세요."
     },
     "common": {
         "error": "오류",

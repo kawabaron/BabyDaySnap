@@ -1,0 +1,7 @@
+{
+    "ios": {
+        "NSCameraUsageDescription": "Permita o acesso à câmara para tirar fotografias do seu bebé.",
+        "NSPhotoLibraryUsageDescription": "Permita o acesso a Fotografias para importar fotografias do seu bebé.",
+        "NSPhotoLibraryAddUsageDescription": "Permita o acesso à fototeca para guardar fotografias editadas."
+    }
+}

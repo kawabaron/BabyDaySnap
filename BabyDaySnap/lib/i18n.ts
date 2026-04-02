@@ -2,13 +2,20 @@ import { getLocales } from "expo-localization";
 import { I18n } from "i18n-js";
 
 import de from "../locales/de.json";
-import en from "../locales/en.json";
-import es from "../locales/es.json";
+import enAU from "../locales/en-AU.json";
+import enCA from "../locales/en-CA.json";
+import enGB from "../locales/en-GB.json";
+import enUS from "../locales/en-US.json";
+import esES from "../locales/es-ES.json";
+import esMX from "../locales/es-MX.json";
 import fr from "../locales/fr.json";
+import it from "../locales/it.json";
 import ja from "../locales/ja.json";
 import ko from "../locales/ko.json";
 import ptBR from "../locales/pt-BR.json";
+import ptPT from "../locales/pt-PT.json";
 import zhCN from "../locales/zh-CN.json";
+import zhTW from "../locales/zh-TW.json";
 
 const jaMonetizationOverrides = {
     adFreeDescription: "広告を非表示にします",
@@ -21,57 +28,122 @@ const jaMonetizationOverrides = {
     restoreHint: "機種変更や再インストール後に、購入済みの状態をこの端末へ反映するためのボタンです。"
 };
 
+export const SUPPORTED_LOCALES = Object.freeze([
+    "ja",
+    "ko",
+    "zh-CN",
+    "zh-TW",
+    "en-US",
+    "en-GB",
+    "en-AU",
+    "en-CA",
+    "fr",
+    "it",
+    "de",
+    "es-ES",
+    "es-MX",
+    "pt-PT",
+    "pt-BR",
+] as const);
+
+export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+
 const translations = {
-    en,
-    ja: {
-        ...en,
+    "ja": {
+        ...enUS,
         ...ja,
         monetization: {
-            ...en.monetization,
+            ...enUS.monetization,
             ...ja.monetization,
-            ...jaMonetizationOverrides
-        }
+            ...jaMonetizationOverrides,
+        },
     },
-    es: {
-        ...en,
-        ...es
-    },
-    "pt-BR": {
-        ...en,
-        ...ptBR
-    },
-    fr: {
-        ...en,
-        ...fr
-    },
-    de: {
-        ...en,
-        ...de
-    },
-    ko: {
-        ...en,
-        ...ko
+    "ko": {
+        ...enUS,
+        ...ko,
     },
     "zh-CN": {
-        ...en,
-        ...zhCN
-    }
-} as const;
+        ...enUS,
+        ...zhCN,
+    },
+    "zh-TW": {
+        ...enUS,
+        ...zhTW,
+    },
+    "en-US": enUS,
+    "en-GB": enGB,
+    "en-AU": enAU,
+    "en-CA": enCA,
+    "fr": {
+        ...enUS,
+        ...fr,
+    },
+    "it": {
+        ...enUS,
+        ...it,
+    },
+    "de": {
+        ...enUS,
+        ...de,
+    },
+    "es-ES": {
+        ...enUS,
+        ...esES,
+    },
+    "es-MX": {
+        ...enUS,
+        ...esMX,
+    },
+    "pt-PT": {
+        ...enUS,
+        ...ptPT,
+    },
+    "pt-BR": {
+        ...enUS,
+        ...ptBR,
+    },
+} as const satisfies Record<SupportedLocale, object>;
 
-export type SupportedLocale = keyof typeof translations;
-export const SUPPORTED_LOCALES = Object.freeze(Object.keys(translations) as SupportedLocale[]);
-
-const FALLBACK_LOCALE: SupportedLocale = "en";
-const LOCALE_PREFIXES: Record<string, SupportedLocale> = {
-    en: "en",
+const FALLBACK_LOCALE: SupportedLocale = "en-US";
+const SUPPORTED_LOCALE_MAP = new Map(
+    SUPPORTED_LOCALES.map((locale) => [locale.toLowerCase(), locale] as const),
+);
+const EXACT_LOCALE_MAP: Record<string, SupportedLocale> = {
+    en: "en-US",
+    "en-us": "en-US",
+    "en-gb": "en-GB",
+    "en-au": "en-AU",
+    "en-ca": "en-CA",
     ja: "ja",
-    es: "es",
-    pt: "pt-BR",
-    fr: "fr",
-    de: "de",
     ko: "ko",
-    zh: "zh-CN"
+    "zh-cn": "zh-CN",
+    "zh-sg": "zh-CN",
+    "zh-hans": "zh-CN",
+    "zh-tw": "zh-TW",
+    "zh-hk": "zh-TW",
+    "zh-mo": "zh-TW",
+    "zh-hant": "zh-TW",
+    fr: "fr",
+    it: "it",
+    de: "de",
+    es: "es-ES",
+    "es-es": "es-ES",
+    "es-mx": "es-MX",
+    "es-419": "es-MX",
+    pt: "pt-BR",
+    "pt-br": "pt-BR",
+    "pt-pt": "pt-PT",
 };
+const PREFIX_FALLBACKS: [string, SupportedLocale][] = [
+    ["en", "en-US"],
+    ["ja", "ja"],
+    ["ko", "ko"],
+    ["fr", "fr"],
+    ["it", "it"],
+    ["de", "de"],
+    ["es", "es-ES"],
+    ["pt", "pt-BR"],
+];
 
 function resolveSupportedLocale(): SupportedLocale {
     for (const locale of getLocales()) {
@@ -90,7 +162,25 @@ function matchSupportedLocale(localeTag?: string | null): SupportedLocale | null
         return null;
     }
 
-    for (const [prefix, supportedLocale] of Object.entries(LOCALE_PREFIXES)) {
+    const exactSupportedLocale = SUPPORTED_LOCALE_MAP.get(normalized);
+    if (exactSupportedLocale) {
+        return exactSupportedLocale;
+    }
+
+    const exactMappedLocale = EXACT_LOCALE_MAP[normalized];
+    if (exactMappedLocale) {
+        return exactMappedLocale;
+    }
+
+    if (normalized.startsWith("zh-hant")) {
+        return "zh-TW";
+    }
+
+    if (normalized.startsWith("zh-hans")) {
+        return "zh-CN";
+    }
+
+    for (const [prefix, supportedLocale] of PREFIX_FALLBACKS) {
         if (normalized === prefix || normalized.startsWith(`${prefix}-`)) {
             return supportedLocale;
         }

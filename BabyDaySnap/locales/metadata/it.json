@@ -1,0 +1,7 @@
+{
+    "ios": {
+        "NSCameraUsageDescription": "Consenti l'accesso alla fotocamera per scattare foto del tuo bambino.",
+        "NSPhotoLibraryUsageDescription": "Consenti l'accesso a Foto per importare le foto del tuo bambino.",
+        "NSPhotoLibraryAddUsageDescription": "Consenti l'accesso alla libreria foto per salvare le foto modificate."
+    }
+}

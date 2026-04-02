@@ -55,7 +55,7 @@
             "bottom_right": "右下"
         },
         "textVisibilityTitle": "表示項目",
-        "displayStyleTitle": "\u8868\u8a18\u30b9\u30bf\u30a4\u30eb",
+        "displayStyleTitle": "表記スタイル",
         "dateLabel": "日付",
         "nameLabel": "名前",
         "ageLabel": "年齢",
@@ -125,7 +125,7 @@
         "defaultDate": "日付",
         "defaultName": "名前",
         "defaultAge": "年齢",
-        "defaultDisplayStyle": "\u65e5\u4ed8\u30fb\u5e74\u9f62\u8868\u8a18",
+        "defaultDisplayStyle": "日付・年齢表記",
         "defaultStyleSection": "デフォルトスタイル",
         "templateSubtitle": "フレーム",
         "fontSubtitle": "フォント",
@@ -149,7 +149,10 @@
         "reviewUnavailableTitle": "レビューを開けません",
         "reviewUnavailableMessage": "この環境ではレビュー画面を開けませんでした。",
         "linkErrorTitle": "エラー",
-        "linkErrorMsg": "リンクを開けませんでした。"
+        "linkErrorMsg": "リンクを開けませんでした。",
+        "adPrivacyChoicesLink": "広告のプライバシー設定",
+        "adPrivacyErrorTitle": "プライバシー設定を開けません",
+        "adPrivacyErrorMessage": "少し時間をおいて再度お試しください。"
     },
     "common": {
         "error": "エラー",
@@ -159,21 +162,21 @@
         "cancel": "キャンセル"
     },
     "templates": {
-        "tpl_frame_berry_sakura": "\u3044\u3061\u3054\u3068\u685c",
+        "tpl_frame_berry_sakura": "いちごと桜",
         "tpl_noframe_full": "フチなし全画面",
         "tpl_noframe_line": "フチなし（内線）",
         "tpl_frame_full": "フチあり（全体）",
         "tpl_frame_crop": "フチあり（切取）"
     },
     "fonts": {
-        "font_standard": "\u6a19\u6e96",
-        "font_soft": "\u67d4\u3089\u304b\u3081",
-        "font_stylish": "\u304a\u3057\u3083\u308c",
-        "font_cute": "\u304b\u308f\u3044\u3044",
-        "font_calligraphy": "\u9054\u7b46",
-        "font_round": "\u307e\u308b\u3081",
-        "font_magic": "\u30de\u30b8\u30c3\u30af\u624b\u66f8\u304d",
-        "font_hina": "\u3072\u306a\u660e\u671d"
+        "font_standard": "標準",
+        "font_soft": "柔らかめ",
+        "font_stylish": "おしゃれ",
+        "font_cute": "かわいい",
+        "font_calligraphy": "達筆",
+        "font_round": "まるめ",
+        "font_magic": "マジック手書き",
+        "font_hina": "ひな明朝"
     },
     "filters": {
         "filter_none": "なし",

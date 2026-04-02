@@ -148,7 +148,11 @@
         "reviewUnavailableTitle": "无法打开评价页面",
         "reviewUnavailableMessage": "当前环境下无法打开评价页面。",
         "linkErrorTitle": "错误",
-        "linkErrorMsg": "无法打开链接。"
+        "linkErrorMsg": "无法打开链接。",
+        "commerceLink": "法律声明",
+        "adPrivacyChoicesLink": "广告隐私选项",
+        "adPrivacyErrorTitle": "无法打开隐私选项",
+        "adPrivacyErrorMessage": "请稍后再试。"
     },
     "common": {
         "error": "错误",

@@ -10,6 +10,8 @@ import {
     Switch,
     TextInput,
     ScrollView,
+    Modal,
+    Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -47,14 +49,21 @@ import { requestManualReview } from "@/lib/review";
 const DISPLAY_STYLE_OPTIONS: DisplayStyle[] = ["current", "soft_english", "diary_english", "keepsake_english"];
 const TEXT_POSITION_OPTIONS: TextPosition[] = ["top_left", "top_right", "bottom_left", "bottom_right"];
 const LANGUAGE_LABELS: Record<SupportedLocale, string> = {
-    en: "English",
     ja: "日本語",
-    es: "Español",
-    "pt-BR": "Português (Brasil)",
-    fr: "Français",
-    de: "Deutsch",
     ko: "한국어",
     "zh-CN": "简体中文",
+    "zh-TW": "繁體中文",
+    "en-US": "English (US)",
+    "en-GB": "English (UK)",
+    "en-AU": "English (Australia)",
+    "en-CA": "English (Canada)",
+    fr: "Français",
+    it: "Italiano",
+    de: "Deutsch",
+    "es-ES": "Español (España)",
+    "es-MX": "Español (México)",
+    "pt-PT": "Português (Portugal)",
+    "pt-BR": "Português (Brasil)",
 };
 
 function createTimeDate(hour: number, minute: number) {
@@ -70,7 +79,7 @@ function formatReminderTime(hour: number, minute: number) {
     });
 }
 
-export default function SettingsScreen() {
+function SettingsScreenContent({ localeKey }: { localeKey: string }) {
     const { settings, babies, library } = useAppState();
     const dispatch = useAppDispatch();
     const router = useRouter();
@@ -91,8 +100,12 @@ export default function SettingsScreen() {
     });
     const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
     const [tempReminderTime, setTempReminderTime] = useState(createTimeDate(18, 30));
+    const [showLanguagePicker, setShowLanguagePicker] = useState(false);
     const availableFonts = getAvailableFontsForCurrentLocale();
     const defaultTemplateHasFrame = getTemplateConfig(settings.defaultTemplateId).hasFrame;
+    const currentLanguageLabel = settings.preferredLocale
+        ? LANGUAGE_LABELS[settings.preferredLocale]
+        : `${i18n.t("settings.appLanguageUseDevice")} (${LANGUAGE_LABELS[getCurrentLocaleTag()]})`;
 
     useEffect(() => {
         let mounted = true;
@@ -278,6 +291,7 @@ export default function SettingsScreen() {
 
     const handlePreferredLocaleChange = (locale: SupportedLocale | null) => {
         dispatch({ type: "SET_PREFERRED_LOCALE", payload: locale });
+        setShowLanguagePicker(false);
     };
 
     const handleSaveReminderTime = (date: Date) => {
@@ -374,7 +388,7 @@ export default function SettingsScreen() {
         );
     };
 
-    const appVersion = Constants.expoConfig?.version ?? "1.12";
+    const appVersion = Constants.expoConfig?.version ?? "1.13";
     const adFreeProduct = productsById[AD_FREE_PRODUCT_ID];
 
     return (
@@ -1047,52 +1061,19 @@ export default function SettingsScreen() {
                             <Text style={styles.settingDescription}>{i18n.t("settings.appLanguageDescription")}</Text>
                         </View>
 
-                        <View style={styles.languageOptionWrap}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.languageOption,
-                                    settings.preferredLocale === null && styles.languageOptionActive,
-                                    settings.preferredLocale === null && { borderColor: theme.accent, backgroundColor: `${theme.accent}12` },
-                                ]}
-                                onPress={() => handlePreferredLocaleChange(null)}
-                                activeOpacity={0.8}
-                            >
-                                <Text
-                                    style={[
-                                        styles.languageOptionLabel,
-                                        settings.preferredLocale === null && { color: theme.accent },
-                                    ]}
-                                >
-                                    {i18n.t("settings.appLanguageUseDevice")}
+                        <TouchableOpacity
+                            style={[styles.languageSelectBox, { borderColor: `${theme.accent}33` }]}
+                            onPress={() => setShowLanguagePicker(true)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.languageSelectTextWrap}>
+                                <Text style={styles.languageSelectLabel}>{i18n.t("settings.appLanguageLabel")}</Text>
+                                <Text style={[styles.languageSelectValue, { color: theme.accent }]}>
+                                    {currentLanguageLabel}
                                 </Text>
-                            </TouchableOpacity>
-
-                            {SUPPORTED_LOCALES.map((locale) => {
-                                const isActive = settings.preferredLocale === locale;
-
-                                return (
-                                    <TouchableOpacity
-                                        key={locale}
-                                        style={[
-                                            styles.languageOption,
-                                            isActive && styles.languageOptionActive,
-                                            isActive && { borderColor: theme.accent, backgroundColor: `${theme.accent}12` },
-                                        ]}
-                                        onPress={() => handlePreferredLocaleChange(locale)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.languageOptionLabel,
-                                                isActive && { color: theme.accent },
-                                            ]}
-                                        >
-                                            {LANGUAGE_LABELS[locale]}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
+                            </View>
+                            <Ionicons name="chevron-down" size={18} color="#AAA" />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -1186,8 +1167,78 @@ export default function SettingsScreen() {
                     <Text style={styles.versionText}>BSnap v{appVersion}</Text>
                 </View>
             </ScrollView>
+
+            <Modal
+                visible={showLanguagePicker}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowLanguagePicker(false)}
+            >
+                <Pressable style={styles.languageModalOverlay} onPress={() => setShowLanguagePicker(false)}>
+                    <View style={styles.languageModalCard}>
+                        <View style={styles.languageModalHeader}>
+                            <Text style={styles.languageModalTitle}>{i18n.t("settings.appLanguageLabel")}</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowLanguagePicker(false)}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Text style={[styles.languageModalCloseText, { color: theme.accent }]}>
+                                    {i18n.t("common.cancel")}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.languageModalList} showsVerticalScrollIndicator={false}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.languageModalOption,
+                                    settings.preferredLocale === null && { backgroundColor: `${theme.accent}12` },
+                                ]}
+                                onPress={() => handlePreferredLocaleChange(null)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.languageModalOptionTextWrap}>
+                                    <Text style={styles.languageModalOptionLabel}>{i18n.t("settings.appLanguageUseDevice")}</Text>
+                                    <Text style={styles.languageModalOptionHint}>{LANGUAGE_LABELS[getCurrentLocaleTag()]}</Text>
+                                </View>
+                                {settings.preferredLocale === null ? (
+                                    <Ionicons name="checkmark" size={18} color={theme.accent} />
+                                ) : null}
+                            </TouchableOpacity>
+
+                            {SUPPORTED_LOCALES.map((locale) => {
+                                const isActive = settings.preferredLocale === locale;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={locale}
+                                        style={[
+                                            styles.languageModalOption,
+                                            isActive && { backgroundColor: `${theme.accent}12` },
+                                        ]}
+                                        onPress={() => handlePreferredLocaleChange(locale)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.languageModalOptionLabel}>{LANGUAGE_LABELS[locale]}</Text>
+                                        {isActive ? (
+                                            <Ionicons name="checkmark" size={18} color={theme.accent} />
+                                        ) : null}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
+}
+
+export default function SettingsScreen() {
+    const { settings } = useAppState();
+    const localeKey = settings.preferredLocale ?? getCurrentLocaleTag();
+
+    return <SettingsScreenContent key={localeKey} localeKey={localeKey} />;
 }
 
 const styles = StyleSheet.create({
@@ -1441,35 +1492,93 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         gap: 4,
     },
-    languageOptionWrap: {
+    languageSelectBox: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 10,
-        padding: 16,
-        paddingTop: 14,
-    },
-    languageOption: {
-        minWidth: 108,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: "#E5E5EA",
-        backgroundColor: "#FFF",
-        paddingHorizontal: 14,
-        paddingVertical: 11,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
+        margin: 16,
+        marginTop: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        backgroundColor: "#FFFDFC",
     },
-    languageOptionActive: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
+    languageSelectTextWrap: {
+        flex: 1,
+        gap: 4,
+        paddingRight: 12,
     },
-    languageOptionLabel: {
+    languageSelectLabel: {
         fontSize: 13,
+        fontWeight: "600",
+        color: "#888",
+    },
+    languageSelectValue: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#444",
+    },
+    languageModalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.34)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 20,
+    },
+    languageModalCard: {
+        width: "100%",
+        maxWidth: 340,
+        maxHeight: "72%",
+        borderRadius: 22,
+        backgroundColor: "#FFF",
+        paddingTop: 20,
+        paddingBottom: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    languageModalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 20,
+        paddingBottom: 12,
+    },
+    languageModalTitle: {
+        fontSize: 18,
         fontWeight: "700",
-        color: "#555",
+        color: "#333",
+    },
+    languageModalCloseText: {
+        fontSize: 15,
+        fontWeight: "700",
+    },
+    languageModalList: {
+        paddingHorizontal: 8,
+    },
+    languageModalOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        minHeight: 54,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 16,
+    },
+    languageModalOptionTextWrap: {
+        gap: 2,
+    },
+    languageModalOptionLabel: {
+        fontSize: 16,
+        color: "#333",
+        fontWeight: "600",
+    },
+    languageModalOptionHint: {
+        fontSize: 13,
+        color: "#888",
     },
     datePickerContainer: {
         borderTopWidth: 1,

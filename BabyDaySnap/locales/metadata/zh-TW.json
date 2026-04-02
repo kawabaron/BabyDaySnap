@@ -1,0 +1,7 @@
+{
+    "ios": {
+        "NSCameraUsageDescription": "允許存取相機以拍攝寶寶照片。",
+        "NSPhotoLibraryUsageDescription": "允許存取照片以匯入寶寶照片。",
+        "NSPhotoLibraryAddUsageDescription": "允許存取照片圖庫以儲存編輯後的照片。"
+    }
+}

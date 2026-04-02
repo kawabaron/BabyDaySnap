@@ -1,14 +1,15 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Text } from "react-native";
 import { useActiveBaby, useAppState } from "@/context/AppContext";
 import { getThemePreset, NEUTRAL_THEME } from "@/constants/babyTheme";
-import i18n from "@/lib/i18n";
+import i18n, { getCurrentLocaleTag } from "@/lib/i18n";
 
 export default function TabsLayout() {
   const { settings } = useAppState();
   const activeBaby = useActiveBaby();
   const theme = activeBaby ? getThemePreset(activeBaby.themeColorHex) : NEUTRAL_THEME;
-  void settings.preferredLocale;
+  const localeKey = settings.preferredLocale ?? getCurrentLocaleTag();
 
   return (
     <Tabs
@@ -34,6 +35,11 @@ export default function TabsLayout() {
         name="camera"
         options={{
           title: i18n.t("tabs.camera"),
+          tabBarLabel: ({ color }) => (
+            <Text key={`camera-${localeKey}`} style={{ color, fontSize: 11, fontWeight: "600" }}>
+              {i18n.t("tabs.camera")}
+            </Text>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
           ),
@@ -43,6 +49,11 @@ export default function TabsLayout() {
         name="library"
         options={{
           title: i18n.t("tabs.library"),
+          tabBarLabel: ({ color }) => (
+            <Text key={`library-${localeKey}`} style={{ color, fontSize: 11, fontWeight: "600" }}>
+              {i18n.t("tabs.library")}
+            </Text>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="images" size={size} color={color} />
           ),
@@ -52,6 +63,11 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: i18n.t("tabs.settings"),
+          tabBarLabel: ({ color }) => (
+            <Text key={`settings-${localeKey}`} style={{ color, fontSize: 11, fontWeight: "600" }}>
+              {i18n.t("tabs.settings")}
+            </Text>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
